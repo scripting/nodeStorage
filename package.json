@@ -1,0 +1,19 @@
+{ 
+	"name": "twitterForNoteblog",
+	"subdomain": "twitterfornoteblog",
+	"description": "The Twitter backend for noteblog.io",
+	"author": "Dave Winer <dave@smallpicture.com>",
+	"version": "0.4.0",
+	"scripts": {
+		"start": "node storage.js"
+		},
+	"dependencies" : {
+		"aws-sdk": "*", 
+		"node-twitter-api": "*",
+		"request": "*"
+		}, 
+	"license": "MIT",
+	"engines": {
+		"node": "0.6.x"
+		}
+	}
