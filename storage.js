@@ -1,7 +1,7 @@
-var myVersion = "0.40", myProductName = "twStorageServer";
+var myVersion = "0.41", myProductName = "twStorageServer";
+  
  
- 
-//last build 12/12/14; 9:41:44 PM 
+//last build 12/15/14; 11:58:43 AM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -40,7 +40,7 @@ var serverStats = {
 	};
 var maxrecentTweets = 500, pathHttpLogFile = "stats/tweetLog.json";
 var macroStart = "<" + "%", macroEnd = "%" + ">"; 
-var defaultOpmlAcl = "private"; //7/22/14 by DW -- see table on this page: http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html
+var defaultOpmlAcl = "private"; //see table on this page: http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html
 
 var feed = {
 	ctPosts: 0, ctPostsToday: 0, whenLastPost: new Date (0),
@@ -522,11 +522,14 @@ function removeMultipleBlanks (s) { //7/30/14 by DW
 function stringAddCommas (x) { //5/27/14 by DW
 	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	}
-function readHttpFile (url, callback) { //5/27/14 by DW
+function readHttpFile (url, callback, timeoutInMilliseconds) { //5/27/14 by DW
+	if (timeoutInMilliseconds === undefined) {
+		timeoutInMilliseconds = 30000;
+		}
 	var jxhr = $.ajax ({ 
 		url: url,
 		dataType: "text" , 
-		timeout: 30000 
+		timeout: timeoutInMilliseconds 
 		}) 
 	.success (function (data, status) { 
 		callback (data);
@@ -1027,6 +1030,45 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 		}
 	
 	
+//long polling -- 12/15/14 by DW
+	var waitingLongpolls = new Array ();
+	var ctSecsLongpollTimeout = 60;
+	
+	function pushLongpoll (urlToWatchFor, httpResponse) {
+		var ctMilliseconds = ctSecsLongpollTimeout * 1000;
+		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
+		waitingLongpolls [waitingLongpolls.length] = {
+			url: urlToWatchFor,
+			whenTimeout: whenExpires,
+			response: httpResponse
+			}
+		console.log ("pushLongpoll: " + waitingLongpolls.length + " requests are waiting in the array.")
+		}
+	function checkLongpolls () { //expire timed-out longpolls
+		var now = new Date ();
+		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
+			var obj = waitingLongpolls [i];
+			if (now >= obj.whenTimeout) {
+				console.log ("Timing-out request #" + i);
+				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+				obj.response.end ("timeout");    
+				waitingLongpolls.splice (i, 1);
+				}
+			}
+		}
+	function checkLongpollsForUrl (url) { //if someone was waiting for the url to change, their wait is over
+		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
+			var obj = waitingLongpolls [i];
+			if (obj.url == url) {
+				console.log ("Request #" + i + " is returning because the resource updated.");
+				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+				obj.response.end ("update");    
+				waitingLongpolls.splice (i, 1);
+				}
+			}
+		}
+	
+	
 
 function getCalendarPath (theDay) {
 	return (s3CalendarFolder + getDatePath (theDay, false) + ".json");
@@ -1255,6 +1297,11 @@ function getS3Acl (flPrivate) { //8/3/14 by DW
 		return ("public-read");
 		}
 	}
+function everySecond () {
+	checkLongpolls ();
+	}
+function everyMinute () {
+	}
 
 loadServerStats ();
 loadFeed (); //6/8/14 by DW
@@ -1444,6 +1491,9 @@ http.createServer (function (httpRequest, httpResponse) {
 												metadata.url = "http:/" + s3path;
 												dataResponse (metadata);
 												serverStats.ctFileSaves++;
+												if (!flprivate) { //12/15/14 by DW
+													checkLongpollsForUrl (metadata.url);
+													}
 												}
 											}, metadata);
 										}
@@ -1839,7 +1889,6 @@ http.createServer (function (httpRequest, httpResponse) {
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end (JSON.stringify (isWhitelistedUser (screenName), undefined, 4));    
 							break;
-						
 						case "/configuration":
 							var params = {};
 							var twitter = newTwitter ();
@@ -1855,6 +1904,11 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								});
 							break;
+						
+						case "/returnwhenready": //12/15/14 by DW -- long polling
+							pushLongpoll (parsedUrl.query.url, httpResponse)
+							break;
+						
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
@@ -1875,3 +1929,6 @@ http.createServer (function (httpRequest, httpResponse) {
 		httpResponse.end (tryError.message);    
 		}
 	}).listen (myPort);
+
+setInterval (function () {everySecond ()}, 1000); 
+setInterval (function () {everyMinute ()}, 60000); 
