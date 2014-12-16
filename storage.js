@@ -1,7 +1,7 @@
-var myVersion = "0.42", myProductName = "twStorageServer";
+var myVersion = "0.43", myProductName = "twStorageServer";
  
  
-//last build 12/16/14; 11:11:15 AM 
+//last build 12/16/14; 4:12:36 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -36,7 +36,11 @@ var serverStats = {
 	ctOpmlSaves: 0, //6/26/14 by DW
 	ctFeedSaves: 0, //7/16/14 by DW
 	ctFileSaves: 0, //8/3/14 by DW
-	ctLongPollPushes: 0, ctLongPollPops: 0, ctLongPollTimeouts: 0, ctLongPollUpdates: 0, //12/16/14 by DW
+	ctLongPollPushes: 0,  //12/16/14 by DW
+	ctLongPollPops: 0,  //12/16/14 by DW
+	ctLongPollTimeouts: 0,  //12/16/14 by DW
+	ctLongPollUpdates: 0, //12/16/14 by DW
+	ctCurrentLongPolls: 0,  //12/16/14 by DW
 	recentTweets: []
 	};
 var flStatsDirty = false; //12/16/14 by DW
@@ -1078,6 +1082,9 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 		}
 	
 	
+function tweetContainsBlockedTag (twitterStatus) { //blocking is not present in this version -- 12/16/14 by DW
+	return (false); 
+	}
 
 function getCalendarPath (theDay) {
 	return (s3CalendarFolder + getDatePath (theDay, false) + ".json");
@@ -1228,6 +1235,7 @@ function newTwitter (myCallback) {
 function saveStats () {
 	flStatsDirty = false;
 	serverStats.ctHoursServerUp = secondsSince (whenServerStart) / 3600; //4/28/14 by DW
+	serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
 	s3NewObject (s3Path + pathHttpLogFile, JSON.stringify (serverStats, undefined, 3));
 	}
 function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
