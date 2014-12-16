@@ -1,7 +1,7 @@
-var myVersion = "0.41", myProductName = "twStorageServer";
-  
+var myVersion = "0.42", myProductName = "twStorageServer";
  
-//last build 12/15/14; 11:58:43 AM 
+ 
+//last build 12/16/14; 11:11:15 AM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -20,7 +20,7 @@ var whenServerStart = new Date ();
 var ctHits = 0;
 var requestTokens = [];
 var serverStats = {
-	today: new Date ().toUTCString (),
+	today: new Date (),
 	ctHits: 0, 
 	ctHitsThisRun: 0,
 	ctHitsToday: 0,
@@ -36,8 +36,10 @@ var serverStats = {
 	ctOpmlSaves: 0, //6/26/14 by DW
 	ctFeedSaves: 0, //7/16/14 by DW
 	ctFileSaves: 0, //8/3/14 by DW
+	ctLongPollPushes: 0, ctLongPollPops: 0, ctLongPollTimeouts: 0, ctLongPollUpdates: 0, //12/16/14 by DW
 	recentTweets: []
 	};
+var flStatsDirty = false; //12/16/14 by DW
 var maxrecentTweets = 500, pathHttpLogFile = "stats/tweetLog.json";
 var macroStart = "<" + "%", macroEnd = "%" + ">"; 
 var defaultOpmlAcl = "private"; //see table on this page: http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html
@@ -1042,6 +1044,7 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 			whenTimeout: whenExpires,
 			response: httpResponse
 			}
+		serverStats.ctLongPollPushes++; flStatsDirty = true;
 		console.log ("pushLongpoll: " + waitingLongpolls.length + " requests are waiting in the array.")
 		}
 	function checkLongpolls () { //expire timed-out longpolls
@@ -1053,6 +1056,9 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 				obj.response.end ("timeout");    
 				waitingLongpolls.splice (i, 1);
+				serverStats.ctLongPollPops++; 
+				serverStats.ctLongPollTimeouts++; 
+				flStatsDirty = true;
 				}
 			}
 		}
@@ -1064,6 +1070,9 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 				obj.response.end ("update");    
 				waitingLongpolls.splice (i, 1);
+				serverStats.ctLongPollPops++; 
+				serverStats.ctLongPollUpdates++; 
+				flStatsDirty = true;
 				}
 			}
 		}
@@ -1217,6 +1226,7 @@ function newTwitter (myCallback) {
 	return (twitter);
 	}
 function saveStats () {
+	flStatsDirty = false;
 	serverStats.ctHoursServerUp = secondsSince (whenServerStart) / 3600; //4/28/14 by DW
 	s3NewObject (s3Path + pathHttpLogFile, JSON.stringify (serverStats, undefined, 3));
 	}
@@ -1264,7 +1274,7 @@ function loadServerStats () {
 			}
 		serverStats.ctHitsThisRun = 0;
 		serverStats.ctTweetsThisRun = 0;
-		serverStats.whenServerStart = new Date ().toLocaleString ();
+		serverStats.whenServerStart = new Date ();
 		serverStats.ctServerStarts++;
 		});
 	}
@@ -1299,6 +1309,9 @@ function getS3Acl (flPrivate) { //8/3/14 by DW
 	}
 function everySecond () {
 	checkLongpolls ();
+	if (flStatsDirty) {
+		saveStats ();
+		}
 	}
 function everyMinute () {
 	}
@@ -1904,11 +1917,13 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								});
 							break;
-						
 						case "/returnwhenready": //12/15/14 by DW -- long polling
 							pushLongpoll (parsedUrl.query.url, httpResponse)
 							break;
-						
+						case "/stats": //12/16/14 by DW
+							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+							httpResponse.end (jsonStringify (serverStats));    
+							break;
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
