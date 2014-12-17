@@ -1,7 +1,7 @@
-var myVersion = "0.44", myProductName = "twStorageServer";
+var myVersion = "0.45", myProductName = "twStorageServer";
  
  
-//last build 12/17/14; 1:05:51 PM 
+//last build 12/17/14; 1:59:47 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -13,7 +13,7 @@ var request = require ("request");
 
 var myPort = process.env.PORT;
 var flEnabled = process.env.enabled; //11/16/14 by DW
-var longPollTimeoutSecs = Number (process.env.longPollTimeoutSecs); //12/17/14 by DW
+var longPollTimeoutSecs = process.env.longPollTimeoutSecs; //12/17/14 by DW
 var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
 var s3PrivatePath = process.env.s3PrivatePath; //where we private stuff, user's outlines for example -- 8/3/14 by DW
 var s3UsersPath = s3Path + "users/"; //where we store users data
@@ -1041,12 +1041,11 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 	var waitingLongpolls = new Array ();
 	
 	function getLongpollTimeout () {
-		var x = longPollTimeoutSecs;
-		if (x == undefined) { //the environment variable wasn't defined
+		if (longPollTimeoutSecs == undefined) { //the environment variable wasn't defined
 			return (Number (20000.0)); //20 seconds
 			}
 		else {
-			return (Number (x * 1000.0));
+			return (Number (longPollTimeoutSecs) * 1000.0);
 			}
 		}
 	function pushLongpoll (urlToWatchFor, httpResponse) {
@@ -1054,7 +1053,6 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
 		
 		console.log ("pushLongpoll: ctMilliseconds == " + ctMilliseconds);
-		console.log ("pushLongpoll: whenExpires == " + whenExpires);
 		
 		waitingLongpolls [waitingLongpolls.length] = {
 			url: urlToWatchFor,
