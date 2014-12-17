@@ -1,7 +1,7 @@
 var myVersion = "0.44", myProductName = "twStorageServer";
  
  
-//last build 12/17/14; 11:43:39 AM 
+//last build 12/17/14; 12:13:38 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -1039,17 +1039,25 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 	
 //long polling -- 12/15/14 by DW
 	var waitingLongpolls = new Array ();
-	var defaultCtSecsLongpollTimeout = 20;
 	
 	function getLongpollTimeout () {
-		if (longPollTimeoutSecs == undefined) { //the environment variable wasn't defined
-			return (defaultCtSecsLongpollTimeout);
+		var x = longPollTimeoutSecs;
+		if (x == undefined) { //the environment variable wasn't defined
+			x = 20000; //20 seconds
 			}
-		return (longPollTimeoutSecs);
+		else {
+			x = x * 1000;
+			}
+		console.log ("getLongpollTimeout: returning " + x);
+		return (Number (x));
 		}
 	function pushLongpoll (urlToWatchFor, httpResponse) {
-		var ctMilliseconds = getLongpollTimeout () * 1000;
+		var ctMilliseconds = getLongpollTimeout ();
 		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
+		
+		console.log ("pushLongpoll: ctMilliseconds == " + ctMilliseconds);
+		console.log ("pushLongpoll: whenExpires == " + whenExpires);
+		
 		waitingLongpolls [waitingLongpolls.length] = {
 			url: urlToWatchFor,
 			whenTimeout: whenExpires,
