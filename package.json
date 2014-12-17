@@ -1,7 +1,7 @@
 { 
-	"name": "twitterForNoteblog",
-	"subdomain": "twitterfornoteblog",
-	"description": "The Twitter backend for noteblog.io",
+	"name": "twitterForLiveblog",
+	"subdomain": "twitterforliveblog",
+	"description": "The Twitter backend for liveblog.co",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"version": "0.4.0",
 	"scripts": {
@@ -14,6 +14,6 @@
 		}, 
 	"license": "MIT",
 	"engines": {
-		"node": "*"
+		"node": "0.10.*"
 		}
 	}
