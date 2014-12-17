@@ -1,7 +1,7 @@
-var myVersion = "0.43", myProductName = "twStorageServer";
+var myVersion = "0.44", myProductName = "twStorageServer";
  
  
-//last build 12/16/14; 4:12:36 PM 
+//last build 12/17/14; 11:36:27 AM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -13,6 +13,7 @@ var request = require ("request");
 
 var myPort = process.env.PORT;
 var flEnabled = process.env.enabled; //11/16/14 by DW
+var longPollTimeoutSecs = Number (process.env.longPollTimeoutSecs); //12/17/14 by DW
 var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
 var s3PrivatePath = process.env.s3PrivatePath; //where we private stuff, user's outlines for example -- 8/3/14 by DW
 var s3UsersPath = s3Path + "users/"; //where we store users data
@@ -1038,10 +1039,14 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 	
 //long polling -- 12/15/14 by DW
 	var waitingLongpolls = new Array ();
-	var ctSecsLongpollTimeout = 60;
+	var defaultCtSecsLongpollTimeout = 29;
 	
 	function pushLongpoll (urlToWatchFor, httpResponse) {
-		var ctMilliseconds = ctSecsLongpollTimeout * 1000;
+		var ctSecsTimeout = longPollTimeoutSecs;
+		if (ctSecsTimeout == undefined) {
+			ctSecsTimeout = defaultCtSecsLongpollTimeout;
+			}
+		var ctMilliseconds = ctSecsTimeout * 1000;
 		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
 		waitingLongpolls [waitingLongpolls.length] = {
 			url: urlToWatchFor,

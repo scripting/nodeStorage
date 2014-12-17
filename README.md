@@ -10,8 +10,8 @@ A simple Amazon S3-based storage system based on Twitter identity implemented in
 <li>AWS_ACCESS_KEY_ID
 <li>AWS_SECRET_ACCESS_KEY
 <li>s3Path
-<li>s3PrivatePath
-<li>myDomain
+<l>s3PrivatePath
+<li>mydomain
 <li>TZ
 </ul>
 
