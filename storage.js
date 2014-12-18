@@ -1,7 +1,7 @@
-var myVersion = "0.45", myProductName = "twStorageServer";
+var myVersion = "0.47", myProductName = "twStorageServer";
  
  
-//last build 12/17/14; 1:59:47 PM 
+//last build 12/18/14; 9:55:38 AM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -42,6 +42,7 @@ var serverStats = {
 	ctLongPollTimeouts: 0,  //12/16/14 by DW
 	ctLongPollUpdates: 0, //12/16/14 by DW
 	ctCurrentLongPolls: 0,  //12/16/14 by DW
+	ctLongPollsToday: 0,  //12/17/14 by DW
 	recentTweets: []
 	};
 var flStatsDirty = false; //12/16/14 by DW
@@ -1002,6 +1003,17 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 		}
 	return (s);
 	}
+function httpHeadRequest (url, callback) { //12/17/14 by DW
+	var jxhr = $.ajax ({
+		url: url,
+		type: "HEAD",
+		dataType: "text",
+		timeout: 30000
+		})
+	.success (function (data, status, xhr) {
+		callback (xhr); //you can do xhr.getResponseHeader to get one of the header elements
+		})
+	}
 
 
 
@@ -1051,15 +1063,14 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 	function pushLongpoll (urlToWatchFor, httpResponse) {
 		var ctMilliseconds = getLongpollTimeout ();
 		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
-		
-		console.log ("pushLongpoll: ctMilliseconds == " + ctMilliseconds);
-		
 		waitingLongpolls [waitingLongpolls.length] = {
 			url: urlToWatchFor,
 			whenTimeout: whenExpires,
 			response: httpResponse
 			}
-		serverStats.ctLongPollPushes++; flStatsDirty = true;
+		serverStats.ctLongPollPushes++; 
+		serverStats.ctLongPollsToday++;
+		flStatsDirty = true;
 		console.log ("pushLongpoll: " + waitingLongpolls.length + " requests are waiting in the array.")
 		}
 	function checkLongpolls () { //expire timed-out longpolls
@@ -1077,13 +1088,13 @@ function popTweetNameAtStart (s) { //12/8/14 by DW
 				}
 			}
 		}
-	function checkLongpollsForUrl (url) { //if someone was waiting for the url to change, their wait is over
+	function checkLongpollsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
 		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
 			var obj = waitingLongpolls [i];
 			if (obj.url == url) {
 				console.log ("Request #" + i + " is returning because the resource updated.");
 				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-				obj.response.end ("update");    
+				obj.response.end ("update\r" + filetext);    
 				waitingLongpolls.splice (i, 1);
 				serverStats.ctLongPollPops++; 
 				serverStats.ctLongPollUpdates++; 
@@ -1405,6 +1416,7 @@ http.createServer (function (httpRequest, httpResponse) {
 				serverStats.today = now;
 				serverStats.ctHitsToday = 0;
 				serverStats.ctTweetsToday = 0;
+				serverStats.ctLongPollsToday = 0;
 				}
 		
 		console.log ("Received request: " + httpRequest.url);
@@ -1524,7 +1536,7 @@ http.createServer (function (httpRequest, httpResponse) {
 												dataResponse (metadata);
 												serverStats.ctFileSaves++;
 												if (!flprivate) { //12/15/14 by DW
-													checkLongpollsForUrl (metadata.url);
+													checkLongpollsForUrl (metadata.url, body);
 													}
 												}
 											}, metadata);
