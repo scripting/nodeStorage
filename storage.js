@@ -1,7 +1,7 @@
-var myVersion = "0.47", myProductName = "twStorageServer";
+var myVersion = "0.48", myProductName = "twStorageServer";
  
  
-//last build 12/18/14; 9:55:38 AM 
+//last build 12/20/14; 6:59:06 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
