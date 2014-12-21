@@ -6,6 +6,12 @@ A simple Amazon S3-based storage system based on Twitter identity implemented in
 <h4>How to set up</h4>
 Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">fantastic guide</a> to setting up a new Storage server on the wiki. 
 
+<h4>The idea</h4>
+Twitter has a great API, but it's designed for server apps. These days I write in-browser JavaScript apps. I wanted an API for Twitter that makes it  easy to quickly develop new apps that run in the browser.
+For a while I was making apps that use localStorage, but that data is only available on the local machine. That meant my notes on my laptop weren't accessible from my iPad. Not good. So I wanted the ability to store stuff from my JS apps on the net, where all instances of the app would be able to find and edit the data.
+So I combined the ability to login via Twitter, that I already had working, with the ability to store stuff on S3. This gave me access to this stuff on the server, so it was simply a matter of crafting a JavaScript API. That's the big idea here. I iterated over the API, and developed a series of software snacks that store stuff using this server. So it's not brand-new, it's pretty well broken-in and debugged (knock wood, Praise Murphy).
+Look in the <a href="https://github.com/scripting/storage/tree/master/client">client folder</a> to get an idea how a Storage app works. The <a href="https://github.com/scripting/storage/blob/master/client/client.html">demo app</a>, called MacWrite (after the demo app that came with the original Mac in 1984), is a simple little text editor that saves text via  Storage . The API is in <a href="https://github.com/scripting/storage/blob/master/client/twstorage.js">twstorage.js</a>. I plan to write docs for this. When I do they will be linked here. ;-)
+
 <h4>Parameters</h4>
 <ul>
 <li>twitterConsumerKey
