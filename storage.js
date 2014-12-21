@@ -1,7 +1,7 @@
-var myVersion = "0.48", myProductName = "twStorageServer";
+var myVersion = "0.49", myProductName = "twStorageServer";
  
  
-//last build 12/21/14; 1:47:54 PM 
+//last build 12/21/14; 2:28:39 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -1337,6 +1337,19 @@ function getS3Acl (flPrivate) { //8/3/14 by DW
 		return ("public-read");
 		}
 	}
+function getUserFileList (s3path, callback) { //12/21/14 by DW
+	var now = new Date (), theList = new Array ();
+	s3ListObjects (s3path, function (obj) {
+		if (obj.flLastObject != undefined) {
+			if (callback != undefined) {
+				callback (undefined, theList);
+				}
+			}
+		else {
+			theList [theList.length] = obj;
+			}
+		});
+	}
 function everySecond () {
 	checkLongpolls ();
 	if (flStatsDirty) {
@@ -1955,6 +1968,31 @@ http.createServer (function (httpRequest, httpResponse) {
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end (jsonStringify (serverStats));    
 							break;
+						
+						case "/getfilelist": //12/21/14 by DW
+							var accessToken = parsedUrl.query.oauth_token;
+							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+							var flprivate = getBoolean (parsedUrl.query.flprivate);
+							getScreenName (accessToken, accessTokenSecret, function (screenName) {
+								if (screenName === undefined) {
+									errorResponse ({message: "Can't get the file list because the accessToken is not valid."});    
+									}
+								else {
+									var s3path = getS3UsersPath (flprivate) + screenName + "/";
+									console.log ("/getfilelist: s3 path == " + s3path); 
+									getUserFileList (s3path, function (error, theList) {
+										if (error) {
+											errorResponse (error);    
+											}
+										else {
+											dataResponse (theList);
+											}
+										});
+									}
+								});
+							break; 
+						
+						
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");

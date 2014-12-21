@@ -420,6 +420,27 @@ function twShortenUrl (longUrl, callback) { //8/25/14 by DW
 		dataType: "json"
 		});
 	}
+function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
+	if (flPrivate == undefined) {
+		flPrivate = false;
+		}
+	$.ajax ({
+		type: "GET",
+		url: twGetDefaultServer () + "getfilelist?oauth_token=" + encodeURIComponent (localStorage.twOauthToken) + "&oauth_token_secret=" + encodeURIComponent (localStorage.twOauthTokenSecret) + "&flprivate=" + encodeURIComponent (flPrivate),
+		success: function (data) {
+			whenLastTwRatelimitError = undefined; 
+			console.log ("twGetUserFiles: list == " + jsonStringify (data));
+			if (callback != undefined) {
+				callback (data);
+				}
+			},
+		error: function (status) { 
+			console.log ("twGetUserFiles: error == " + JSON.stringify (status, undefined, 4));
+			twCheckForRateLimitError (status.responseText); 
+			},
+		dataType: "json"
+		});
+	}
 function twUserWhitelisted (username, callback) {
 	$.ajax ({
 		type: "GET",
