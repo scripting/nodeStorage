@@ -1,7 +1,7 @@
 storage
 =======
 
-A simple Amazon S3-based storage system based on Twitter identity implemented in Node.js.
+A simple Amazon S3-based storage system using Twitter identity, implemented in Node.js.
 
 <h4>How to set up</h4>
 Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">fantastic guide</a> to setting up a new Storage server on the wiki. 
