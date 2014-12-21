@@ -19,10 +19,11 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 <li>AWS_ACCESS_KEY_ID
 <li>AWS_SECRET_ACCESS_KEY
 <li>s3Path
-<l>s3PrivatePath
+<li>s3PrivatePath
 <li>myDomain
 <li>longPollTimeoutSecs
 <li>TZ
+<li>PORT
 </ul>
 
 <h4>Setup</h4>
