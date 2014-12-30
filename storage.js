@@ -1,7 +1,7 @@
-var myVersion = "0.49", myProductName = "twStorageServer";
+var myVersion = "0.50", myProductName = "storage";
  
  
-//last build 12/21/14; 2:28:39 PM 
+//last build 12/29/14; 8:14:20 PM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -1014,6 +1014,58 @@ function httpHeadRequest (url, callback) { //12/17/14 by DW
 		callback (xhr); //you can do xhr.getResponseHeader to get one of the header elements
 		})
 	}
+function httpExt2MIME (ext) { //12/24/14 by DW
+	var lowerext = stringLower (ext);
+	var map = {
+		"au": "audio/basic",
+		"avi": "application/x-msvideo",
+		"bin": "application/x-macbinary",
+		"css": "text/css",
+		"dcr": "application/x-director",
+		"dir": "application/x-director",
+		"dll": "application/octet-stream",
+		"doc": "application/msword",
+		"dtd": "text/dtd",
+		"dxr": "application/x-director",
+		"exe": "application/octet-stream",
+		"fatp": "text/html",
+		"ftsc": "text/html",
+		"fttb": "text/html",
+		"gif": "image/gif",
+		"gz": "application/x-gzip",
+		"hqx": "application/mac-binhex40",
+		"htm": "text/html",
+		"html": "text/html",
+		"jpeg": "image/jpeg",
+		"jpg": "image/jpeg",
+		"js": "application/javascript",
+		"mid": "audio/x-midi",
+		"midi": "audio/x-midi",
+		"mov": "video/quicktime",
+		"mp3": "audio/mpeg",
+		"pdf": "application/pdf",
+		"png": "image/png",
+		"ppt": "application/mspowerpoint",
+		"ps": "application/postscript",
+		"ra": "audio/x-pn-realaudio",
+		"ram": "audio/x-pn-realaudio",
+		"sit": "application/x-stuffit",
+		"sys": "application/octet-stream",
+		"tar": "application/x-tar",
+		"text": "text/plain",
+		"txt": "text/plain",
+		"wav": "audio/x-wav",
+		"wrl": "x-world/x-vrml",
+		"xml": "text/xml",
+		"zip": "application/zip"
+		};
+	for (x in map) {
+		if (stringLower (x) == lowerext) {
+			return (map [x]);
+			}
+		}
+	return ("text/plain");
+	}
 
 
 
@@ -1187,8 +1239,6 @@ function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by 
 				else {
 					callback (undefined);
 					}
-				
-				console.log ("getScreenName: found \"" + obj.screenName + "\" in cache. " + obj.ctAccesses + " accesses.");
 				return;
 				}
 			}
@@ -1214,7 +1264,6 @@ function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by 
 					callback (undefined);
 					}
 				
-				console.log ("getScreenName: \"" + obj.screenName + "\" not in cache. " + screenNameCache.length + " items in cache.");
 				}
 			});
 	}
@@ -1364,7 +1413,10 @@ loadFeed (); //6/8/14 by DW
 loadTodaysFeed (); //6/8/14 by DW
 readUserWhitelist (); //11/18/14 by DW
 setInterval (function () {everyMinute ()}, 60000); 
-console.log (myProductName + myVersion + " running on port " + myPort + ".");
+
+console.log ();
+console.log (myProductName + " v" + myVersion + " running on port " + myPort + ".");
+console.log ();
 
 if (flEnabled === undefined) { //11/16/14 by DW
 	flEnabled = true;
@@ -1375,7 +1427,10 @@ else {
 
 http.createServer (function (httpRequest, httpResponse) {
 	try {
-		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date (), startTime = now, flStatsSaved = false;
+		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
+		var startTime = now, flStatsSaved = false, host, lowerhost, port;
+		var lowerpath = parsedUrl.pathname.toLowerCase ();
+		
 		function addOurDataToReturnObject (returnObject) {
 			returnObject ["#smallpict"] = {
 				productname: myProductName,
@@ -1431,10 +1486,19 @@ http.createServer (function (httpRequest, httpResponse) {
 				serverStats.ctTweetsToday = 0;
 				serverStats.ctLongPollsToday = 0;
 				}
+		//set host, port
+			host = httpRequest.headers.host;
+			if (stringContains (host, ":")) {
+				port = stringNthField (host, ":", 2);
+				host = stringNthField (host, ":", 1);
+				}
+			else {
+				port = 80;
+				}
+			lowerhost = host.toLowerCase ();
+		console.log (now.toLocaleTimeString () + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath);
 		
-		console.log ("Received request: " + httpRequest.url);
-		
-		if (flEnabled) { //11/16/14 by DW
+		if (flEnabled) { 
 			switch (httpRequest.method) {
 				case "POST":
 					var body = "";
@@ -1442,7 +1506,6 @@ http.createServer (function (httpRequest, httpResponse) {
 						body += data;
 						});
 					httpRequest.on ("end", function () {
-						console.log ("POST body length: " + body.length);
 						switch (parsedUrl.pathname.toLowerCase ()) {
 							case "/statuswithmedia": //6/30/14 by DW -- used in Little Card Editor
 								var params = {
@@ -1483,9 +1546,6 @@ http.createServer (function (httpRequest, httpResponse) {
 									else {
 										var s3path = getS3UsersPath (flprivate) + screenName + "/" + nameoutline + ".opml";
 										var metadata = {whenLastUpdate: new Date ().toString ()};
-										
-										console.log ("/publishopml: s3 path == " + s3path); //7/22/14 by DW
-										
 										s3NewObject (s3path, body, "text/xml", getS3Acl (flprivate), function (error, data) {
 											if (error) {
 												errorResponse (error);    
@@ -1538,7 +1598,6 @@ http.createServer (function (httpRequest, httpResponse) {
 										var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
 										var metadata = {whenLastUpdate: new Date ().toString ()};
 										
-										console.log ("/publishfile: s3 path == " + s3path); //7/22/14 by DW
 										
 										s3NewObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
 											if (error) {
@@ -1565,7 +1624,7 @@ http.createServer (function (httpRequest, httpResponse) {
 						});
 					break;
 				case "GET":
-					switch (parsedUrl.pathname.toLowerCase ()) {
+					switch (lowerpath) {
 						case "/version":
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end (myVersion);    
@@ -1602,7 +1661,6 @@ http.createServer (function (httpRequest, httpResponse) {
 								else {
 									saveRequestToken (requestToken, requestTokenSecret);
 									
-									console.log ("requestToken == " + requestToken + ", requestTokenSecret == " + requestTokenSecret + ".");
 									
 									var twitterOauthUrl = "https://twitter.com/oauth/authenticate?oauth_token=" + requestToken;
 									httpResponse.writeHead (302, {"location": twitterOauthUrl});
@@ -1621,7 +1679,6 @@ http.createServer (function (httpRequest, httpResponse) {
 							var myRequestToken = parsedUrl.query.oauth_token;
 							var myTokenSecret = findRequestToken (myRequestToken, true);
 							
-							console.log ("myRequestToken == " + myRequestToken + ", myTokenSecret == " + myTokenSecret + ".");
 							
 							twitter.getAccessToken (myRequestToken, myTokenSecret, parsedUrl.query.oauth_verifier, function (error, accessToken, accessTokenSecret, results) {
 								if (error) {
@@ -1784,7 +1841,6 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (flprivate) + screenName + "/" + nameoutline + ".opml";
-									console.log ("/getopmlfile: s3 path == " + s3path); //7/22/14 by DW
 									s3GetObject (s3path, function (error, data) {
 										if (error) {
 											errorResponse (error);    
@@ -1812,7 +1868,6 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-									console.log ("/getfile: s3 path == " + s3path); 
 									s3GetObject (s3path, function (error, data) {
 										if (error) {
 											errorResponse (error);    
@@ -1881,7 +1936,6 @@ http.createServer (function (httpRequest, httpResponse) {
 											shortUrl: jstruct.data.url,
 											longUrl: longUrl
 											};
-										console.log ("/shortenurl: bitly returned == " + body)
 										dataResponse (theResponse);
 										}
 									}
@@ -1903,27 +1957,22 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (true) + screenName + "/";
-									console.log ("/getrecentposts: s3 path == " + s3path); 
 									s3GetObject (s3path + "postsData.json", function (error, data) {
 										if (error) {
 											errorResponse (error);    
 											}
 										else {
-											console.log ("/getrecentposts: data.Body == " + data.Body.toString ());
 											var postsData = JSON.parse (data.Body.toString ());
 											var lastpostnum = postsData.nextfilenum - 1;
-											console.log ("/getrecentposts: lastpostnum == " + lastpostnum);
 											var postsArray = [], ct = 0;
 											function getOnePost (postnum) {
 												var filepath = s3path + "posts/" + padWithZeros (postnum, 7) + ".json";
 												
-												console.log ("/getrecentposts: filepath == " + filepath);
 												
 												s3GetObject (filepath, function (error, data) {
 													if (!error) {
 														var jstruct = JSON.parse (data.Body.toString ());
 														
-														console.log ("/getrecentposts: postnum == " + postnum + ", jstruct == " + jsonStringify (jstruct));
 														
 														postsArray [postsArray.length] = jstruct;
 														if ((++ct < ctposts) && (postnum > 0)) {
@@ -1979,7 +2028,6 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (flprivate) + screenName + "/";
-									console.log ("/getfilelist: s3 path == " + s3path); 
 									getUserFileList (s3path, function (error, theList) {
 										if (error) {
 											errorResponse (error);    

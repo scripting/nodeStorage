@@ -2,7 +2,7 @@ var appConsts = {
 	productname: "MacWrite",
 	productnameForDisplay: "MacWrite",
 	"description": "Test app for Storage project.",
-	urlTwitterServer: "http://twitter.macwrite.org/",
+	urlTwitterServer: "http://twitter.macwrite.org:1337/",
 	domain: "macwrite.org", 
 	version: "0.40"
 	}
@@ -100,7 +100,7 @@ function startup () {
 		}
 	console.log ("startup");
 	pathAppPrefs = "appPrefs.json"; 
-	twStorageData.urlTwitterServer = "http://twitter.macwrite.org/";
+	twStorageData.urlTwitterServer = appConsts.urlTwitterServer;
 	$("#idTwitterIcon").html (twStorageConsts.fontAwesomeIcon);
 	$("#idVersionNumber").html ("v" + appConsts.version);
 	initMenus ();

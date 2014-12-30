@@ -13,7 +13,7 @@
 		"request": "*"
 		}, 
 	"license": "MIT",
-	"engines": {
+	"engines": { 
 		"node": "0.10.*"
 		}
 	}
