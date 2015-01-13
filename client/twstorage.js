@@ -260,7 +260,7 @@ function twUpdateTwitterUsername (iditem) {
 	document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? localStorage.twScreenName : "Sign on here";
 	}
 function twWebIntent (id, twOp, paramName) {
-	if (paramName == undefined) {
+	if (paramName === undefined) {
 		paramName = "tweet_id";
 		}
 	if (id != undefined) {

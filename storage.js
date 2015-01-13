@@ -1,7 +1,7 @@
-var myVersion = "0.50", myProductName = "storage";
+var myVersion = "0.51", myProductName = "storage";
  
  
-//last build 12/29/14; 8:14:20 PM 
+//last build 1/13/15; 9:52:21 AM 
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -34,8 +34,6 @@ var serverStats = {
 	ctServerStarts: 0,
 	version: 0,
 	nextUrlString: "0",
-	ctOpmlSaves: 0, //6/26/14 by DW
-	ctFeedSaves: 0, //7/16/14 by DW
 	ctFileSaves: 0, //8/3/14 by DW
 	ctLongPollPushes: 0,  //12/16/14 by DW
 	ctLongPollPops: 0,  //12/16/14 by DW
@@ -94,10 +92,10 @@ function s3SplitPath (path) { //split path like this: /tmp.scripting.com/testing
 	}
 function s3NewObject (path, data, type, acl, callback, metadata) {
 	var splitpath = s3SplitPath (path);
-	if (type == undefined) {
+	if (type === undefined) {
 		type = s3defaultType;
 		}
-	if (acl == undefined) {
+	if (acl === undefined) {
 		acl = s3defaultAcl;
 		}
 	var params = {
@@ -231,13 +229,13 @@ function padWithZeros (num, ctplaces) {
 	return (s);
 	}
 function getDatePath (theDate, flLastSeparator) {
-	if (theDate == undefined) {
+	if (theDate === undefined) {
 		theDate = new Date ();
 		}
 	else {
 		theDate = new Date (theDate); //8/12/14 by DW -- make sure it's a date type
 		}
-	if (flLastSeparator == undefined) {
+	if (flLastSeparator === undefined) {
 		flLastSeparator = true;
 		}
 	
@@ -275,11 +273,11 @@ function multipleReplaceAll (s, adrTable, flCaseSensitive, startCharacters, endC
 	return s;
 	}
 function endsWith (s, possibleEnding, flUnicase) {
-	if ((s == undefined) || (s.length == 0)) { 
+	if ((s === undefined) || (s.length == 0)) { 
 		return (false);
 		}
 	var ixstring = s.length - 1;
-	if (flUnicase == undefined) {
+	if (flUnicase === undefined) {
 		flUnicase = true;
 		}
 	if (flUnicase) {
@@ -299,7 +297,7 @@ function endsWith (s, possibleEnding, flUnicase) {
 	return (true);
 	}
 function stringContains (s, whatItMightContain, flUnicase) { //11/9/14 by DW
-	if (flUnicase == undefined) {
+	if (flUnicase === undefined) {
 		flUnicase = true;
 		}
 	if (flUnicase) {
@@ -312,7 +310,7 @@ function beginsWith (s, possibleBeginning, flUnicase) {
 	if (s.length == 0) { //1/1/14 by DW
 		return (false);
 		}
-	if (flUnicase == undefined) {
+	if (flUnicase === undefined) {
 		flUnicase = true;
 		}
 	if (flUnicase) {
@@ -357,7 +355,7 @@ function trimWhitespace (s) { //rewrite -- 5/30/14 by DW
 			}
 		return (false);
 		}
-	if (s == undefined) { //9/10/14 by DW
+	if (s === undefined) { //9/10/14 by DW
 		return ("");
 		}
 	while (isWhite (s.charAt (0))) {
@@ -415,7 +413,7 @@ function getBoolean (val) { //12/5/13 by DW
 	return (false);
 	}
 function bumpUrlString (s) { //5/10/14 by DW
-	if (s == undefined) {
+	if (s === undefined) {
 		s = "0";
 		}
 	function bumpChar (ch) {
@@ -498,10 +496,10 @@ function stripMarkup (s) { //5/24/14 by DW
 	return (s.replace (/(<([^>]+)>)/ig, ""));
 	}
 function maxStringLength (s, len, flWholeWordAtEnd, flAddElipses) {
-	if (flWholeWordAtEnd == undefined) {
+	if (flWholeWordAtEnd === undefined) {
 		flWholeWordAtEnd = true;
 		}
-	if (flAddElipses == undefined) { //6/2/14 by DW
+	if (flAddElipses === undefined) { //6/2/14 by DW
 		flAddElipses = true;
 		}
 	if (s.length > len) {
@@ -549,7 +547,7 @@ function readHttpFile (url, callback, timeoutInMilliseconds) { //5/27/14 by DW
 	}
 function readHttpFileThruProxy (url, type, callback) { //10/25/14 by DW
 	var urlReadFileApi = "http://pub.fargo.io/httpReadUrl";
-	if (type == undefined) {
+	if (type === undefined) {
 		type = "text/plain";
 		}
 	var jxhr = $.ajax ({ 
@@ -610,7 +608,7 @@ function decodeXml (s) { //11/7/14 by DW
 	}
 function hotUpText (s, url) { //7/18/14 by DW
 	
-	if (url == undefined) { //makes it easier to call -- 3/14/14 by DW
+	if (url === undefined) { //makes it easier to call -- 3/14/14 by DW
 		return (s);
 		}
 	
@@ -694,13 +692,13 @@ function innerCaseName (text) { //8/12/14 by DW
 function hitCounter (counterGroup, counterServer) { //8/12/14 by DW
 	var defaultCounterGroup = "scripting", defaultCounterServer = "http://counter.fargo.io/counter";
 	var thispageurl = location.href;
-	if (counterGroup == undefined) {
+	if (counterGroup === undefined) {
 		counterGroup = defaultCounterGroup;
 		}
-	if (counterServer == undefined) {
+	if (counterServer === undefined) {
 		counterServer = defaultCounterServer;
 		}
-	if (thispageurl == undefined) {
+	if (thispageurl === undefined) {
 		thispageurl = "";
 		}
 	if (endsWith (thispageurl, "#")) {
@@ -836,13 +834,13 @@ function maxLengthString (s, maxlength) { //8/27/14 by DW
 	return (s);
 	}
 function formatDate (theDate, dateformat, timezone) { //8/28/14 by DW
-	if (theDate == undefined) {
+	if (theDate === undefined) {
 		theDate = new Date ();
 		}
-	if (dateformat == undefined) {
+	if (dateformat === undefined) {
 		dateformat = "%c";
 		}
-	if (timezone == undefined) {
+	if (timezone === undefined) {
 		timezone =  - (new Date ().getTimezoneOffset () / 60);
 		}
 	try {
@@ -896,7 +894,7 @@ function copyScalars (source, dest) { //8/31/14 by DW
 	}
 function linkToDomainFromUrl (url, flshort, maxlength) { //10/10/14 by DW
 	var splitUrl = urlSplitter (url), host = splitUrl.host.toLowerCase ();
-	if (flshort == undefined) {
+	if (flshort === undefined) {
 		flshort = false;
 		}
 	if (flshort) {
@@ -936,7 +934,7 @@ function monthToString (theMonthNum) { //11/4/14 by DW
 	
 	
 	var theDate;
-	if (theMonthNum == undefined) {
+	if (theMonthNum === undefined) {
 		theDate = new Date ();
 		}
 	else {
@@ -1160,59 +1158,6 @@ function tweetContainsBlockedTag (twitterStatus) { //blocking is not present in 
 	return (false); 
 	}
 
-function getCalendarPath (theDay) {
-	return (s3CalendarFolder + getDatePath (theDay, false) + ".json");
-	}
-function loadTodaysFeed () { //6/8/14 by DW
-	s3GetObject (getCalendarPath (dayForTodaysFeed), function (error, data) {
-		if (!error) {
-			if (data != null) {
-				todaysFeed = JSON.parse (data.Body);
-				}
-			}
-		});
-	}
-function saveTodaysFeed () { //6/8/14 by DW
-	s3NewObject (getCalendarPath (dayForTodaysFeed), JSON.stringify (todaysFeed, undefined, 3));
-	}
-
-function addItemToFeed (text, user) { 
-	var now = new Date (), obj = new Object ();
-	
-	feed.ctPosts++;
-	if (!sameDay (now, feed.whenLastPost)) { //rollover
-		feed.ctPostsToday = 0;
-		}
-	feed.ctPostsToday++;
-	feed.whenLastPost = now;
-	
-	obj.text = text;
-	obj.user = user;
-	obj.when = now;
-	
-	feed.recentPosts.unshift (obj);  //add at beginning of array
-	while (feed.recentPosts.length > maxFeedPosts) { //keep array within max size
-		feed.recentPosts.pop ();
-		}
-	
-	//add it to today's feed
-		todaysFeed [todaysFeed.length] = obj;
-		saveTodaysFeed ();
-	
-	s3NewObject (s3FeedPath, JSON.stringify (feed, undefined, 3));
-	}
-function loadFeed () { //6/8/14 by DW
-	s3GetObject (s3FeedPath, function (error, data) { 
-		if (data != null) {
-			var oldFeed = JSON.parse (data.Body);
-			for (var x in oldFeed) { 
-				if (x != "ctPostsThisRun") {
-					feed [x] = oldFeed [x];
-					}
-				}
-			}
-		});
-	}
 
 function saveTweet (jsontext) { //7/2/14 by DW
 	try {
@@ -1409,10 +1354,7 @@ function everyMinute () {
 	}
 
 loadServerStats ();
-loadFeed (); //6/8/14 by DW
-loadTodaysFeed (); //6/8/14 by DW
 readUserWhitelist (); //11/18/14 by DW
-setInterval (function () {everyMinute ()}, 60000); 
 
 console.log ();
 console.log (myProductName + " v" + myVersion + " running on port " + myPort + ".");
@@ -1533,56 +1475,6 @@ http.createServer (function (httpRequest, httpResponse) {
 								form.append ("status", parsedUrl.query.status);
 								form.append ("media[]", buffer, {filename: "picture.png"});
 								break;
-							case "/publishopml": //6/26/14 by DW
-								var twitter = newTwitter ();
-								var accessToken = parsedUrl.query.oauth_token;
-								var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-								var nameoutline = parsedUrl.query.nameoutline;
-								var flprivate = getBoolean (parsedUrl.query.flprivate);
-								getScreenName (accessToken, accessTokenSecret, function (screenName) {
-									if (screenName === undefined) {
-										errorResponse ({message: "Can't save the OPML because the accessToken is not valid."});    
-										}
-									else {
-										var s3path = getS3UsersPath (flprivate) + screenName + "/" + nameoutline + ".opml";
-										var metadata = {whenLastUpdate: new Date ().toString ()};
-										s3NewObject (s3path, body, "text/xml", getS3Acl (flprivate), function (error, data) {
-											if (error) {
-												errorResponse (error);    
-												}
-											else {
-												metadata.opmlurl = "http:/" + s3path;
-												dataResponse (metadata);
-												serverStats.ctOpmlSaves++;
-												}
-											}, metadata);
-										}
-									});
-								break;
-							case "/publishfeed": //7/16/14 by DW
-								var accessToken = parsedUrl.query.oauth_token;
-								var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-								getScreenName (accessToken, accessTokenSecret, function (screenName) {
-									if (screenName === undefined) {
-										errorResponse ({message: "Can't save the feed because the accessToken is not valid."});    
-										}
-									else {
-										var s3path = s3UsersPath + screenName + "/rss.xml";
-										s3NewObject (s3path, body, "text/xml", "public-read", function (error, data) {
-											if (error) {
-												errorResponse (error);    
-												}
-											else {
-												var data = {
-													feedurl: "http:/" + s3path
-													};
-												dataResponse (data);
-												serverStats.ctFeedSaves++;
-												}
-											});
-										}
-									});
-								break;
 							case "/publishfile": //8/3/14 by DW
 								var twitter = newTwitter ();
 								var accessToken = parsedUrl.query.oauth_token;
@@ -1615,7 +1507,6 @@ http.createServer (function (httpRequest, httpResponse) {
 										}
 									});
 								break;
-							
 							default: 
 								httpResponse.writeHead (200, {"Content-Type": "text/html"});
 								httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
@@ -1642,7 +1533,6 @@ http.createServer (function (httpRequest, httpResponse) {
 								hitsToday: serverStats.ctHitsToday,
 								tweets: serverStats.ctTweets,
 								tweetsToday: serverStats.ctTweetsToday,
-								ctOpmlSaves: serverStats.ctOpmlSaves,
 								ctFileSaves: serverStats.ctFileSaves
 								};
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
@@ -1731,25 +1621,6 @@ http.createServer (function (httpRequest, httpResponse) {
 								}
 							
 							break;
-						case "/fatfeed": //6/8/14 by DW
-							var twitter = newTwitter ();
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var text = parsedUrl.query.text;
-							twitter.verifyCredentials (accessToken, accessTokenSecret, function (error, data, response) {
-								if (error) {
-									errorResponse (error);    
-									}
-								else {
-									var returnedData = {
-										};
-									addItemToFeed (text, data.screen_name);
-									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									addOurDataToReturnObject (returnedData);
-									httpResponse.end (JSON.stringify (returnedData, undefined, 4));    
-									}
-								});
-							break;
 						case "/getembedcode": //6/20/14 by DW
 							
 							var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + parsedUrl.query.id;
@@ -1827,33 +1698,6 @@ http.createServer (function (httpRequest, httpResponse) {
 							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 							getScreenName (accessToken, accessTokenSecret, function (screenName) {
 								dataResponse ({screenName: screenName});
-								});
-							break;
-						case "/getopmlfile": //7/22/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var nameoutline = parsedUrl.query.nameoutline;
-							var flIncludeOpml = getBoolean (parsedUrl.query.flIncludeOpml);
-							var flprivate = getBoolean (parsedUrl.query.flprivate);
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								if (screenName === undefined) {
-									errorResponse ({message: "Can't get the OPML because the accessToken is not valid."});    
-									}
-								else {
-									var s3path = getS3UsersPath (flprivate) + screenName + "/" + nameoutline + ".opml";
-									s3GetObject (s3path, function (error, data) {
-										if (error) {
-											errorResponse (error);    
-											}
-										else {
-											if (flIncludeOpml) {
-												data.opmltext = data.Body.toString (); //they send back an array of numbers?  we fix it. ;-)
-												}
-											delete data.Body;
-											dataResponse (data);
-											}
-										});
-									}
 								});
 							break;
 						case "/getfile": //8/9/14 by DW
@@ -2017,7 +1861,6 @@ http.createServer (function (httpRequest, httpResponse) {
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end (jsonStringify (serverStats));    
 							break;
-						
 						case "/getfilelist": //12/21/14 by DW
 							var accessToken = parsedUrl.query.oauth_token;
 							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
@@ -2039,8 +1882,6 @@ http.createServer (function (httpRequest, httpResponse) {
 									}
 								});
 							break; 
-						
-						
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");

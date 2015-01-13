@@ -8,13 +8,45 @@ var appConsts = {
 	}
 var appPrefs = {
 	ctStartups: 0, minSecsBetwAutoSaves: 3,
-	textFont: "Ubuntu", textFontSize: 16, textLineHeight: 24
+	textFont: "Ubuntu", textFontSize: 16, textLineHeight: 24,
+	lastTweetText: "", lastUserName: "davewiner"
 	};
 var flStartupFail = false;
 var flPrefsChanged = false;
 var whenLastUserAction = new Date ();
 var myTextFilename = "myTextFile.txt";
 
+function aboutTestingMenu () {
+	alertDialog ("Commands that test an installation of the Storage server.");
+	}
+function sendATweet () {
+	askDialog ("Text of your tweet:", appPrefs.lastTweetText, "Enter the text of your tweet here.", function (s) {
+		appPrefs.lastTweetText = s;
+		twTweet (s);
+		prefsChanged ();
+		});
+	}
+function getUserInfo () {
+	askDialog ("Enter a user name:", appPrefs.lastUserName, "The Twitter user you want info about.", function (username) {
+		twGetUserInfo (username, function (data) {
+			appPrefs.lastUserName = username;
+			prefsChanged ();
+			console.log (jsonStringify (data)); //all the info is displayed in the console
+			alertDialog (data.description);
+			});
+		});
+	}
+function getMyMostRecentTweet () {
+	twGetUserTweets (localStorage.twUserId, undefined, function (theTweets) {
+		console.log (jsonStringify (theTweets)); //all the info is displayed in the console
+		if (theTweets.length > 0) {
+			alertDialog (theTweets [0].text);
+			}
+		else {
+			alertDialog ("Hey you haven't tweeted yet.");
+			}
+		});
+	}
 function applyPrefs () {
 	$("#idTextArea").css ("font-family", appPrefs.textFont);
 	$("#idTextArea").css ("font-size", appPrefs.textFontSize);

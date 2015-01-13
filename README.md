@@ -2,7 +2,7 @@ storage
 
 =======
 
-
+ 
 
 A simple Amazon S3-based storage system using Twitter identity, implemented in Node.js.
 
@@ -39,23 +39,15 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 <li>AWS_SECRET_ACCESS_KEY
 
 <li>s3Path
-<<<<<<< HEAD
 
 <l>s3PrivatePath
 
-=======
-<li>s3PrivatePath
->>>>>>> FETCH_HEAD
 <li>myDomain
 
 <li>longPollTimeoutSecs
 
 <li>TZ
-<<<<<<< HEAD
 
-=======
-<li>PORT
->>>>>>> FETCH_HEAD
 </ul>
 
 
