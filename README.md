@@ -20,7 +20,7 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 
 
 
-<h4>Parameters</h4>
+#### Parameters
 
 <ul>
 
@@ -46,7 +46,7 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 
 
 
-<h4>Setup</h4>
+#### Setup
 
 1. You have to set up an app on apps.twitter.com. The goal is to get the twitterConsumerKey and twitterConsumerSecret values. That's the connection between Twitter and the Storage app.
 
@@ -57,14 +57,4 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 4. myDomain is a domain that's mapped to the server. Its used in creating the OAuth dance with Twitter. It needs to know how to call us back. 
 
 5. TZ is the timezone the server is running in. I have it set for my server to *America/New_York.*
-
-
-
-#### Example app
-
-Look in the client folder for an app that uses Storage.
-
-It's a simple text editor called MacWrite, after the famous app that got Mac development going in 1984.
-
-You can run the app to see what it does at <a href="http://macwrite.org/">macwrite.org</a>.
 
