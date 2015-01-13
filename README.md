@@ -2,13 +2,13 @@ A simple Amazon S3-based storage system using Twitter identity, implemented in N
 
 
 
-<h4>How to set up</h4>
+#### How to set up
 
 Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">fantastic guide</a> to setting up a new Storage server on the wiki. 
 
 
 
-<h4>The idea</h4>
+#### The idea
 
 <p>Twitter has a great API, but it's designed for server apps. These days I write in-browser JavaScript apps. I wanted an API for Twitter that makes it  easy to quickly develop new apps that run in the browser.</p>
 
@@ -22,27 +22,23 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 
 #### Parameters
 
-<ul>
+1. twitterConsumerKey
 
-<li>twitterConsumerKey
+2. twitterConsumerSecret
 
-<li>twitterConsumerSecret
+3. AWS_ACCESS_KEY_ID
 
-<li>AWS_ACCESS_KEY_ID
+4. AWS_SECRET_ACCESS_KEY
 
-<li>AWS_SECRET_ACCESS_KEY
+5. s3Path
 
-<li>s3Path
+6. s3PrivatePath
 
-<l>s3PrivatePath
+7. myDomain
 
-<li>myDomain
+8. longPollTimeoutSecs
 
-<li>longPollTimeoutSecs
-
-<li>TZ
-
-</ul>
+9. TZ
 
 
 
