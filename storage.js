@@ -1,7 +1,4 @@
-var myVersion = "0.51", myProductName = "storage";
- 
- 
-//last build 1/13/15; 10:01:23 AM 
+var myVersion = "0.52", myProductName = "storage";
 
 var http = require ("http");
 var AWS = require ("aws-sdk");
@@ -12,14 +9,14 @@ var fs = require ("fs");
 var request = require ("request");
 
 var myPort = process.env.PORT;
-var flEnabled = process.env.enabled; //11/16/14 by DW
-var longPollTimeoutSecs = process.env.longPollTimeoutSecs; //12/17/14 by DW
+var flEnabled = process.env.enabled; 
+var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
 var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
-var s3PrivatePath = process.env.s3PrivatePath; //where we private stuff, user's outlines for example -- 8/3/14 by DW
+var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
+var myDomain = process.env.myDomain; 
+
 var s3UsersPath = s3Path + "users/"; //where we store users data
-var whenServerStart = new Date ();
-var ctHits = 0;
-var requestTokens = [];
+var requestTokens = []; //used in the OAuth dance
 var serverStats = {
 	today: new Date (),
 	ctHits: 0, 
@@ -43,29 +40,9 @@ var serverStats = {
 	ctLongPollsToday: 0,  //12/17/14 by DW
 	recentTweets: []
 	};
-var flStatsDirty = false; //12/16/14 by DW
+var flStatsDirty = false; 
 var maxrecentTweets = 500, pathHttpLogFile = "stats/tweetLog.json";
-var macroStart = "<" + "%", macroEnd = "%" + ">"; 
-var defaultOpmlAcl = "private"; //see table on this page: http://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html
-
-var feed = {
-	ctPosts: 0, ctPostsToday: 0, whenLastPost: new Date (0),
-	recentPosts: []
-	};
-var maxFeedPosts = 100;
-var s3FeedFolder = s3Path + "feed/";
-var s3FeedPath = s3FeedFolder + "index.json";
-
-var todaysFeed = []; //holds all items posted today
-var dayForTodaysFeed = new Date ();
-var s3CalendarFolder = s3FeedFolder + "calendar/";
-
-var myDomain = process.env.myDomain; //6/30/14 AM by DW
-if (myDomain == undefined) {
-	myDomain = "fargotwitter.herokuapp.com";
-	}
-
-var screenNameCache = []; //7/9/14 by DW
+var screenNameCache = []; 
 
 
  
@@ -1250,7 +1227,7 @@ function newTwitter (myCallback) {
 	}
 function saveStats () {
 	flStatsDirty = false;
-	serverStats.ctHoursServerUp = secondsSince (whenServerStart) / 3600; //4/28/14 by DW
+	serverStats.ctHoursServerUp = secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
 	serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
 	s3NewObject (s3Path + pathHttpLogFile, JSON.stringify (serverStats, undefined, 3));
 	}
@@ -1353,21 +1330,7 @@ function everySecond () {
 function everyMinute () {
 	}
 
-loadServerStats ();
-readUserWhitelist (); //11/18/14 by DW
-
-console.log ();
-console.log (myProductName + " v" + myVersion + " running on port " + myPort + ".");
-console.log ();
-
-if (flEnabled === undefined) { //11/16/14 by DW
-	flEnabled = true;
-	}
-else {
-	flEnabled = getBoolean (flEnabled);
-	}
-
-http.createServer (function (httpRequest, httpResponse) {
+function handleHttpRequest (httpRequest, httpResponse) {
 	try {
 		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
 		var startTime = now, flStatsSaved = false, host, lowerhost, port;
@@ -1528,7 +1491,7 @@ http.createServer (function (httpRequest, httpResponse) {
 							var myStatus = {
 								version: myVersion, 
 								now: now.toUTCString (), 
-								whenServerStart: whenServerStart.toUTCString (), 
+								whenServerStart: serverStats.whenServerStart.toUTCString (), 
 								hits: serverStats.ctHits, 
 								hitsToday: serverStats.ctHitsToday,
 								tweets: serverStats.ctTweets,
@@ -1901,7 +1864,32 @@ http.createServer (function (httpRequest, httpResponse) {
 		httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 		httpResponse.end (tryError.message);    
 		}
-	}).listen (myPort);
+	}
 
-setInterval (function () {everySecond ()}, 1000); 
-setInterval (function () {everyMinute ()}, 60000); 
+function startup () {
+	console.log ();
+	console.log (myProductName + " v" + myVersion + " running on port " + myPort + ".");
+	console.log ();
+	
+	myDomain = process.env.myDomain; 
+	if (myDomain == undefined) {
+		console.log ("Can't start the server because the \"myDomain\" parameter is not specified.");
+		}
+	
+	loadServerStats ();
+	readUserWhitelist (); //11/18/14 by DW
+	
+	if (flEnabled === undefined) { //11/16/14 by DW
+		flEnabled = true;
+		}
+	else {
+		flEnabled = getBoolean (flEnabled);
+		}
+	
+	http.createServer (handleHttpRequest).listen (myPort);
+	
+	setInterval (everySecond, 1000); 
+	setInterval (everyMinute, 60000); 
+	}
+startup ();
+
