@@ -1,12 +1,11 @@
-var myVersion = "0.52", myProductName = "storage";
+var myVersion = "0.54", myProductName = "storage";
 
 var http = require ("http");
-var AWS = require ("aws-sdk");
-var s3 = new AWS.S3 ();
 var urlpack = require ("url");
 var twitterAPI = require ("node-twitter-api");
 var fs = require ("fs");
 var request = require ("request");
+var s3 = require ("./lib/s3.js");
 
 var myPort = process.env.PORT;
 var flEnabled = process.env.enabled; 
@@ -43,132 +42,6 @@ var serverStats = {
 var flStatsDirty = false; 
 var maxrecentTweets = 500, pathHttpLogFile = "stats/tweetLog.json";
 var screenNameCache = []; 
-
-
- 
-
-var s3defaultType = "text/plain";
-var s3defaultAcl = "public-read";
-
-var s3stats = {
-	ctReads: 0, ctBytesRead: 0, ctReadErrors: 0, 
-	ctWrites: 0, ctBytesWritten: 0, ctWriteErrors: 0
-	};
-
-function s3SplitPath (path) { //split path like this: /tmp.scripting.com/testing/one.txt -- into bucketname and path.
-	var bucketname = "";
-	if (path.length > 0) {
-		if (path [0] == "/") { //delete the slash
-			path = path.substr (1); 
-			}
-		var ix = path.indexOf ("/");
-		bucketname = path.substr (0, ix);
-		path = path.substr (ix + 1);
-		}
-	return ({Bucket: bucketname, Key: path});
-	}
-function s3NewObject (path, data, type, acl, callback, metadata) {
-	var splitpath = s3SplitPath (path);
-	if (type === undefined) {
-		type = s3defaultType;
-		}
-	if (acl === undefined) {
-		acl = s3defaultAcl;
-		}
-	var params = {
-		ACL: acl,
-		ContentType: type,
-		Body: data,
-		Bucket: splitpath.Bucket,
-		Key: splitpath.Key,
-		Metadata: metadata
-		};
-	s3.putObject (params, function (err, data) { 
-		if (err) {
-			console.log ("s3NewObject: error == " + err.message);
-			s3stats.ctWriteErrors++;
-			if (callback != undefined) {
-				callback (err, data);
-				}
-			}
-		else {
-			s3stats.ctWrites++;
-			s3stats.ctBytesWritten += params.Body.length;
-			if (callback != undefined) {
-				callback (err, data);
-				}
-			}
-		});
-	}
-function s3Redirect (path, url) { //1/30/14 by DW -- doesn't appear to work -- don't know why
-	var splitpath = s3SplitPath (path);
-	var params = {
-		WebsiteRedirectLocation: url,
-		Bucket: splitpath.Bucket,
-		Key: splitpath.Key,
-		Body: " "
-		};
-	s3.putObject (params, function (err, data) { 
-		if (err != null) {
-			consoleLog ("s3Redirect: err.message = " + err.message + ".");
-			}
-		else {
-			consoleLog ("s3Redirect: path = " + path + ", url = " + url + ", data = ", JSON.stringify (data));
-			}
-		});
-	}
-function s3GetObjectMetadata (path, callback) {
-	var params = s3SplitPath (path);
-	s3.headObject (params, function (err, data) {
-		callback (data);
-		});
-	}
-function s3GetObject (path, callback) {
-	var params = s3SplitPath (path);
-	s3.getObject (params, function (err, data) {
-		if (err) {
-			s3stats.ctReadErrors++;
-			}
-		else {
-			s3stats.ctReads++;
-			s3stats.ctBytesRead += data.Body.length;
-			}
-		callback (err, data);
-		});
-	}
-function s3ListObjects (path, callback) {
-	var splitpath = s3SplitPath (path);
-	function getNextGroup (marker) {
-		var params = {Bucket: splitpath.Bucket, Prefix: splitpath.Key};
-		if (marker != undefined) {
-			params = {Bucket: splitpath.Bucket, Prefix: splitpath.Key, Marker: marker};
-			}
-		s3.listObjects (params, function (err, data) {
-			if (err) {
-				console.log ("s3ListObjects: error == " + err.message);
-				}
-			else {
-				var lastobj = data.Contents [data.Contents.length - 1];
-				for (var i = 0; i < data.Contents.length; i++) {
-					data.Contents [i].s3path = splitpath.Bucket + "/" + data.Contents [i].Key; //5/22/14 by DW
-					callback (data.Contents [i]);
-					}
-				if (data.IsTruncated) {
-					getNextGroup (lastobj.Key);
-					}
-				else {
-					var obj = new Object ();
-					obj.flLastObject = true;
-					callback (obj);
-					}
-				}
-			});
-		}
-	getNextGroup ();
-	}
-
-
-
 
 
 function sameDay (d1, d2) { 
@@ -1140,7 +1013,7 @@ function saveTweet (jsontext) { //7/2/14 by DW
 	try {
 		var theTweet = JSON.parse (jsontext), idTweet = theTweet.id_str;
 		if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
-			s3NewObject (s3Path + "tweets/" + getDatePath (new Date (), true) + idTweet + ".json", JSON.stringify (theTweet, undefined, 3));
+			s3.newObject (s3Path + "tweets/" + getDatePath (new Date (), true) + idTweet + ".json", JSON.stringify (theTweet, undefined, 3));
 			}
 		}
 	catch (tryError) {
@@ -1229,7 +1102,7 @@ function saveStats () {
 	flStatsDirty = false;
 	serverStats.ctHoursServerUp = secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
 	serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
-	s3NewObject (s3Path + pathHttpLogFile, JSON.stringify (serverStats, undefined, 3));
+	s3.newObject (s3Path + pathHttpLogFile, JSON.stringify (serverStats, undefined, 3));
 	}
 function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
 	var now = new Date ();
@@ -1264,7 +1137,7 @@ function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
 	saveStats ();
 	}
 function loadServerStats () {
-	s3GetObject (s3Path + pathHttpLogFile, function (error, data) { //5/18/14 by DW -- this changed, got a new <i>error</i> parameter. 
+	s3.getObject (s3Path + pathHttpLogFile, function (error, data) { //5/18/14 by DW -- this changed, got a new <i>error</i> parameter. 
 		if (data != null) {
 			var oldServerStats = JSON.parse (data.Body);
 			for (var x in oldServerStats) { 
@@ -1310,7 +1183,7 @@ function getS3Acl (flPrivate) { //8/3/14 by DW
 	}
 function getUserFileList (s3path, callback) { //12/21/14 by DW
 	var now = new Date (), theList = new Array ();
-	s3ListObjects (s3path, function (obj) {
+	s3.listObjects (s3path, function (obj) {
 		if (obj.flLastObject != undefined) {
 			if (callback != undefined) {
 				callback (undefined, theList);
@@ -1454,7 +1327,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										var metadata = {whenLastUpdate: new Date ().toString ()};
 										
 										
-										s3NewObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+										s3.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
 											if (error) {
 												errorResponse (error);    
 												}
@@ -1675,7 +1548,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-									s3GetObject (s3path, function (error, data) {
+									s3.getObject (s3path, function (error, data) {
 										if (error) {
 											errorResponse (error);    
 											}
@@ -1764,7 +1637,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									}
 								else {
 									var s3path = getS3UsersPath (true) + screenName + "/";
-									s3GetObject (s3path + "postsData.json", function (error, data) {
+									s3.getObject (s3path + "postsData.json", function (error, data) {
 										if (error) {
 											errorResponse (error);    
 											}
@@ -1776,7 +1649,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												var filepath = s3path + "posts/" + padWithZeros (postnum, 7) + ".json";
 												
 												
-												s3GetObject (filepath, function (error, data) {
+												s3.getObject (filepath, function (error, data) {
 													if (!error) {
 														var jstruct = JSON.parse (data.Body.toString ());
 														
