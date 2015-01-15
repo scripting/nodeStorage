@@ -1,4 +1,4 @@
-var myVersion = "0.56", myProductName = "storage";
+var myVersion = "0.57", myProductName = "storage";
 
 var http = require ("http");
 var urlpack = require ("url");
@@ -30,7 +30,6 @@ var serverStats = {
 	ctHoursServerUp: 0,
 	ctServerStarts: 0,
 	version: 0,
-	nextUrlString: "0",
 	ctFileSaves: 0, //8/3/14 by DW
 	ctLongPollPushes: 0,  //12/16/14 by DW
 	ctLongPollPops: 0,  //12/16/14 by DW
@@ -46,6 +45,7 @@ var serverPrefs = {
 	flArchiveTweets: true
 	};
 var fnamePrefs = "data/serverPrefs.json";
+var fnameTweetsFolder = "data/tweets/";
 
 var requestTokens = []; //used in the OAuth dance
 var screenNameCache = []; 
@@ -262,15 +262,18 @@ function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by 
 			});
 	}
 	
-function saveTweet (jsontext) { //7/2/14 by DW
-	try {
-		var theTweet = JSON.parse (jsontext), idTweet = theTweet.id_str;
-		if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
-			s3.newObject (s3Path + "tweets/" + utils.getDatePath (new Date (), true) + idTweet + ".json", utils.jsonStringify (theTweet));
+function saveTweet (theTweet) { //7/2/14 by DW
+	if (serverPrefs.flArchiveTweets) {
+		try {
+			var idTweet = theTweet.id_str;
+			if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
+				var filepath = s3Path + fnameTweetsFolder + utils.getDatePath (new Date (), true) + idTweet + ".json";
+				s3.newObject (filepath, utils.jsonStringify (theTweet));
+				}
 			}
-		}
-	catch (tryError) {
-		console.log ("saveTweet error: " + tryError.message);    
+		catch (tryError) {
+			console.log ("saveTweet error: " + tryError.message);    
+			}
 		}
 	}
 function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
@@ -595,6 +598,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										addOurDataToReturnObject (data);
 										httpResponse.end (utils.jsonStringify (data));    
 										addTweetToLog (data, startTime);
+										saveTweet (data); //1/15/15 by DW
 										}
 									});
 								}
