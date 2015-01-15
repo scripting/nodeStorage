@@ -1,4 +1,4 @@
-var myVersion = "0.55", myProductName = "storage";
+var myVersion = "0.56", myProductName = "storage";
 
 var http = require ("http");
 var urlpack = require ("url");
@@ -16,7 +16,7 @@ var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, u
 var myDomain = process.env.myDomain; 
 
 var s3UsersPath = s3Path + "users/"; //where we store users data
-var requestTokens = []; //used in the OAuth dance
+
 var serverStats = {
 	today: new Date (),
 	ctHits: 0, 
@@ -40,15 +40,37 @@ var serverStats = {
 	ctLongPollsToday: 0,  //12/17/14 by DW
 	recentTweets: []
 	};
-var flStatsDirty = false; 
-var maxrecentTweets = 500, pathHttpLogFile = "stats/tweetLog.json";
+var fnameStats = "data/serverStats.json", flStatsDirty = false, maxrecentTweets = 500; 
+
+var serverPrefs = {
+	flArchiveTweets: true
+	};
+var fnamePrefs = "data/serverPrefs.json";
+
+var requestTokens = []; //used in the OAuth dance
 var screenNameCache = []; 
 
-
+//request token cache -- part of the OAuth dance
+	function findRequestToken (theRequestToken, flDelete) {
+		for (var i = 0; i < requestTokens.length; i++) {
+			if (requestTokens [i].rt == theRequestToken) {
+				var secret = requestTokens [i].secret;
+				requestTokens.splice (i, 1);
+				return (secret);
+				}
+			}
+		return (undefined);
+		}
+	function saveRequestToken (requestToken, requestTokenSecret) {
+		var obj = new Object ();
+		obj.rt = requestToken;
+		obj.secret = requestTokenSecret;
+		requestTokens [requestTokens.length] = obj;
+		}
 //whitelist -- 11/18/14 by DW
 	var urlWhitelist = process.env.urlUserWhitelist, userWhitelist = [];
 	
-	function readUserWhitelist () {
+	function readUserWhitelist (callback) {
 		if (urlWhitelist != undefined) {
 			httpReadUrl (urlWhitelist, function (s) {
 				try {
@@ -58,7 +80,15 @@ var screenNameCache = [];
 				catch (err) {
 					console.log ("readWhitelist: error parsing whitelist JSON -- \"" + err + "\"");
 					}
+				if (callback != undefined) {
+					callback ();
+					}
 				});
+			}
+		else {
+			if (callback != undefined) {
+				callback ();
+				}
 			}
 		}
 	function isWhitelistedUser (username) {
@@ -132,23 +162,64 @@ var screenNameCache = [];
 		}
 	
 	
-function tweetContainsBlockedTag (twitterStatus) { //blocking is not present in this version -- 12/16/14 by DW
-	return (false); 
-	}
-
-
-function saveTweet (jsontext) { //7/2/14 by DW
-	try {
-		var theTweet = JSON.parse (jsontext), idTweet = theTweet.id_str;
-		if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
-			s3.newObject (s3Path + "tweets/" + utils.getDatePath (new Date (), true) + idTweet + ".json", utils.jsonStringify (theTweet));
-			}
+//blocking -- 11/9/14 by DW
+	function tweetContainsBlockedTag (twitterStatus) { //blocking is not present in this version -- 12/16/14 by DW
+		return (false); 
 		}
-	catch (tryError) {
-		console.log ("saveTweet error: " + tryError.message);    
+//stats & prefs -- 1/15/15 by DW
+	function statsChanged () {
+		flStatsDirty = true;
 		}
-	}
+	function loadStruct (fname, struct, callback) {
+		s3.getObject (s3Path + fname, function (error, data) {
+			if (data != null) {
+				var oldStruct = JSON.parse (data.Body);
+				for (var x in oldStruct) { 
+					struct [x] = oldStruct [x];
+					}
+				}
+			if (callback != undefined) {
+				callback ();
+				}
+			});
+		}
+	function saveStruct (fname, struct, callback) {
+		s3.newObject (s3Path + fname, utils.jsonStringify (struct));
+		}
+	function loadServerStats (callback) {
+		loadStruct (fnameStats, serverStats, function () {
+			serverStats.ctHitsThisRun = 0;
+			serverStats.ctTweetsThisRun = 0;
+			serverStats.whenServerStart = new Date ();
+			serverStats.ctServerStarts++;
+			if (callback != undefined) {
+				callback ();
+				}
+			});
+		}
+	function saveServerStats () {
+		flStatsDirty = false;
+		serverStats.ctHoursServerUp = utils.secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
+		serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
+		saveStruct (fnameStats, serverStats);
+		}
+	function loadServerPrefs (callback) {
+		loadStruct (fnamePrefs, serverPrefs, function () {
+			saveStruct (fnamePrefs, serverPrefs);
+			if (callback != undefined) {
+				callback ();
+				}
+			});
+		}
 
+function newTwitter (myCallback) {
+	var twitter = new twitterAPI ({
+		consumerKey: process.env.twitterConsumerKey,
+		consumerSecret: process.env.twitterConsumerSecret,
+		callback: myCallback
+		});
+	return (twitter);
+	}
 function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by DW
 	//see if we can get it from the cache first
 		for (var i = 0; i < screenNameCache.length; i++) {
@@ -191,46 +262,16 @@ function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by 
 			});
 	}
 	
-
-function httpReadUrl (url, callback) {
-	request (url, function (error, response, body) {
-		if (!error && (response.statusCode == 200)) {
-			callback (body) 
-			}
-		});
-	}
-function shortenUrl (url, callback) {
-	httpReadUrl ("http://tinyurl.com/api-create.php?url=" + encodeURIComponent (url), callback);
-	}
-function findRequestToken (theRequestToken, flDelete) {
-	for (var i = 0; i < requestTokens.length; i++) {
-		if (requestTokens [i].rt == theRequestToken) {
-			var secret = requestTokens [i].secret;
-			requestTokens.splice (i, 1);
-			return (secret);
+function saveTweet (jsontext) { //7/2/14 by DW
+	try {
+		var theTweet = JSON.parse (jsontext), idTweet = theTweet.id_str;
+		if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
+			s3.newObject (s3Path + "tweets/" + utils.getDatePath (new Date (), true) + idTweet + ".json", utils.jsonStringify (theTweet));
 			}
 		}
-	return (undefined);
-	}
-function saveRequestToken (requestToken, requestTokenSecret) {
-	var obj = new Object ();
-	obj.rt = requestToken;
-	obj.secret = requestTokenSecret;
-	requestTokens [requestTokens.length] = obj;
-	}
-function newTwitter (myCallback) {
-	var twitter = new twitterAPI ({
-		consumerKey: process.env.twitterConsumerKey,
-		consumerSecret: process.env.twitterConsumerSecret,
-		callback: myCallback
-		});
-	return (twitter);
-	}
-function saveStats () {
-	flStatsDirty = false;
-	serverStats.ctHoursServerUp = utils.secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
-	serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
-	s3.newObject (s3Path + pathHttpLogFile, utils.jsonStringify (serverStats));
+	catch (tryError) {
+		console.log ("saveTweet error: " + tryError.message);    
+		}
 	}
 function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
 	var now = new Date ();
@@ -262,35 +303,9 @@ function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
 	while (serverStats.recentTweets.length > maxrecentTweets) { //keep array within max size
 		serverStats.recentTweets.pop ();
 		}
-	saveStats ();
-	}
-function loadServerStats () {
-	s3.getObject (s3Path + pathHttpLogFile, function (error, data) { //5/18/14 by DW -- this changed, got a new <i>error</i> parameter. 
-		if (data != null) {
-			var oldServerStats = JSON.parse (data.Body);
-			for (var x in oldServerStats) { 
-				if (x != "httpLog") {
-					serverStats [x] = oldServerStats [x];
-					}
-				}
-			}
-		serverStats.ctHitsThisRun = 0;
-		serverStats.ctTweetsThisRun = 0;
-		serverStats.whenServerStart = new Date ();
-		serverStats.ctServerStarts++;
-		});
-	}
-function getNextUrlString () { //5/10/14 by DW
-	var s = serverStats.nextUrlString;
-	serverStats.nextUrlString = utils.bumpUrlString (s);
-	saveStats ();
-	return (s);
+	statsChanged ();
 	}
 function everyMinute () { //6/8/14 by DW
-	var now = new Date ();
-	if (!utils.sameDay (now, dayForTodaysFeed)) {
-		dayForTodaysFeed = now; //a place to add code on rollover
-		}
 	readUserWhitelist (); //11/18/14 by DW
 	}
 function getS3UsersPath (flPrivate) { //8/3/14 by DW
@@ -325,7 +340,7 @@ function getUserFileList (s3path, callback) { //12/21/14 by DW
 function everySecond () {
 	checkLongpolls ();
 	if (flStatsDirty) {
-		saveStats ();
+		saveServerStats ();
 		}
 	}
 function everyMinute () {
@@ -392,6 +407,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				serverStats.ctTweetsToday = 0;
 				serverStats.ctLongPollsToday = 0;
 				}
+			statsChanged ();
 		//set host, port
 			host = httpRequest.headers.host;
 			if (utils.stringContains (host, ":")) {
@@ -579,7 +595,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										addOurDataToReturnObject (data);
 										httpResponse.end (utils.jsonStringify (data));    
 										addTweetToLog (data, startTime);
-										flStatsSaved = true;
 										}
 									});
 								}
@@ -852,9 +867,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 						}
 					break;
 				}
-			if (!flStatsSaved) {
-				saveStats ();
-				}
 			}
 		else {
 			httpResponse.writeHead (503, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
@@ -877,9 +889,6 @@ function startup () {
 		console.log ("Can't start the server because the \"myDomain\" parameter is not specified.");
 		}
 	
-	loadServerStats ();
-	readUserWhitelist (); //11/18/14 by DW
-	
 	if (flEnabled === undefined) { //11/16/14 by DW
 		flEnabled = true;
 		}
@@ -887,10 +896,16 @@ function startup () {
 		flEnabled = utils.getBoolean (flEnabled);
 		}
 	
-	http.createServer (handleHttpRequest).listen (myPort);
-	
-	setInterval (everySecond, 1000); 
-	setInterval (everyMinute, 60000); 
+	loadServerStats (function () {
+		loadServerPrefs (function () {
+			readUserWhitelist (function () {
+				http.createServer (handleHttpRequest).listen (myPort);
+				
+				setInterval (everySecond, 1000); 
+				setInterval (everyMinute, 60000); 
+				});
+			});
+		});
 	}
 startup ();
 
