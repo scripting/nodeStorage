@@ -1,9 +1,8 @@
 { 
-	"name": "twitterForLiveblog",
-	"subdomain": "twitterforliveblog",
-	"description": "The Twitter backend for liveblog.co",
+	"name": "storage",
+	"description": "A simple S3 storage system based on Twitter identity.",
 	"author": "Dave Winer <dave@smallpicture.com>",
-	"version": "0.4.0",
+	"version": "0.58.0",
 	"scripts": {
 		"start": "node storage.js"
 		},

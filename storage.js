@@ -1,4 +1,4 @@
-var myVersion = "0.57", myProductName = "storage";
+var myVersion = "0.58", myProductName = "storage";
 
 var http = require ("http");
 var urlpack = require ("url");
@@ -7,6 +7,7 @@ var fs = require ("fs");
 var request = require ("request");
 var s3 = require ("./lib/s3.js");
 var utils = require ("./lib/utils.js");
+var dns = require ("dns");
 
 var myPort = process.env.PORT;
 var flEnabled = process.env.enabled; 
@@ -14,6 +15,14 @@ var longPollTimeoutSecs = process.env.longPollTimeoutSecs;
 var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
 var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
 var myDomain = process.env.myDomain; 
+var bitlyApiKey = process.env.bitlyApiKey;
+var bitlyApiUsername = process.env.bitlyApiUsername;
+
+
+var apiKey = "R_4ffde2526ceffd7037116a0871f45eac";
+var username = "dave";
+
+
 
 var s3UsersPath = s3Path + "users/"; //where we store users data
 
@@ -308,9 +317,6 @@ function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
 		}
 	statsChanged ();
 	}
-function everyMinute () { //6/8/14 by DW
-	readUserWhitelist (); //11/18/14 by DW
-	}
 function getS3UsersPath (flPrivate) { //8/3/14 by DW
 	if (utils.getBoolean (flPrivate)) {
 		return (s3PrivatePath + "users/");
@@ -347,12 +353,13 @@ function everySecond () {
 		}
 	}
 function everyMinute () {
+	readUserWhitelist (); //11/18/14 by DW
 	}
 
 function handleHttpRequest (httpRequest, httpResponse) {
 	try {
 		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
-		var startTime = now, flStatsSaved = false, host, lowerhost, port;
+		var startTime = now, flStatsSaved = false, host, lowerhost, port, referrer;
 		var lowerpath = parsedUrl.pathname.toLowerCase ();
 		
 		function addOurDataToReturnObject (returnObject) {
@@ -421,7 +428,22 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				port = 80;
 				}
 			lowerhost = host.toLowerCase ();
-		console.log (now.toLocaleTimeString () + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath);
+		//set referrer
+			referrer = httpRequest.headers.referer;
+			if (referrer == undefined) {
+				referrer = "";
+				}
+			
+		//log the request
+			dns.reverse (httpRequest.connection.remoteAddress, function (err, domains) {
+				var client = httpRequest.connection.remoteAddress;
+				if (!err) {
+					if (domains.length > 0) {
+						client = domains [0];
+						}
+					}
+				console.log (now.toLocaleTimeString () + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath + " " + referrer + " " + client);
+				});
 		
 		if (flEnabled) { 
 			switch (httpRequest.method) {
@@ -581,14 +603,12 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							var twitter = newTwitter ();
 							
 							if (tweetContainsBlockedTag (twitterStatus)) { //11/9/14 by DW
-								console.log ("The tweet contains a blocked tag: " + twitterStatus);
 								httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 								httpResponse.end ("Tweet contains a blocked tag.");    
 								}
 							else {
 								twitter.statuses ("update", params, accessToken, accessTokenSecret, function (error, data, response) {
 									if (error) {
-										console.log ("There was an error on the tweet: " + utils.jsonStringify (error));
 										httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 										httpResponse.end (utils.jsonStringify (error));    
 										serverStats.ctTweetErrors++;
@@ -631,7 +651,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									httpResponse.end (utils.jsonStringify (error));    
 									}
 								});
-							
 							break;
 						case "/getuserinfo": //6/21/14 by DW
 							var accessToken = parsedUrl.query.oauth_token;
@@ -742,36 +761,37 @@ function handleHttpRequest (httpRequest, httpResponse) {
 						case "/shortenurl": //8/25/14 by DW
 							var longUrl = parsedUrl.query.url;
 							var apiUrl = "http://api.bitly.com/v3/shorten";
-							var apiKey = "R_4ffde2526ceffd7037116a0871f45eac";
-							var username = "dave";
-							function encode (s) {
-								return (encodeURIComponent (s));
+							var apiKey = bitlyApiKey, username = bitlyApiUsername; //1/17/15 by DW -- removed hard-coded constants
+							if ((apiKey == undefined) || (username == undefined)) {
+								errorResponse ({message: "Can't shorten the URL because the server is not configured to shorten URLs."});    
 								}
-							apiUrl += "?login=" + encode (username)
-							apiUrl += "&apiKey=" + encode (apiKey)
-							apiUrl += "&longUrl=" + encode (longUrl)
-							apiUrl += "&format=json"
-							
-							request (apiUrl, function (error, response, body) {
-								if (!error && (response.statusCode == 200)) {
-									var jstruct = JSON.parse (body);
-									if (jstruct.status_code != 200) {
-										errorResponse ({message: "Can't shorten the URL because bitly returned an error code of " + jstruct.status_code + "."});    
-										}
-									else {
-										var theResponse = {
-											shortUrl: jstruct.data.url,
-											longUrl: longUrl
-											};
-										dataResponse (theResponse);
-										}
+							else {
+								function encode (s) {
+									return (encodeURIComponent (s));
 									}
-								else { 
-									errorResponse ({message: "Can't shorten the URL because there was an error making the HTTP request."});    
-									}
-								});
-							
-							
+								apiUrl += "?login=" + encode (username)
+								apiUrl += "&apiKey=" + encode (apiKey)
+								apiUrl += "&longUrl=" + encode (longUrl)
+								apiUrl += "&format=json"
+								request (apiUrl, function (error, response, body) {
+									if (!error && (response.statusCode == 200)) {
+										var jstruct = JSON.parse (body);
+										if (jstruct.status_code != 200) {
+											errorResponse ({message: "Can't shorten the URL because bitly returned an error code of " + jstruct.status_code + "."});    
+											}
+										else {
+											var theResponse = {
+												shortUrl: jstruct.data.url,
+												longUrl: longUrl
+												};
+											dataResponse (theResponse);
+											}
+										}
+									else { 
+										errorResponse ({message: "Can't shorten the URL because there was an error making the HTTP request."});    
+										}
+									});
+								}
 							break;
 						case "/getrecentposts": //9/16/14 by DW
 							var twitter = newTwitter ();
