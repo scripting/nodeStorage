@@ -1,4 +1,4 @@
-var myVersion = "0.58", myProductName = "storage";
+var myVersion = "0.60", myProductName = "storage";
 
 var http = require ("http");
 var urlpack = require ("url");
@@ -9,22 +9,15 @@ var s3 = require ("./lib/s3.js");
 var utils = require ("./lib/utils.js");
 var dns = require ("dns");
 
-var myPort = process.env.PORT;
-var flEnabled = process.env.enabled; 
-var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
-var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
-var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
-var myDomain = process.env.myDomain; 
-var bitlyApiKey = process.env.bitlyApiKey;
-var bitlyApiUsername = process.env.bitlyApiUsername;
-
-
-var apiKey = "R_4ffde2526ceffd7037116a0871f45eac";
-var username = "dave";
-
-
-
-var s3UsersPath = s3Path + "users/"; //where we store users data
+//environment variables
+	var myPort = process.env.PORT;
+	var flEnabled = process.env.enabled; 
+	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
+	var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
+	var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
+	var myDomain = process.env.myDomain; 
+	var bitlyApiKey = process.env.bitlyApiKey;
+	var bitlyApiUsername = process.env.bitlyApiUsername;
 
 var serverStats = {
 	today: new Date (),
@@ -58,6 +51,14 @@ var fnameTweetsFolder = "data/tweets/";
 
 var requestTokens = []; //used in the OAuth dance
 var screenNameCache = []; 
+
+function httpReadUrl (url, callback) {
+	request (url, function (error, response, body) {
+		if (!error && (response.statusCode == 200)) {
+			callback (body) 
+			}
+		});
+	}
 
 //request token cache -- part of the OAuth dance
 	function findRequestToken (theRequestToken, flDelete) {
@@ -105,9 +106,9 @@ var screenNameCache = [];
 			return (true);
 			}
 		else {
-			username = stringLower (username);
+			username = utils.stringLower (username);
 			for (var i = 0; i < userWhitelist.length; i++) {
-				if (stringLower (userWhitelist [i]) == username) {
+				if (utils.stringLower (userWhitelist [i]) == username) {
 					return (true);
 					}
 				}
@@ -504,6 +505,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												metadata.url = "http:/" + s3path;
 												dataResponse (metadata);
 												serverStats.ctFileSaves++;
+												statsChanged ();
 												if (!flprivate) { //12/15/14 by DW
 													checkLongpollsForUrl (metadata.url, body);
 													}
@@ -612,6 +614,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 										httpResponse.end (utils.jsonStringify (error));    
 										serverStats.ctTweetErrors++;
+										statsChanged ();
 										}
 									else {
 										httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
@@ -813,7 +816,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											var lastpostnum = postsData.nextfilenum - 1;
 											var postsArray = [], ct = 0;
 											function getOnePost (postnum) {
-												var filepath = s3path + "posts/" + padWithZeros (postnum, 7) + ".json";
+												var filepath = s3path + "posts/" + utils.padWithZeros (postnum, 7) + ".json";
 												
 												
 												s3.getObject (filepath, function (error, data) {

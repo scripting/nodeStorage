@@ -1,5 +1,5 @@
 { 
-	"name": "storage",
+	"name": "nodeStorage",
 	"description": "A simple S3 storage system based on Twitter identity.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"version": "0.58.0",
