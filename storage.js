@@ -1,4 +1,4 @@
-var myVersion = "0.60", myProductName = "storage";
+var myVersion = "0.60", myProductName = "nodeStorage";
 
 var http = require ("http");
 var urlpack = require ("url");
