@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.62", myProductName = "nodeStorage";
+var myVersion = "0.63", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -910,6 +910,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									}
 								});
 							break; 
+						case "/api.js": //1/20/15 by MF
+							httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
+							fs.createReadStream (path.join (__dirname, "api.js")).pipe (httpResponse);
+							break;
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
