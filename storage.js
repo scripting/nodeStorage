@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.61", myProductName = "nodeStorage";
+var myVersion = "0.62", myProductName = "nodeStorage";
 
 var http = require ("http");
 var urlpack = require ("url");

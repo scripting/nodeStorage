@@ -1,163 +1,0 @@
-<html>
-	<head>
-		<title>MacWrite</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		
-		<script src="http://fargo.io/code/jquery-1.9.1.min.js"></script>
-		<link href="http://fargo.io/code/bootstrap.css" rel="stylesheet">
-		<script src="http://fargo.io/code/bootstrap.min.js"></script>
-		
-		<link rel="stylesheet" href="http://fargo.io/code/fontAwesome/css/font-awesome.min.css"/>
-		<link href="http://fargo.io/code/ubuntuFont.css" rel="stylesheet" type="text/css">
-		<link href="http://fargo.io/code/ranchoFont.css" rel="stylesheet" type="text/css">
-		
-		<script src="http://fargo.io/code/node/shared/utils.js"></script>
-		<script src="http://fargo.io/code/node/shared/alertdialog.js"></script>
-		<script src="http://fargo.io/code/node/shared/confirmdialog.js"></script>
-		<script src="http://fargo.io/code/node/shared/askdialog.js"></script>
-		<script src="http://fargo.io/code/strftime.js"></script>
-		<script src="http://fargo.io/code/shared/ga.js"></script>
-		<script src="http://fargo.io/code/shared/app.js"></script>
-		<link href="http://fargo.io/code/shared/app.css" rel="stylesheet" type="text/css">
-		<script src="http://fargo.io/code/shared/appprefs.js"></script>
-		<script src="http://fargo.io/code/shared/menus.js"></script>
-		<link href="http://fargo.io/code/shared/menus.css" rel="stylesheet" type="text/css">
-		
-		<script src="http://macwrite.org/twstorage.js"></script>
-		<script src="http://macwrite.org/client.js"></script>
-		
-		<style>
-			body {
-				font-family: Ubuntu;
-				font-size: 18px;
-				background-color: whitesmoke;
-				}
-			.divPageBody {
-				width: 60%;
-				margin-top: 90px;
-				margin-left: auto;
-				margin-right: auto;
-				}
-			.myTextArea {
-				font-family: Ubuntu;
-				font-size: 22px;
-				width: 100%; 
-				line-height: 150%;
-				margin: 0;
-				margin-bottom: 5px;
-				border: 1px solid silver;
-				height: 500px;
-				margin-top: 5px;
-				}
-			.divVersionNumber {
-				font-size: 12px;
-				color: #777777;
-				float: right;
-				padding: 19px;
-				}
-			.btn {
-				width: 120px;
-				}
-			.btnSave {
-				float: right;
-				}
-			</style>
-		</head>
-	<body>
-		<div class="divMenubar" id="idMenubar">
-			<div class="topbar-wrapper" style="z-index: 5;">
-				<div class="navbar navbar-fixed-top" data-dropdown="dropdown">
-					<div class="divVersionNumber" id="idVersionNumber">
-						</div>
-					<div class="navbar-inner">
-						<div class="container">
-							<a class="brand" href="/"><span id="idMenuProductName"></span></a>
-							<ul class="nav" id="idMainMenuList">
-								<li class="dropdown" id="idTestMenu"> 
-									<a href="#" class="dropdown-toggle" data-toggle="dropdown">Testing&nbsp;<b class="caret"></b></a>
-									<ul class="dropdown-menu">
-										<li><a onclick="aboutTestingMenu ();">About this menu...</a></li>
-										<li class="divider"></li>
-										<li><a onclick="sendATweet ();">Send tweet...</a></li>
-										<li><a onclick="getUserInfo ();">Get user info...</a></li>
-										<li><a onclick="getMyMostRecentTweet ();">My most recent tweet...</a></li>
-										</ul>
-									</li>
-								</ul>
-							<ul class="nav pull-right">
-								<li class="dropdown">
-									<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span id="idTwitterIcon"></span><span id="idTwitterUsername"></span>&nbsp;<b class="caret"></b></a>
-									<ul class="dropdown-menu">
-										<li><a onclick="aboutDialog ();">About <span id="idMenuAboutProductName"></span>...</a></li>
-										<li class="divider"></li>
-										<li><a onclick="settingsCommand ();">Settings...</a></li>
-										<li class="divider"></li>
-										<li><a onclick="fbToggleConnectCommand ();" id="idFacebookConnectMenuItem"></a></li>
-										<li><a onclick="twToggleConnectCommand ();" id="idTwitterConnectMenuItem"></a></li>
-										</ul>
-									</li>
-								</ul>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		<div class="divPrefsDialog" comment="This is the Settings dialog.">
-			<div id="idPrefsDialog" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="windowTitleLabel" aria-hidden="true">
-				<div class="modal-body">
-					<div class="divDialogElements">
-						<form method="POST">
-	<div class="divTabsFromOutline">
-	<div class="tabbable">
-		<ul class="nav nav-tabs" data-tabs="tabs">
-			<li class="active" ><a href="#idFont214"  data-toggle="tab">Font</a></li>
-			</ul>
-		<div id="my-tab-content" class="tab-content">
-			<div class="active tab-pane" id="idFont214">
-				<fieldset>
-					<div class="divPrefs">	<p>You can set the font and size we use to display text.</p><div class="clearfix">	<label for="textFont">Font:</label>	<div class="input">		<input class="xlarge prefsInput" id="textFont" name="textFont" size="50" type="text" value="" placeholder="Text display font" />		</div>	</div><div class="clearfix">	<label for="textFontSize">Font-size:</label>	<div class="input">		<input class="xlarge numberPrefsInput" id="textFontSize" name="textFontSize" size="7" type="text" value="" /><span class="textToRight">&nbsp;(pixels)</span>		</div>	</div><div class="clearfix">	<label for="textLineHeight">Line-height:</label>	<div class="input">		<input class="xlarge numberPrefsInput" id="textLineHeight" name="textLineHeight" size="7" type="text" value="" /><span class="textToRight">&nbsp;(pixels)</span>		</div>	</div>	</div>
-					</fieldset>
-						</div>
-					</div>
-				</div>
-			</div>
-
-	</form>
-
-						</div>
-					</div>
-				<div class="modal-footer">
-					<a href="#" class="btn" onclick="prefsCloseDialog ();">Cancel</a>
-					<a href="#" class="btn btn-primary" onclick="prefsOkClicked ();">OK</a>
-					</div>
-				</div>
-			</div>
-		<div class="divPageBody">
-			<div class="divWholePageMessage" id="idEditor" style="display: none;">
-				<textarea class="myTextArea" id="idTextArea" onKeyUp="keyupTextArea ()" placeholder="Obviously this is a good place to write something."></textarea>
-				<button id="idSaveButton" class="btn btn-large btnSave" type="button" onclick="saveButtonClick ();">Save</button>
-				</div>
-			<div class="divWholePageMessage" id="idLogonMessage" style="display: none;">
-				<div class="divLogonMessage">
-					<center>
-						Please sign on to Twitter to access your stuff.<br><br>
-						</center>
-					</div>
-				</div>
-			<div class="divWholePageMessage" id="idStartupFailBody" style="display: none;">
-				<div class="divLogonMessage">
-					<center>
-						There was a problem connecting with the server. 
-						Please wait a moment and reload the page.
-						</center>
-					</div>
-				</div>
-			</div>
-		<script>
-			$(document).ready (function () {
-				startup ();
-				});
-			</script>
-		</body>
-	</html>
