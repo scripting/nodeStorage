@@ -22,7 +22,7 @@
 
 var myVersion = "0.62", myProductName = "nodeStorage";
 
-var http = require ("http");
+var http = require ("http"); 
 var urlpack = require ("url");
 var twitterAPI = require ("node-twitter-api");
 var fs = require ("fs");
