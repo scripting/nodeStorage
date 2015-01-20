@@ -18,6 +18,12 @@ I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage
 
 
 
+#### Demo app
+
+There's a <a href="http://macwrite.org/">demo app</a> which you can try now. And the <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub.
+
+
+
 #### Parameters
 
 1. twitterConsumerKey
