@@ -20,7 +20,25 @@ I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage
 
 #### Demo app
 
-There's a <a href="http://macwrite.org/">demo app</a> which you can try now. And the <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub.
+There's a <a href="http://macwrite.org/">demo app</a> which you can try now. 
+
+The <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub.
+
+
+
+#### API
+
+The api.js file provides glue for browser-based JavaScript apps. 
+
+You can also access it in api.nodestorage.io and include it from apps if you want. 
+
+
+
+#### Breakage alerts
+
+Once an API is done, I believe in no-breakage. I think all changes made from the point where it's complete can be done continuously, meaning old versions of the API can continue to be supported. I do not believe in deprecation. 
+
+However, the API here is not yet frozen, so be on the alert for breakage. But I want to freeze it fairly quickly. Look for this note to disappear. ;-)
 
 
 
