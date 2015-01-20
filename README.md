@@ -14,11 +14,7 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 
 #### The idea
 
-<p>Twitter has a great API, but it's designed for server apps. These days I write in-browser JavaScript apps. I wanted an API for Twitter that makes it  easy to quickly develop new apps that run in the browser.</p>
-
-<p>For a while I was making apps that use localStorage, but that data is only available on the local machine. That meant notes on my laptop weren't accessible from my iPad. Not good. So I wanted the ability to store stuff from my JS apps on the net, where all instances of the app would be able to find and edit the data.</p>
-
-<p>So I combined the ability to login via Twitter, that I already had working, with the ability to store stuff on S3. This gave me access to this stuff on the server, so it was simply a matter of crafting a JavaScript API. That's the big idea here. I iterated over the API, and developed a series of <a href="http://scripting.com/2014/07/16/myLatestSoftwareSnacks.html">software snacks</a> that store stuff using this server. So it's not brand-new. It's pretty well broken-in and debugged (knock wood, Praise Murphy).</p>
+I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
 
 
 
