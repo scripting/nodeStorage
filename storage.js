@@ -912,7 +912,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							break; 
 						case "/api.js": //1/20/15 by DW
 							httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
-							fs.readFile ("./api.js", function (err, data) {
+							fs.readFile ("api.js", function (err, data) {
 								if (err) {
 									httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 									httpResponse.end (err.message);    
