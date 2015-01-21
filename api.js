@@ -250,8 +250,8 @@ function twTweet (status, inReplyToId, callback) {
 		error: function (status) { 
 			var twitterResponse = JSON.parse (status.responseText);
 			var innerResponse = JSON.parse (twitterResponse.data);
-			console.log ("twTweet: error reported by twitter == " + jsonStringify (innerResponse.error));
-			alertDialog ("Twitter reported an error: \"" + innerResponse.error + "\"");
+			console.log ("twTweet: error reported by twitter == " + JSON.stringify (innerResponse.error, undefined, 4));
+			alert ("Twitter reported an error: \"" + innerResponse.error + "\"");
 			
 			},
 		dataType: "json"
@@ -264,11 +264,16 @@ function twGetUrlLength () { //8/8/14 by DW
 		}
 	return (twUrlLength);
 	}
-function twToggleConnectCommand () { 
+function twToggleConnectCommand (confirmDialogCallback) { 
 	if (twIsTwitterConnected ()) {
-		confirmDialog ("Sign off Twitter?", function () {
+		if (confirmDialogCallback == undefined) {
 			twDisconnectFromTwitter ();
-			});
+			}
+		else {
+			confirmDialogCallback ("Sign off Twitter?", function () {
+				twDisconnectFromTwitter ();
+				});
+			}
 		}
 	else {
 		twConnectToTwitter ();
@@ -306,8 +311,6 @@ function twGetFile (relpath, flIncludeBody, flPrivate, callback) { //8/10/14 by 
 			},
 		error: function (status, something, otherthing) { 
 			console.log ("twGetFile: error == " + JSON.stringify (status, undefined, 4));
-			console.log ("twGetFile: something == " + JSON.stringify (something, undefined, 4));
-			console.log ("twGetFile: otherthing == " + JSON.stringify (otherthing, undefined, 4));
 			callback (status, undefined);
 			},
 		dataType: "json"
@@ -335,18 +338,18 @@ function twTwitterDateToGMT (twitterDate) { //7/16/14 by DW
 	}
 function twViewTweet (idTweet, idDiv, callback) { //7/18/14 by DW
 	function prefsToStorage () {
-		localStorage.twEmbedCache = JSON.stringify (twEmbedCache, undefined, 4);
+		localStorage.twEmbedCache = JSON.stringify (twStorageData.embedCache, undefined, 4);
 		}
 	function storageToPrefs () {
 		if (localStorage.twEmbedCache != undefined) {
-			twEmbedCache = JSON.parse (localStorage.twEmbedCache);
+			twStorageData.embedCache = JSON.parse (localStorage.twEmbedCache);
 			}
 		}
 	var idViewer = "#" + idDiv, now = new Date ();
 	
-	if (!flEmbedCacheInitialized) {
+	if (!twStorageData.flEmbedCacheInitialized) {
 		storageToPrefs ();
-		flEmbedCacheInitialized = true;
+		twStorageData.flEmbedCacheInitialized = true;
 		}
 	
 	if (idTweet == undefined) {
@@ -354,8 +357,8 @@ function twViewTweet (idTweet, idDiv, callback) { //7/18/14 by DW
 		}
 	else {
 		var cacheElement, flFoundInCache = false;
-		for (var i = 0; i < twEmbedCache.length; i++) {
-			var c = twEmbedCache [i];
+		for (var i = 0; i < twStorageData.embedCache.length; i++) {
+			var c = twStorageData.embedCache [i];
 			if (c.id == idTweet) {
 				cacheElement = c;
 				flFoundInCache = true;
@@ -381,18 +384,18 @@ function twViewTweet (idTweet, idDiv, callback) { //7/18/14 by DW
 					ctAccesses: 0,
 					whenLastAccess: now
 					};
-				if (twEmbedCache.length < maxTwEmbedCache) {
-					twEmbedCache [twEmbedCache.length] = obj;
+				if (twStorageData.embedCache.length < twStorageData.maxEmbedCache) {
+					twStorageData.embedCache [twStorageData.embedCache.length] = obj;
 					}
 				else {
-					var whenOldest = twEmbedCache [0].whenLastAccess, ixOldest = 0;
-					for (var i = 1; i < twEmbedCache.length; i++) {
-						if (twEmbedCache [i].whenLastAccess < whenOldest) {
-							whenOldest = twEmbedCache [i].whenLastAccess;
+					var whenOldest = twStorageData.embedCache [0].whenLastAccess, ixOldest = 0;
+					for (var i = 1; i < twStorageData.embedCache.length; i++) {
+						if (twStorageData.embedCache [i].whenLastAccess < whenOldest) {
+							whenOldest = twStorageData.embedCache [i].whenLastAccess;
 							ixOldest = i;
 							}
 						}
-					twEmbedCache [ixOldest] = obj;
+					twStorageData.embedCache [ixOldest] = obj;
 					}
 				
 				if (callback != undefined) {
@@ -417,10 +420,10 @@ function twDerefUrl (shorturl, callback) { //7/31/14 by DW
 				if (callback != undefined) {
 					callback (data.longurl);
 					}
-				console.log ("twDerefUrl: data == " + jsonStringify (data));
+				console.log ("twDerefUrl: data == " + JSON.stringify (data, undefined, 4));
 				},
 			error: function (status) { 
-				console.log ("twDerefUrl: error status == " + jsonStringify (status));
+				console.log ("twDerefUrl: error status == " + JSON.stringify (status, undefined, 4));
 				},
 			dataType: "json"
 			});
@@ -450,7 +453,7 @@ function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
 		url: twGetDefaultServer () + "getfilelist?oauth_token=" + encodeURIComponent (localStorage.twOauthToken) + "&oauth_token_secret=" + encodeURIComponent (localStorage.twOauthTokenSecret) + "&flprivate=" + encodeURIComponent (flPrivate),
 		success: function (data) {
 			whenLastTwRatelimitError = undefined; 
-			console.log ("twGetUserFiles: list == " + jsonStringify (data));
+			console.log ("twGetUserFiles: list == " + JSON.stringify (data, undefined, 4));
 			if (callback != undefined) {
 				callback (data);
 				}
@@ -475,40 +478,54 @@ function twUserWhitelisted (username, callback) {
 		dataType: "json"
 		});
 	}
-function twGetTwitterConfig (urlServer) {
+function twGetTwitterConfig (callback) {
 	if (twIsTwitterConnected ()) {
-		if (urlServer == undefined) {
-			urlServer = twGetDefaultServer ();
-			}
 		$.ajax ({
 			type: "GET",
-			url: urlServer + "configuration?oauth_token=" + encodeURIComponent (localStorage.twOauthToken) + "&oauth_token_secret=" + encodeURIComponent (localStorage.twOauthTokenSecret),
+			url: twGetDefaultServer () + "configuration?oauth_token=" + encodeURIComponent (localStorage.twOauthToken) + "&oauth_token_secret=" + encodeURIComponent (localStorage.twOauthTokenSecret),
 			success: function (data) {
-				twitterConfig = data;
+				twStorageData.twitterConfig = data;
+				if (callback != undefined) {
+					callback ();
+					}
 				},
 			error: function (status) { 
 				console.log ("getTwitterConfig: error.");
+				if (callback != undefined) {
+					callback ();
+					}
 				},
 			dataType: "json"
 			});
 		}
 	}
 
-function twPrefsToStorage () {
-	var jsontext = JSON.stringify (appPrefs), whenstart = new Date ();
-	twUploadFile (twStorageStartup.pathAppPrefs, jsontext, "application/json", true, function (data) {
+function twPrefsToStorage (appPrefs) {
+	function secondsSince (when) { 
+		var now = new Date ();
+		when = new Date (when);
+		return ((now - when) / 1000);
+		}
+	var jsontext = JSON.stringify (appPrefs, undefined, 4), whenstart = new Date ();
+	twUploadFile (twStorageData.pathAppPrefs, jsontext, "application/json", true, function (data) {
 		console.log ("twPrefsToStorage: uploaded to server in " + secondsSince (whenstart) + " secs.");
 		});
 	}
-function twStorageToPrefs (callback) {
+function twStorageToPrefs (appPrefs, callback) {
+	function secondsSince (when) { 
+		var now = new Date ();
+		when = new Date (when);
+		return ((now - when) / 1000);
+		}
 	var whenstart = new Date ();
-	twGetFile (twStorageStartup.pathAppPrefs, true, true, function (error, data) {
+	twGetFile (twStorageData.pathAppPrefs, true, true, function (error, data) {
 		if (data != undefined) {
 			var storedPrefs = JSON.parse (data.filedata);
 			for (var x in storedPrefs) {
 				appPrefs [x] = storedPrefs [x];
 				}
 			console.log ("twStorageToPrefs: downloaded from server in " + secondsSince (whenstart) + " secs.");
+			console.log ("twStorageToPrefs: appPrefs == " + JSON.stringify (appPrefs, undefined, 4));
 			if (callback != undefined) { //8/16/14 by DW
 				callback ();
 				}
@@ -529,11 +546,11 @@ function twStorageToPrefs (callback) {
 			}
 		});
 	}
-function twStorageStartup (callback) {
-	twStorageToPrefs (function (errorInfo) {
+function twStorageStartup (appPrefs, callback) {
+	twStorageToPrefs (appPrefs, function (errorInfo) {
 		var flStartupFail = false;
 		if (errorInfo != undefined) { 
-			console.log ("twStorageStartup: errorInfo == " + jsonStringify (errorInfo));
+			console.log ("twStorageStartup: errorInfo == " + JSON.stringify (errorInfo, undefined, 4));
 			if (errorInfo.flFileNotFound != undefined) {
 				if (!errorInfo.flFileNotFound) { //some error other than file-not-found (which is a benign error, first-time user
 					if (callback != undefined) { //startup fail
