@@ -86,3 +86,9 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does.
 
+
+
+##### v0.65 -- -1/24/15 by DW
+
+Added a readout of free memory as the second item in the server log. In this <a href="http://scripting.com/2015/01/24/freemem.png">screen shot</a> the red arrow points to the free memory readout. 
+

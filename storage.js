@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.64", myProductName = "nodeStorage";
+var myVersion = "0.65", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -30,6 +30,7 @@ var request = require ("request");
 var s3 = require ("./lib/s3.js");
 var utils = require ("./lib/utils.js");
 var dns = require ("dns");
+var os = require ("os");
 
 //environment variables
 	var myPort = process.env.PORT;
@@ -252,6 +253,26 @@ function newTwitter (myCallback) {
 		});
 	return (twitter);
 	}
+function kilobyteString (num) { //1/24/15 by DW
+	num = Number (num) / 1024;
+	return (num.toFixed (2) + "K");
+	}
+function megabyteString (num) { //1/24/15 by DW
+	var onemeg = 1024 * 1024;
+	if (num <= onemeg) {
+		return (kilobyteString (num));
+		}
+	num = Number (num) / onemeg;
+	return (num.toFixed (2) + "MB");
+	}
+function gigabyteString (num) { //1/24/15 by DW
+	var onegig = 1024 * 1024 * 1024;
+	if (num <= onegig) {
+		return (megabyteString (num));
+		}
+	num = Number (num) / onegig;
+	return (num.toFixed (2) + "GB");
+	}
 function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by DW
 	//see if we can get it from the cache first
 		for (var i = 0; i < screenNameCache.length; i++) {
@@ -460,12 +481,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 		//log the request
 			dns.reverse (httpRequest.connection.remoteAddress, function (err, domains) {
 				var client = httpRequest.connection.remoteAddress;
+				var freemem = gigabyteString (os.freemem ()); //1/24/15 by DW
 				if (!err) {
 					if (domains.length > 0) {
 						client = domains [0];
 						}
 					}
-				console.log (now.toLocaleTimeString () + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath + " " + referrer + " " + client);
+				console.log (now.toLocaleTimeString () + " " + freemem + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath + " " + referrer + " " + client);
 				});
 		
 		if (flEnabled) { 
@@ -943,7 +965,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 
 function startup () {
 	console.log ();
-	console.log (myProductName + " v" + myVersion + " running on port " + myPort + ".");
+	console.log (myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()));
 	console.log ();
 	
 	myDomain = process.env.myDomain; 
