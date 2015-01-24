@@ -88,7 +88,15 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 
 
-##### v0.65 -- -1/24/15 by DW
+##### v0.65 -1/24/15 by DW
 
-Added a readout of free memory as the second item in the server log. In this <a href="http://scripting.com/2015/01/24/freemem.png">screen shot</a> the red arrow points to the free memory readout. 
+Added a readout of free memory as the second item in the server log. 
+
+In this <a href="http://scripting.com/2015/01/24/freemem.png">screen shot</a> the arrow points to the free memory readout. 
+
+
+
+#### Questions, problems
+
+Please post a note on the <a href="https://groups.google.com/forum/?fromgroups#!forum/server-snacks">server-snacks</a> mail list. 
 
