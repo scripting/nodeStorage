@@ -88,6 +88,8 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 
 
+#### Updates
+
 ##### v0.65 -1/24/15 by DW
 
 Added a readout of free memory as the second item in the server log. 
