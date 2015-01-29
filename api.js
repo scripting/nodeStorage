@@ -206,7 +206,7 @@ function twGetEmbedCode (id, callback, maxwidth, hide_media, hide_thread, omit_s
 		dataType: "json"
 		});
 	}
-function twGetTwitterReplies (userid, callback, idLastSeen) {
+function twGetTwitterReplies (userid, idLastSeen, callback) {
 	var sinceParam = "", urlServer = twGetDefaultServer ();
 	function encode (s) {
 		return (encodeURIComponent (s));
@@ -214,9 +214,14 @@ function twGetTwitterReplies (userid, callback, idLastSeen) {
 	if (idLastSeen != undefined) {
 		sinceParam = "&since_id=" + idLastSeen;
 		}
+	
+	var apiUrl = urlServer + "getmymentions?oauth_token=" + encode (localStorage.twOauthToken) + "&oauth_token_secret=" + encode (localStorage.twOauthTokenSecret) + "&user_id=" + encode (userid) + sinceParam;
+	
+	console.log ("twGetTwitterReplies: apiUrl == " + apiUrl);
+	
 	$.ajax ({
 		type: "GET",
-		url: urlServer + "getmymentions?oauth_token=" + encode (localStorage.twOauthToken) + "&oauth_token_secret=" + encode (localStorage.twOauthTokenSecret) + "&user_id=" + encode (userid) + sinceParam,
+		url: apiUrl,
 		success: function (data) {
 			callback (data);
 			},
