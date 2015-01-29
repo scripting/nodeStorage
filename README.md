@@ -92,7 +92,7 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 ##### v0.66 -1/29/15 by DW
 
-New stats for longpolling, in serverStats.json. Here's an example in the stats file for the liveblog.co server. This gives us a way to quickly see how many people are watching the resources managed by a given nodeStorage server.
+New stats for longpolling, in serverStats.json. <a href="http://liveblog.co/data/serverStats.json">Example</a>. Gives us a way to see how many people are watching resources managed by a nodeStorage server.
 
 ##### v0.65 -1/24/15 by DW
 
