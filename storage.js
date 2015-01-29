@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.65", myProductName = "nodeStorage";
+var myVersion = "0.66", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -62,6 +62,7 @@ var serverStats = {
 	ctLongPollUpdates: 0, //12/16/14 by DW
 	ctCurrentLongPolls: 0,  //12/16/14 by DW
 	ctLongPollsToday: 0,  //12/17/14 by DW
+	currentLogPolls: new Array (), //1/29/15 by DW
 	recentTweets: []
 	};
 var fnameStats = "data/serverStats.json", flStatsDirty = false, maxrecentTweets = 500; 
@@ -151,12 +152,13 @@ function httpReadUrl (url, callback) {
 			return (Number (longPollTimeoutSecs) * 1000.0);
 			}
 		}
-	function pushLongpoll (urlToWatchFor, httpResponse) {
+	function pushLongpoll (urlToWatchFor, httpResponse, clientIpAddress) {
 		var ctMilliseconds = getLongpollTimeout ();
 		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
 		waitingLongpolls [waitingLongpolls.length] = {
 			url: urlToWatchFor,
 			whenTimeout: whenExpires,
+			client: clientIpAddress,
 			response: httpResponse
 			}
 		serverStats.ctLongPollPushes++; 
@@ -234,6 +236,17 @@ function httpReadUrl (url, callback) {
 		flStatsDirty = false;
 		serverStats.ctHoursServerUp = utils.secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
 		serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
+		
+		//add info about current longPolls -- 1/29/15 by DW
+			serverStats.currentLogPolls = new Array ();
+			for (var i = 0; i < waitingLongpolls.length; i++) {
+				var obj = waitingLongpolls [i];
+				serverStats.currentLogPolls [i] = {
+					url: obj.url,
+					client: obj.client
+					};
+				}
+		
 		saveStruct (fnameStats, serverStats);
 		}
 	function loadServerPrefs (callback) {
@@ -404,7 +417,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 	try {
 		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
 		var startTime = now, flStatsSaved = false, host, lowerhost, port, referrer;
-		var lowerpath = parsedUrl.pathname.toLowerCase ();
+		var lowerpath = parsedUrl.pathname.toLowerCase (), clientIp = httpRequest.connection.remoteAddress;
 		
 		function addOurDataToReturnObject (returnObject) {
 			returnObject ["#smallpict"] = {
@@ -479,7 +492,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				}
 			
 		//log the request
-			dns.reverse (httpRequest.connection.remoteAddress, function (err, domains) {
+			dns.reverse (clientIp, function (err, domains) {
 				var client = httpRequest.connection.remoteAddress;
 				var freemem = gigabyteString (os.freemem ()); //1/24/15 by DW
 				if (!err) {
@@ -905,7 +918,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								});
 							break;
 						case "/returnwhenready": //12/15/14 by DW -- long polling
-							pushLongpoll (parsedUrl.query.url, httpResponse)
+							pushLongpoll (parsedUrl.query.url, httpResponse, clientIp)
 							break;
 						case "/stats": //12/16/14 by DW
 							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
