@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.66", myProductName = "nodeStorage";
+var myVersion = "0.67", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -44,6 +44,7 @@ var os = require ("os");
 
 var serverStats = {
 	today: new Date (),
+	ctStatsSaves: 0,
 	ctHits: 0, 
 	ctHitsThisRun: 0,
 	ctHitsToday: 0,
@@ -234,6 +235,7 @@ function httpReadUrl (url, callback) {
 		}
 	function saveServerStats () {
 		flStatsDirty = false;
+		serverStats.ctStatsSaves++; //1/30/15 by DW
 		serverStats.ctHoursServerUp = utils.secondsSince (serverStats.whenServerStart) / 3600; //4/28/14 by DW
 		serverStats.ctCurrentLongPolls = waitingLongpolls.length; //12/16/14 by DW
 		

@@ -18,6 +18,8 @@ And Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/
 
 I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
 
+A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> provides another perspective.
+
 BTW, my name is Dave Winer. This is <a href="http://scripting.com/">where</a> I live on the net. ;-)
 
 
