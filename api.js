@@ -470,6 +470,61 @@ function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
 		dataType: "json"
 		});
 	}
+
+function twAddComment (snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
+	var paramtable = {
+		oauth_token: localStorage.twOauthToken,
+		oauth_token_secret: localStorage.twOauthTokenSecret,
+		author: snAuthor,
+		idpost: idPost,
+		urlopmlfile: urlOpmlFile
+		}
+	var url = twGetDefaultServer () + "addcomment?" + twBuildParamList (paramtable);
+	$.ajax ({
+		type: "GET",
+		url: url,
+		success: function (data) {
+			if (callback != undefined) {
+				callback (data);
+				}
+			},
+		error: function (status, something, otherthing) { 
+			console.log ("twAddComment: error == " + JSON.stringify (status, undefined, 4));
+			if (callback != undefined) {
+				callback (undefined);
+				}
+			},
+		dataType: "json"
+		});
+	}
+function twGetComments (snAuthor, idPost, callback) {
+	var paramtable = {
+		oauth_token: localStorage.twOauthToken,
+		oauth_token_secret: localStorage.twOauthTokenSecret,
+		author: snAuthor,
+		idpost: idPost
+		}
+	var url = twGetDefaultServer () + "getcomments?" + twBuildParamList (paramtable);
+	$.ajax ({
+		type: "GET",
+		url: url,
+		success: function (data) {
+			if (callback != undefined) {
+				callback (data);
+				}
+			},
+		error: function (status, something, otherthing) { 
+			console.log ("twGetComments: error == " + JSON.stringify (status, undefined, 4));
+			if (callback != undefined) {
+				callback (undefined);
+				}
+			},
+		dataType: "json"
+		});
+	}
+
+
+
 function twUserWhitelisted (username, callback) {
 	$.ajax ({
 		type: "GET",

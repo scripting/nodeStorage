@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.67", myProductName = "nodeStorage";
+var myVersion = "0.68", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -405,6 +405,69 @@ function getUserFileList (s3path, callback) { //12/21/14 by DW
 			}
 		});
 	}
+function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
+	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
+	s3.getObject (s3path, function (error, data) {
+		var jstruct;
+		if (error) {
+			jstruct = new Object ();
+			}
+		else {
+			jstruct = JSON.parse (data.Body.toString ());
+			}
+		
+		if (jstruct [snCommenter] === undefined) {
+			jstruct [snCommenter] = {
+				ctUpdates: 0,
+				whenCreated: now,
+				whenUpdated: now
+				};
+			}
+		
+		var jstructsub = jstruct [snCommenter];
+		jstructsub.whenUpdated = now;
+		jstructsub.ctUpdates++;
+		jstructsub.urlOpmlFile = urlOpmlFile;
+		
+		
+		s3.newObject (s3path, utils.jsonStringify (jstruct), "application/json", getS3Acl (flprivate), function (error, data) {
+			if (error) {
+				if (callback != undefined) {
+					callback (error, undefined);
+					}
+				}
+			else {
+				var returnStruct = {
+					filepath: s3path,
+					whenCreated: jstructsub.whenCreated,
+					whenUpdated: jstructsub.whenUpdated,
+					ctUpdates: jstructsub.ctUpdates
+					};
+				if (callback != undefined) {
+					callback (undefined, returnStruct);
+					}
+				}
+			});
+		});
+	}
+function getComments (snAuthor, idPost, callback) {
+	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json";
+	s3.getObject (s3path, function (error, data) {
+		if (error) {
+			if (callback != undefined) {
+				callback (error, undefined);
+				}
+			}
+		else {
+			var jstruct = JSON.parse (data.Body.toString ());
+			if (callback != undefined) {
+				callback (undefined, jstruct);
+				}
+			}
+		});
+	}
+
+
 function everySecond () {
 	checkLongpolls ();
 	if (flStatsDirty) {
@@ -960,6 +1023,41 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									}
 								});
 							break;
+						
+						case "/addcomment": //2/21/15 by DW
+							var accessToken = parsedUrl.query.oauth_token;
+							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+							var snAuthor = parsedUrl.query.author;
+							var idPost = parsedUrl.query.idpost;
+							var urlOpmlFile = parsedUrl.query.urlopmlfile;
+							getScreenName (accessToken, accessTokenSecret, function (snCommenter) {
+								addComment (snCommenter, snAuthor, idPost, urlOpmlFile, function (error, jstruct) {
+									if (jstruct !== undefined) {
+										dataResponse (jstruct);
+										}
+									else {
+										errorResponse (error);    
+										}
+									});
+								});
+							break;
+						case "/getcomments": //2/21/15 by DW
+							var accessToken = parsedUrl.query.oauth_token;
+							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+							var snAuthor = parsedUrl.query.author;
+							var idPost = parsedUrl.query.idpost;
+							getScreenName (accessToken, accessTokenSecret, function (snReader) {
+								getComments (snAuthor, idPost, function (error, jstruct) {
+									if (jstruct !== undefined) {
+										dataResponse (jstruct);
+										}
+									else {
+										errorResponse (error);    
+										}
+									});
+								});
+							break;
+						
 						default: //404 not found
 							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
