@@ -513,7 +513,7 @@ function twGetComments (snAuthor, idPost, callback) {
 				callback (data);
 				}
 			},
-		error: function (status, something, otherthing) { 
+		error: function (error) { 
 			console.log ("twGetComments: error == " + JSON.stringify (status, undefined, 4));
 			if (callback != undefined) {
 				callback (undefined);
@@ -522,7 +522,6 @@ function twGetComments (snAuthor, idPost, callback) {
 		dataType: "json"
 		});
 	}
-
 
 
 function twUserWhitelisted (username, callback) {

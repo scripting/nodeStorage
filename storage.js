@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.68", myProductName = "nodeStorage";
+var myVersion = "0.69", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -408,23 +408,33 @@ function getUserFileList (s3path, callback) { //12/21/14 by DW
 function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
 	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
 	s3.getObject (s3path, function (error, data) {
-		var jstruct;
+		var jstruct, flnew = true, jstructsub;
 		if (error) {
-			jstruct = new Object ();
+			jstruct = new Array ();
 			}
 		else {
 			jstruct = JSON.parse (data.Body.toString ());
 			}
 		
-		if (jstruct [snCommenter] === undefined) {
-			jstruct [snCommenter] = {
+		for (var i = 0; i < jstruct.length; i++) {
+			if (jstruct [i].commenter == snCommenter) {
+				flnew = false;
+				jstructsub = jstruct [i];
+				break;
+				}
+			}
+		if (flnew) {
+			var ixnew = jstruct.length;
+			jstruct [ixnew] = {
+				commenter: snCommenter,
 				ctUpdates: 0,
 				whenCreated: now,
 				whenUpdated: now
 				};
+			jstructsub = jstruct [ixnew];
 			}
 		
-		var jstructsub = jstruct [snCommenter];
+		
 		jstructsub.whenUpdated = now;
 		jstructsub.ctUpdates++;
 		jstructsub.urlOpmlFile = urlOpmlFile;
@@ -485,6 +495,8 @@ function handleHttpRequest (httpRequest, httpResponse) {
 		var lowerpath = parsedUrl.pathname.toLowerCase (), clientIp = httpRequest.connection.remoteAddress;
 		
 		function addOurDataToReturnObject (returnObject) {
+			return; //disabled -- 2/21/15 by DW
+			
 			returnObject ["#smallpict"] = {
 				productname: myProductName,
 				version: myVersion
@@ -1052,7 +1064,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										dataResponse (jstruct);
 										}
 									else {
-										errorResponse (error);    
+										console.log ("/getcomments: error == ", JSON.stringify (error, undefined, 4));
+										if (error.statusCode == 404) {
+											dataResponse (new Array ());
+											}
+										else {
+											errorResponse (error);    
+											}
 										}
 									});
 								});
