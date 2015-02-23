@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.69", myProductName = "nodeStorage";
+var myVersion = "0.70", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -288,14 +288,22 @@ function gigabyteString (num) { //1/24/15 by DW
 	num = Number (num) / onegig;
 	return (num.toFixed (2) + "GB");
 	}
-function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by DW
+function getScreenName (accessToken, accessTokenSecret, callback, flNotWhitelisted) { //7/9/14 by DW
+	function checkWhitelist (name) { //2/23/15 by DW
+		if (flNotWhitelisted) {
+			return (true);
+			}
+		else {
+			return (isWhitelistedUser (name));
+			}
+		}
 	//see if we can get it from the cache first
 		for (var i = 0; i < screenNameCache.length; i++) {
 			var obj = screenNameCache [i];
 			if ((obj.accessToken == accessToken) && (obj.accessTokenSecret == accessTokenSecret)) {
 				obj.ctAccesses++;
 				
-				if (isWhitelistedUser (obj.screenName)) { //11/18/14 by DW
+				if (checkWhitelist (obj.screenName)) { //11/18/14 by DW
 					callback (obj.screenName);
 					}
 				else {
@@ -319,7 +327,7 @@ function getScreenName (accessToken, accessTokenSecret, callback) { //7/9/14 by 
 				obj.ctAccesses = 0;
 				screenNameCache [screenNameCache.length] = obj;
 				
-				if (isWhitelistedUser (data.screen_name)) { //11/18/14 by DW
+				if (checkWhitelist (data.screen_name)) { //11/18/14 by DW
 					callback (data.screen_name);
 					}
 				else {
@@ -622,6 +630,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								var relpath = parsedUrl.query.relpath;
 								var type = parsedUrl.query.type;
 								var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+								var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
 								getScreenName (accessToken, accessTokenSecret, function (screenName) {
 									if (screenName === undefined) {
 										errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
@@ -646,7 +655,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												}
 											}, metadata);
 										}
-									});
+									}, flNotWhitelisted);
 								break;
 							default: 
 								httpResponse.writeHead (200, {"Content-Type": "text/html"});
@@ -845,6 +854,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							var relpath = parsedUrl.query.relpath;
 							var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
 							var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
+							var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+							
+							console.log ("/getfile: flNotWhitelisted == " + flNotWhitelisted);
+							
 							getScreenName (accessToken, accessTokenSecret, function (screenName) {
 								if (screenName === undefined) {
 									errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
@@ -864,7 +877,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									}
-								});
+								}, flNotWhitelisted);
 							break;
 						case "/derefurl": //7/31/14 by DW
 							var accessToken = parsedUrl.query.oauth_token;
@@ -1042,6 +1055,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							var snAuthor = parsedUrl.query.author;
 							var idPost = parsedUrl.query.idpost;
 							var urlOpmlFile = parsedUrl.query.urlopmlfile;
+							var flNotWhitelisted = true; //2/23/15 by DW
 							getScreenName (accessToken, accessTokenSecret, function (snCommenter) {
 								addComment (snCommenter, snAuthor, idPost, urlOpmlFile, function (error, jstruct) {
 									if (jstruct !== undefined) {
@@ -1051,13 +1065,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										errorResponse (error);    
 										}
 									});
-								});
+								}, flNotWhitelisted);
 							break;
 						case "/getcomments": //2/21/15 by DW
 							var accessToken = parsedUrl.query.oauth_token;
 							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 							var snAuthor = parsedUrl.query.author;
 							var idPost = parsedUrl.query.idpost;
+							var flNotWhitelisted = true; //2/23/15 by DW
 							getScreenName (accessToken, accessTokenSecret, function (snReader) {
 								getComments (snAuthor, idPost, function (error, jstruct) {
 									if (jstruct !== undefined) {
@@ -1073,7 +1088,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										}
 									});
-								});
+								}, flNotWhitelisted);
 							break;
 						
 						default: //404 not found

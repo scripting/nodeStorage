@@ -298,7 +298,7 @@ function twWebIntent (id, twOp, paramName) {
 		window.open ("https://twitter.com/intent/" + twOp + "?" + paramName + "=" + id, "_blank", "left=200,top=300,location=no,height=350,width=600,scrollbars=no,status=no");
 		}
 	}
-function twGetFile (relpath, flIncludeBody, flPrivate, callback) { //8/10/14 by DW
+function twGetFile (relpath, flIncludeBody, flPrivate, callback, flNotWhitelisted) { //8/10/14 by DW
 	var paramtable = {
 		oauth_token: localStorage.twOauthToken,
 		oauth_token_secret: localStorage.twOauthTokenSecret,
@@ -306,6 +306,9 @@ function twGetFile (relpath, flIncludeBody, flPrivate, callback) { //8/10/14 by 
 		}
 	if (flIncludeBody) {
 		paramtable.flIncludeBody = "true";
+		}
+	if (flNotWhitelisted) { //2/23/15 by DW
+		paramtable.flNotWhitelisted = "true";
 		}
 	var url = twGetDefaultServer () + "getfile?" + twBuildParamList (paramtable, flPrivate);
 	$.ajax ({
@@ -321,12 +324,15 @@ function twGetFile (relpath, flIncludeBody, flPrivate, callback) { //8/10/14 by 
 		dataType: "json"
 		});
 	}
-function twUploadFile (relpath, filedata, type, flPrivate, callback) { //8/3/14 by DW
+function twUploadFile (relpath, filedata, type, flPrivate, callback, flNotWhitelisted) { //8/3/14 by DW
 	var paramtable = {
 		oauth_token: localStorage.twOauthToken,
 		oauth_token_secret: localStorage.twOauthTokenSecret,
 		relpath: relpath,
 		type: type
+		}
+	if (flNotWhitelisted) { //2/23/15 by DW
+		paramtable.flNotWhitelisted = "true";
 		}
 	var url = twGetDefaultServer () + "publishfile?" + twBuildParamList (paramtable, flPrivate);
 	$.post (url, filedata, function (data, status) {
