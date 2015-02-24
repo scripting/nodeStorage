@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.70", myProductName = "nodeStorage";
+var myVersion = "0.71", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -480,6 +480,38 @@ function getComments (snAuthor, idPost, callback) {
 			var jstruct = JSON.parse (data.Body.toString ());
 			if (callback != undefined) {
 				callback (undefined, jstruct);
+				}
+			}
+		});
+	}
+function getUserCommentsOpml (s3path, callback) {
+	var opmltext = "", indentlevel = 0;
+	function add (s) {
+		opmltext += utils.filledString ("\t", indentlevel) + s + "\r\n";
+		}
+	add ("<?xml version=\"1.0\"?>");
+	add ("<opml version=\"2.0\">"); indentlevel++;
+	//add head
+		add ("<head>"); indentlevel++;
+		add ("<title>Comments</title>");
+		add ("</head>"); indentlevel--;
+	add ("<body>"); indentlevel++;
+	s3.listObjects (s3path, function (obj) { 
+		if (obj.flLastObject != undefined) {
+			add ("</body>"); indentlevel--;
+			add ("</opml>"); indentlevel--;
+			if (callback != undefined) {
+				callback (opmltext);
+				}
+			}
+		else {
+			if (obj.Size > 0) { //it's a file
+				var filepath = obj.s3path;
+				var url = "http://" + filepath;
+				var fname = utils.stringNthField (filepath, "/", utils.stringCountFields (filepath, "/")); //something like 1424570840000.opml
+				var numpart = utils.stringNthField (fname, ".", 1);
+				var when = new Date (Number (numpart));
+				add ("<outline text=\"" + when + "\" type=\"include\" url=\"" + url + "\" />");
 				}
 			}
 		});
@@ -1089,6 +1121,20 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										}
 									});
 								}, flNotWhitelisted);
+							break;
+						case "/opmlcomments": //2/23/15 by DW
+							var username = parsedUrl.query.user, returnedstring = "";
+							var s3path = "/liveblog.co/users/" + username + "/comments/";
+							console.log ("/opmlcomments: s3path == " + s3path);
+							getUserCommentsOpml (s3path, function (opmltext) {
+								httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
+								httpResponse.end (opmltext);    
+								});
+							
+							
+							
+							
+							
 							break;
 						
 						default: //404 not found
