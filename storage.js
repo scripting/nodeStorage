@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.71", myProductName = "nodeStorage";
+var myVersion = "0.72", myProductName = "nodeStorage";
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -1060,8 +1060,31 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										if (error) {
 											errorResponse (error);    
 											}
-										else {
-											dataResponse (theList);
+										else { 
+											var returnedList = new Array (); //return a processed array -- 3/5/15 by DW
+											for (var i = 0; i < theList.length; i++) {
+												var obj = new Object (), s3obj = theList [i];
+												//set obj.path -- start copying into the object path when we pass the user's screen name
+													var splitlist = s3obj.Key.split ("/"), flcopy = false, objectpath = "";
+													for (var j = 0; j < splitlist.length; j++) {
+														if (flcopy) {
+															if (objectpath.length > 0) {
+																objectpath += "/";
+																}
+															objectpath += splitlist [j];
+															}
+														else {
+															if (splitlist [j] == screenName) {
+																flcopy = true;
+																}
+															}
+														}
+													obj.path = objectpath;
+												obj.whenLastChange = s3obj.LastModified;
+												obj.ctChars = s3obj.Size;
+												returnedList [i] = obj;
+												}
+											dataResponse (returnedList);
 											}
 										});
 									}
@@ -1127,7 +1150,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							var s3path = "/liveblog.co/users/" + username + "/comments/";
 							console.log ("/opmlcomments: s3path == " + s3path);
 							getUserCommentsOpml (s3path, function (opmltext) {
-								httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
+								httpResponse.writeHead (200, {"Content-Type": "text/xml", "Access-Control-Allow-Origin": "*"});
 								httpResponse.end (opmltext);    
 								});
 							

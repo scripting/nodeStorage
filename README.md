@@ -92,6 +92,10 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 #### Updates
 
+##### v0.72 - 3/5/15 by DW
+
+The /getfilelist endpoint now returns an array of objects, one for each file, as before. But now the objects only contain three values, path, whenLastChange and ctChars. Previously we were just returning the array that S3 returns to us. The file paths it returns would not be easily used by a client. There is a possibility of breakage here if you had built on this endpoint, but given it's previous state, it's hard to imagine anyone building on it. ;-)
+
 ##### v0.66 -1/29/15 by DW
 
 New stats for longpolling, in serverStats.json. <a href="http://liveblog.co/data/serverStats.json">Example</a>. Gives us a way to see how many people are watching resources managed by a nodeStorage server.

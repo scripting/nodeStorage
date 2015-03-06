@@ -476,7 +476,6 @@ function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
 		dataType: "json"
 		});
 	}
-
 function twAddComment (snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
 	var paramtable = {
 		oauth_token: localStorage.twOauthToken,
@@ -528,8 +527,6 @@ function twGetComments (snAuthor, idPost, callback) {
 		dataType: "json"
 		});
 	}
-
-
 function twUserWhitelisted (username, callback) {
 	$.ajax ({
 		type: "GET",
@@ -564,7 +561,6 @@ function twGetTwitterConfig (callback) {
 			});
 		}
 	}
-
 function twPrefsToStorage (appPrefs) {
 	function secondsSince (when) { 
 		var now = new Date ();
