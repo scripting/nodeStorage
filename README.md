@@ -92,6 +92,10 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 #### Updates
 
+##### v0.73 - 5/10/15 by DW
+
+<a href="http://storage.smallpict.com/2015/05/10/newWayToConfigureNodestorage.html">A new way</a> to configure nodeStorage, with a config.json file.
+
 ##### v0.72 - 3/5/15 by DW
 
 The /getfilelist endpoint now returns an array of objects, one for each file, as before. The objects contain three values, <i>path, whenLastChange</i> and <i>ctChars.</i> 

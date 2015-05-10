@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.72", myProductName = "nodeStorage";
+var myVersion = "0.73", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -35,12 +35,23 @@ var os = require ("os");
 //environment variables
 	var myPort = process.env.PORT;
 	var flEnabled = process.env.enabled; 
-	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
 	var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
 	var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
 	var myDomain = process.env.myDomain; 
+	var twitterConsumerKey = process.env.twitterConsumerKey;  //5/8/15 by DW
+	var twitterConsumerSecret = process.env.twitterConsumerSecret; //5/8/15 by DW
+	var myDomain = process.env.myDomain;  //5/8/15 by DW
+	
+	var urlWhitelist = process.env.urlUserWhitelist; //5/8/15 by DW
 	var bitlyApiKey = process.env.bitlyApiKey;
 	var bitlyApiUsername = process.env.bitlyApiUsername;
+	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
+
+
+
+
+var fnameConfig = "config.json"; //config, another way of setting environment variables -- 5/8/15 by DW
+
 
 var serverStats = {
 	today: new Date (),
@@ -103,10 +114,10 @@ function httpReadUrl (url, callback) {
 		requestTokens [requestTokens.length] = obj;
 		}
 //whitelist -- 11/18/14 by DW
-	var urlWhitelist = process.env.urlUserWhitelist, userWhitelist = [];
+	var userWhitelist = [];
 	
 	function readUserWhitelist (callback) {
-		if (urlWhitelist != undefined) {
+		if ((urlWhitelist !== undefined) && (urlWhitelist.length > 0)) {
 			httpReadUrl (urlWhitelist, function (s) {
 				try {
 					userWhitelist = JSON.parse (s);
@@ -127,7 +138,7 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function isWhitelistedUser (username) {
-		if (urlWhitelist == undefined) { //no whitelist, everyone is whitelisted
+		if ((urlWhitelist == undefined) || (urlWhitelist.length == 0)) { //no whitelist, everyone is whitelisted
 			return (true);
 			}
 		else {
@@ -262,8 +273,8 @@ function httpReadUrl (url, callback) {
 
 function newTwitter (myCallback) {
 	var twitter = new twitterAPI ({
-		consumerKey: process.env.twitterConsumerKey,
-		consumerSecret: process.env.twitterConsumerSecret,
+		consumerKey: twitterConsumerKey,
+		consumerSecret: twitterConsumerSecret,
 		callback: myCallback
 		});
 	return (twitter);
@@ -326,7 +337,6 @@ function getScreenName (accessToken, accessTokenSecret, callback, flNotWhitelist
 				obj.screenName = data.screen_name; //the whole point! ;-)
 				obj.ctAccesses = 0;
 				screenNameCache [screenNameCache.length] = obj;
-				
 				if (checkWhitelist (data.screen_name)) { //11/18/14 by DW
 					callback (data.screen_name);
 					}
@@ -633,8 +643,8 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								var params = {
 									url: "https://api.twitter.com/1.1/statuses/update_with_media.json",
 									oauth: {
-										consumer_key: process.env.twitterConsumerKey,
-										consumer_secret: process.env.twitterConsumerSecret,
+										consumer_key: twitterConsumerKey,
+										consumer_secret: twitterConsumerSecret,
 										token: parsedUrl.query.oauth_token,
 										token_secret: parsedUrl.query.oauth_token_secret
 										}
@@ -722,8 +732,8 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							break;
 						case "/connect": 
 							var twitter = new twitterAPI ({
-								consumerKey: process.env.twitterConsumerKey,
-								consumerSecret: process.env.twitterConsumerSecret,
+								consumerKey: twitterConsumerKey,
+								consumerSecret: twitterConsumerSecret,
 								callback: "http://" + myDomain + "/callbackFromTwitter?redirectUrl=" + encodeURIComponent (parsedUrl.query.redirect_url)
 								});
 							twitter.getRequestToken (function (error, requestToken, requestTokenSecret, results) {
@@ -743,8 +753,8 @@ function handleHttpRequest (httpRequest, httpResponse) {
 						case "/callbackfromtwitter":
 							
 							var twitter = new twitterAPI ({
-								consumerKey: process.env.twitterConsumerKey,
-								consumerSecret: process.env.twitterConsumerSecret,
+								consumerKey: twitterConsumerKey,
+								consumerSecret: twitterConsumerSecret,
 								callback: undefined
 								});
 							
@@ -887,9 +897,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 							var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
 							var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
 							var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-							
-							console.log ("/getfile: flNotWhitelisted == " + flNotWhitelisted);
-							
 							getScreenName (accessToken, accessTokenSecret, function (screenName) {
 								if (screenName === undefined) {
 									errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
@@ -1177,31 +1184,104 @@ function handleHttpRequest (httpRequest, httpResponse) {
 		httpResponse.end (tryError.message);    
 		}
 	}
+function loadConfig (callback) { //5/8/15 by DW
+	fs.readFile (fnameConfig, function (err, data) {
+		if (!err) {
+			var config = JSON.parse (data.toString ());
+			if (config.enabled !== undefined) {
+				flEnabled = utils.getBoolean (config.enabled);
+				}
+			if (config.myDomain !== undefined) {
+				myDomain = config.myDomain;
+				}
+			if (config.s3Path !== undefined) {
+				s3Path = config.s3Path;
+				}
+			if (config.s3PrivatePath !== undefined) {
+				s3PrivatePath = config.s3PrivatePath;
+				}
+			if (config.twitterConsumerKey !== undefined) {
+				twitterConsumerKey = config.twitterConsumerKey;
+				}
+			if (config.twitterConsumerSecret !== undefined) {
+				twitterConsumerSecret = config.twitterConsumerSecret;
+				}
+			if (config.myPort !== undefined) {
+				myPort = config.myPort;
+				}
+			
+			if (config.urlUserWhitelist !== undefined) {
+				urlWhiteList = config.urlUserWhitelist;
+				}
+			if (config.longPollTimeoutSecs !== undefined) {
+				longPollTimeoutSecs = config.longPollTimeoutSecs;
+				}
+			if (config.bitlyApiKey !== undefined) {
+				bitlyApiKey = config.bitlyApiKey;
+				}
+			if (config.bitlyApiUsername !== undefined) {
+				bitlyApiUsername = config.bitlyApiUsername;
+				}
+			}
+		if (callback !== undefined) {
+			callback ();
+			}
+		});
+	}
 
 function startup () {
-	console.log ();
-	console.log (myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()));
-	console.log ();
-	
-	myDomain = process.env.myDomain; 
-	if (myDomain == undefined) {
-		console.log ("Can't start the server because the \"myDomain\" parameter is not specified.");
+	function notDefined (value, name) {
+		if (value === undefined) {
+			console.log ("Can't start the server because the \"" + name + "\" parameter is not specified.");
+			return (true);
+			}
+		return (false);
 		}
-	
-	if (flEnabled === undefined) { //11/16/14 by DW
-		flEnabled = true;
-		}
-	else {
-		flEnabled = utils.getBoolean (flEnabled);
-		}
-	
-	loadServerStats (function () {
-		loadServerPrefs (function () {
-			readUserWhitelist (function () {
-				http.createServer (handleHttpRequest).listen (myPort);
-				
-				setInterval (everySecond, 1000); 
-				setInterval (everyMinute, 60000); 
+	loadConfig (function () {
+		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()) + "\n");
+		
+		if (notDefined (myDomain, "myDomain")) {
+			return;
+			}
+		if (notDefined (s3Path, "s3Path")) {
+			return;
+			}
+		if (notDefined (s3PrivatePath, "s3PrivatePath")) {
+			return;
+			}
+		if (notDefined (twitterConsumerKey, "twitterConsumerKey")) {
+			return;
+			}
+		if (notDefined (twitterConsumerSecret, "twitterConsumerSecret")) {
+			return;
+			}
+		if (notDefined (myPort, "myPort")) {
+			return;
+			}
+		
+		if (flEnabled === undefined) { //11/16/14 by DW
+			flEnabled = true;
+			}
+		else {
+			flEnabled = utils.getBoolean (flEnabled);
+			}
+		
+		//a little defensive driving -- 5/8/15; 6:16:09 PM by DW
+			if (urlWhitelist !== undefined) {
+				if (urlWhitelist.length == 0) { //yes, this happens
+					urlWhitelist = undefined; 
+					}
+				}
+		
+		loadServerStats (function () {
+			loadServerPrefs (function () {
+				readUserWhitelist (function () {
+					
+					http.createServer (handleHttpRequest).listen (myPort);
+					
+					setInterval (everySecond, 1000); 
+					setInterval (everyMinute, 60000); 
+					});
 				});
 			});
 		});

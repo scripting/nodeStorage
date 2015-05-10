@@ -22,14 +22,15 @@
 
 var twStorageConsts = {
 	fontAwesomeIcon: "<i class=\"fa fa-twitter\" style=\"color: #4099FF;\"></i>",
-	iconColor: "#4099FF",
+	iconColor: "#4099FF"
 	}
 var twStorageData = {
 	whenLastRatelimitError: undefined,
 	embedCache: [], maxEmbedCache: 25, flEmbedCacheInitialized: false,
 	urlTwitterServer: undefined,
 	twitterConfig: undefined,
-	pathAppPrefs: "appPrefs.json"
+	pathAppPrefs: "appPrefs.json",
+	flPrefsCalendarBackup: false //4/24/15 by DW -- if true, we keep a calendar-based archive of prefs
 	}
 
 function twGetDefaultServer () { 
@@ -528,9 +529,13 @@ function twGetComments (snAuthor, idPost, callback) {
 		});
 	}
 function twUserWhitelisted (username, callback) {
+	
+	var apiurl = twGetDefaultServer () + "iswhitelisted?screen_name=" + username;
+	console.log ("twUserWhitelisted: apiurl == " + apiurl);
+	
 	$.ajax ({
 		type: "GET",
-		url: twGetDefaultServer () + "iswhitelisted?screen_name=" + username,
+		url: apiurl,
 		success: function (data) {
 			callback (data);
 			},
@@ -567,9 +572,30 @@ function twPrefsToStorage (appPrefs) {
 		when = new Date (when);
 		return ((now - when) / 1000);
 		}
+	function padWithZeros (num, ctplaces) { 
+		var s = num.toString ();
+		while (s.length < ctplaces) {
+			s = "0" + s;
+			}
+		return (s);
+		}
+	function getDatePath (theDate) {
+		var month = padWithZeros (theDate.getMonth () + 1, 2);
+		var day = padWithZeros (theDate.getDate (), 2);
+		var year = theDate.getFullYear ();
+		return (year + "/" + month + "/" + day + "/");
+		}
 	var jsontext = JSON.stringify (appPrefs, undefined, 4), whenstart = new Date ();
 	twUploadFile (twStorageData.pathAppPrefs, jsontext, "application/json", true, function (data) {
-		console.log ("twPrefsToStorage: uploaded to server in " + secondsSince (whenstart) + " secs.");
+		if (twStorageData.flPrefsCalendarBackup) { //4/24/15 by DW
+			var archivepath = getDatePath (whenstart) + twStorageData.pathAppPrefs;
+			twUploadFile (archivepath, jsontext, "application/json", true, function (data) {
+				console.log ("twPrefsToStorage: uploaded \"" + archivepath + "\" to server in " + secondsSince (whenstart) + " secs.");
+				});
+			}
+		else {
+			console.log ("twPrefsToStorage: uploaded " + twStorageData.pathAppPrefs + " to server in " + secondsSince (whenstart) + " secs.");
+			}
 		});
 	}
 function twStorageToPrefs (appPrefs, callback) {
@@ -585,8 +611,7 @@ function twStorageToPrefs (appPrefs, callback) {
 			for (var x in storedPrefs) {
 				appPrefs [x] = storedPrefs [x];
 				}
-			console.log ("twStorageToPrefs: downloaded from server in " + secondsSince (whenstart) + " secs.");
-			console.log ("twStorageToPrefs: appPrefs == " + JSON.stringify (appPrefs, undefined, 4));
+			console.log ("twStorageToPrefs: downloaded " + data.filedata.length + " chars from server in " + secondsSince (whenstart) + " secs.");
 			if (callback != undefined) { //8/16/14 by DW
 				callback ();
 				}
