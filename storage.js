@@ -20,7 +20,7 @@
 	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	//SOFTWARE.
 
-var myVersion = "0.73", myProductName = "nodeStorage"; 
+var myVersion = "0.74", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -176,14 +176,12 @@ function httpReadUrl (url, callback) {
 		serverStats.ctLongPollPushes++; 
 		serverStats.ctLongPollsToday++;
 		flStatsDirty = true;
-		console.log ("pushLongpoll: " + waitingLongpolls.length + " requests are waiting in the array.")
 		}
 	function checkLongpolls () { //expire timed-out longpolls
 		var now = new Date ();
 		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
 			var obj = waitingLongpolls [i];
 			if (now >= obj.whenTimeout) {
-				console.log ("Timing-out request #" + i);
 				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 				obj.response.end ("timeout");    
 				waitingLongpolls.splice (i, 1);
@@ -1209,9 +1207,8 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.myPort !== undefined) {
 				myPort = config.myPort;
 				}
-			
 			if (config.urlUserWhitelist !== undefined) {
-				urlWhiteList = config.urlUserWhitelist;
+				urlWhitelist = config.urlUserWhitelist;
 				}
 			if (config.longPollTimeoutSecs !== undefined) {
 				longPollTimeoutSecs = config.longPollTimeoutSecs;
@@ -1238,7 +1235,7 @@ function startup () {
 		return (false);
 		}
 	loadConfig (function () {
-		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()) + "\n");
+		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()) + ", urlWhitelist == " + urlWhitelist + "\n");
 		
 		if (notDefined (myDomain, "myDomain")) {
 			return;

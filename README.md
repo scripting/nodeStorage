@@ -92,6 +92,10 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 #### Updates
 
+##### v0.74 - 5/20/15 by DW
+
+Fixed an error in the way whitelists are specified. 
+
 ##### v0.73 - 5/10/15 by DW
 
 <a href="http://storage.smallpict.com/2015/05/10/newWayToConfigureNodestorage.html">A new way</a> to configure nodeStorage, with a config.json file.
