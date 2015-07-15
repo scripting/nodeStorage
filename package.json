@@ -8,6 +8,7 @@
 		},
 	"dependencies" : {
 		"aws-sdk": "*", 
+		"opmlparser": "*",
 		"node-twitter-api": "*",
 		"request": "*"
 		}, 

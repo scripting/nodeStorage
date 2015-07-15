@@ -1,26 +1,29 @@
-//The MIT License (MIT)
+/* The MIT License (MIT)
 	
-	//Copyright (c) 2014 Dave Winer
+	Copyright (c) 2014-2015 Dave Winer
 	
-	//Permission is hereby granted, free of charge, to any person obtaining a copy
-	//of this software and associated documentation files (the "Software"), to deal
-	//in the Software without restriction, including without limitation the rights
-	//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	//copies of the Software, and to permit persons to whom the Software is
-	//furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 	
-	//The above copyright notice and this permission notice shall be included in all
-	//copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
 	
-	//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-	//SOFTWARE.
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+	
+	structured listing: http://scripting.com/listings/storage.html
+	*/
 
-var myVersion = "0.74", myProductName = "nodeStorage"; 
+var myVersion = "0.75x", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -29,6 +32,7 @@ var fs = require ("fs");
 var request = require ("request");
 var s3 = require ("./lib/s3.js");
 var utils = require ("./lib/utils.js");
+var names = require ("./lib/names.js");
 var dns = require ("dns");
 var os = require ("os");
 
@@ -47,11 +51,7 @@ var os = require ("os");
 	var bitlyApiUsername = process.env.bitlyApiUsername;
 	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
 
-
-
-
 var fnameConfig = "config.json"; //config, another way of setting environment variables -- 5/8/15 by DW
-
 
 var serverStats = {
 	today: new Date (),
@@ -84,6 +84,7 @@ var serverPrefs = {
 	};
 var fnamePrefs = "data/serverPrefs.json";
 var fnameTweetsFolder = "data/tweets/";
+var userDomain = undefined; //7/13/15 by DW
 
 var requestTokens = []; //used in the OAuth dance
 var screenNameCache = []; 
@@ -121,7 +122,6 @@ function httpReadUrl (url, callback) {
 			httpReadUrl (urlWhitelist, function (s) {
 				try {
 					userWhitelist = JSON.parse (s);
-					console.log ("readWhitelist: " + userWhitelist.length + " names on the list.");
 					}
 				catch (err) {
 					console.log ("readWhitelist: error parsing whitelist JSON -- \"" + err + "\"");
@@ -524,8 +524,6 @@ function getUserCommentsOpml (s3path, callback) {
 			}
 		});
 	}
-
-
 function everySecond () {
 	checkLongpolls ();
 	if (flStatsDirty) {
@@ -535,7 +533,6 @@ function everySecond () {
 function everyMinute () {
 	readUserWhitelist (); //11/18/14 by DW
 	}
-
 function handleHttpRequest (httpRequest, httpResponse) {
 	try {
 		var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
@@ -629,548 +626,586 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				});
 		
 		if (flEnabled) { 
-			switch (httpRequest.method) {
-				case "POST":
-					var body = "";
-					httpRequest.on ("data", function (data) {
-						body += data;
-						});
-					httpRequest.on ("end", function () {
-						switch (parsedUrl.pathname.toLowerCase ()) {
-							case "/statuswithmedia": //6/30/14 by DW -- used in Little Card Editor
-								var params = {
-									url: "https://api.twitter.com/1.1/statuses/update_with_media.json",
-									oauth: {
-										consumer_key: twitterConsumerKey,
-										consumer_secret: twitterConsumerSecret,
-										token: parsedUrl.query.oauth_token,
-										token_secret: parsedUrl.query.oauth_token_secret
-										}
-									}
-								function requestCallback (error, response, body) {
-									if (error) {
-										errorResponse (error);
-										}
-									else {
-										saveTweet (body); //7/2/14 by DW
-										dataResponse (body);
-										console.log (utils.jsonStringify (body));    
-										}
-									}
-								var r = request.post (params, requestCallback);
-								var form = r.form ();
-								var buffer = new Buffer (body, "base64"); 
-								form.append ("status", parsedUrl.query.status);
-								form.append ("media[]", buffer, {filename: "picture.png"});
-								break;
-							case "/publishfile": //8/3/14 by DW
-								var twitter = newTwitter ();
-								var accessToken = parsedUrl.query.oauth_token;
-								var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-								var relpath = parsedUrl.query.relpath;
-								var type = parsedUrl.query.type;
-								var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
-								var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-								getScreenName (accessToken, accessTokenSecret, function (screenName) {
-									if (screenName === undefined) {
-										errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
-										}
-									else {
-										var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-										var metadata = {whenLastUpdate: new Date ().toString ()};
-										
-										
-										s3.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+			names.serveThroughName (host, port, httpRequest, userDomain, function (flMatch, code, contentType, data) {
+				if (flMatch) {
+					httpResponse.writeHead (code, {"Content-Type": contentType, "Access-Control-Allow-Origin": "*"});
+					httpResponse.end (data);
+					}
+				else {
+					switch (httpRequest.method) {
+						case "POST":
+							var body = "";
+							httpRequest.on ("data", function (data) {
+								body += data;
+								});
+							httpRequest.on ("end", function () {
+								switch (parsedUrl.pathname.toLowerCase ()) {
+									case "/statuswithmedia": //6/30/14 by DW -- used in Little Card Editor
+										var params = {
+											url: "https://api.twitter.com/1.1/statuses/update_with_media.json",
+											oauth: {
+												consumer_key: twitterConsumerKey,
+												consumer_secret: twitterConsumerSecret,
+												token: parsedUrl.query.oauth_token,
+												token_secret: parsedUrl.query.oauth_token_secret
+												}
+											}
+										function requestCallback (error, response, body) {
 											if (error) {
-												errorResponse (error);    
+												errorResponse (error);
 												}
 											else {
-												metadata.url = "http:/" + s3path;
-												dataResponse (metadata);
-												serverStats.ctFileSaves++;
-												statsChanged ();
-												if (!flprivate) { //12/15/14 by DW
-													checkLongpollsForUrl (metadata.url, body);
-													}
+												saveTweet (body); //7/2/14 by DW
+												dataResponse (body);
+												console.log (utils.jsonStringify (body));    
 												}
-											}, metadata);
-										}
-									}, flNotWhitelisted);
-								break;
-							default: 
-								httpResponse.writeHead (200, {"Content-Type": "text/html"});
-								httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
-								break;
-							}
-						});
-					break;
-				case "GET":
-					switch (lowerpath) {
-						case "/version":
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end (myVersion);    
-							break;
-						case "/now":
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end (now.toString ());    
-							break;
-						case "/status": 
-							var myStatus = {
-								version: myVersion, 
-								now: now.toUTCString (), 
-								whenServerStart: serverStats.whenServerStart.toUTCString (), 
-								hits: serverStats.ctHits, 
-								hitsToday: serverStats.ctHitsToday,
-								tweets: serverStats.ctTweets,
-								tweetsToday: serverStats.ctTweetsToday,
-								ctFileSaves: serverStats.ctFileSaves
-								};
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end (utils.jsonStringify (myStatus));    
-							break;
-						case "/connect": 
-							var twitter = new twitterAPI ({
-								consumerKey: twitterConsumerKey,
-								consumerSecret: twitterConsumerSecret,
-								callback: "http://" + myDomain + "/callbackFromTwitter?redirectUrl=" + encodeURIComponent (parsedUrl.query.redirect_url)
-								});
-							twitter.getRequestToken (function (error, requestToken, requestTokenSecret, results) {
-								if (error) {
-									errorResponse (error); //6/30/14 by DW
-									}
-								else {
-									saveRequestToken (requestToken, requestTokenSecret);
-									
-									
-									var twitterOauthUrl = "https://twitter.com/oauth/authenticate?oauth_token=" + requestToken;
-									httpResponse.writeHead (302, {"location": twitterOauthUrl});
-									httpResponse.end ("302 REDIRECT");    
+											}
+										var r = request.post (params, requestCallback);
+										var form = r.form ();
+										var buffer = new Buffer (body, "base64"); 
+										form.append ("status", parsedUrl.query.status);
+										form.append ("media[]", buffer, {filename: "picture.png"});
+										break;
+									case "/publishfile": //8/3/14 by DW
+										var twitter = newTwitter ();
+										var accessToken = parsedUrl.query.oauth_token;
+										var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+										var relpath = parsedUrl.query.relpath;
+										var type = parsedUrl.query.type;
+										var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+										var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+										getScreenName (accessToken, accessTokenSecret, function (screenName) {
+											if (screenName === undefined) {
+												errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
+												}
+											else {
+												var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
+												var metadata = {whenLastUpdate: new Date ().toString ()};
+												
+												
+												s3.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+													if (error) {
+														errorResponse (error);    
+														}
+													else {
+														metadata.url = "http:/" + s3path;
+														dataResponse (metadata);
+														serverStats.ctFileSaves++;
+														statsChanged ();
+														if (!flprivate) { //12/15/14 by DW
+															checkLongpollsForUrl (metadata.url, body);
+															}
+														}
+													}, metadata);
+												}
+											}, flNotWhitelisted);
+										break;
+									default: 
+										httpResponse.writeHead (200, {"Content-Type": "text/html"});
+										httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
+										break;
 									}
 								});
 							break;
-						case "/callbackfromtwitter":
-							
-							var twitter = new twitterAPI ({
-								consumerKey: twitterConsumerKey,
-								consumerSecret: twitterConsumerSecret,
-								callback: undefined
-								});
-							
-							var myRequestToken = parsedUrl.query.oauth_token;
-							var myTokenSecret = findRequestToken (myRequestToken, true);
-							
-							
-							twitter.getAccessToken (myRequestToken, myTokenSecret, parsedUrl.query.oauth_verifier, function (error, accessToken, accessTokenSecret, results) {
-								if (error) {
-									console.log ("twitter.getAccessToken: error == " + error.message);
-									}
-								else {
-									
-									var url = parsedUrl.query.redirectUrl + "?oauth_token=" + encode (accessToken) + "&oauth_token_secret=" + encode (accessTokenSecret) + "&user_id=" + encode (results.user_id) + "&screen_name=" + encode (results.screen_name);
-									
-									httpResponse.writeHead (302, {"location": url});
-									httpResponse.end ("302 REDIRECT");    
-									}
-								});
-							break;
-						case "/getmytweets":
-							getTwitterTimeline ("user");
-							break;
-						case "/getmymentions":
-							getTwitterTimeline ("mentions");
-							break;
-						case "/tweet":
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var twitterStatus = parsedUrl.query.status;
-							var inReplyToId = parsedUrl.query.in_reply_to_status_id;
-							var params = {status: twitterStatus, in_reply_to_status_id: inReplyToId};
-							var twitter = newTwitter ();
-							
-							if (tweetContainsBlockedTag (twitterStatus)) { //11/9/14 by DW
-								httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-								httpResponse.end ("Tweet contains a blocked tag.");    
-								}
-							else {
-								twitter.statuses ("update", params, accessToken, accessTokenSecret, function (error, data, response) {
-									if (error) {
-										httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-										httpResponse.end (utils.jsonStringify (error));    
-										serverStats.ctTweetErrors++;
-										statsChanged ();
-										}
-									else {
-										httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-										addOurDataToReturnObject (data);
-										httpResponse.end (utils.jsonStringify (data));    
-										addTweetToLog (data, startTime);
-										saveTweet (data); //1/15/15 by DW
-										}
-									});
-								}
-							
-							break;
-						case "/getembedcode": //6/20/14 by DW
-							
-							var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + parsedUrl.query.id;
-							
-							function addParam (name) {
-								if (parsedUrl.query [name] != undefined) {
-									url += "&" + name + "=" + parsedUrl.query [name];
-									}
-								}
-							addParam ("maxwidth");
-							addParam ("hide_media");
-							addParam ("hide_thread");
-							addParam ("omit_script");
-							addParam ("align");
-							addParam ("related");
-							addParam ("lang");
-							
-							request (url, function (error, response, body) {
-								if (!error && (response.statusCode == 200)) {
+						case "GET":
+							switch (lowerpath) {
+								case "/version":
 									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (body);    
-									}
-								else {
-									httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (utils.jsonStringify (error));    
-									}
-								});
-							break;
-						case "/getuserinfo": //6/21/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var screenName = parsedUrl.query.screen_name;
-							var params = {screen_name: screenName};
-							var twitter = newTwitter ();
-							twitter.users ("show", params, accessToken, accessTokenSecret, function (error, data, response) {
-								if (error) {
-									errorResponse (error);
-									}
-								else {
-									dataResponse (data);
-									}
-								});
-							break;
-						case "/gettweetinfo": //6/25/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var params = {id: parsedUrl.query.id};
-							var twitter = newTwitter ();
-							twitter.statuses ("show", params, accessToken, accessTokenSecret, function (error, data, response) {
-								if (error) {
-									errorResponse (error);
-									}
-								else {
-									dataResponse (data);
-									}
-								});
-							break;
-						case "/retweet": //7/3/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var params = {id: parsedUrl.query.id};
-							var twitter = newTwitter ();
-							twitter.statuses ("retweet", params, accessToken, accessTokenSecret, function (error, data, response) {
-								if (error) {
-									errorResponse (error);
-									}
-								else {
-									dataResponse (data);
-									}
-								});
-							break;
-						case "/getmyscreenname": //7/9/14 by DW -- mostly for testing the new cached getScreenName function
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								dataResponse ({screenName: screenName});
-								});
-							break;
-						case "/getfile": //8/9/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var relpath = parsedUrl.query.relpath;
-							var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
-							var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
-							var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								if (screenName === undefined) {
-									errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
-									}
-								else {
-									var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-									s3.getObject (s3path, function (error, data) {
+									httpResponse.end (myVersion);    
+									break;
+								case "/now":
+									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+									httpResponse.end (now.toString ());    
+									break;
+								case "/status": 
+									var myStatus = {
+										version: myVersion, 
+										now: now.toUTCString (), 
+										whenServerStart: serverStats.whenServerStart.toUTCString (), 
+										hits: serverStats.ctHits, 
+										hitsToday: serverStats.ctHitsToday,
+										tweets: serverStats.ctTweets,
+										tweetsToday: serverStats.ctTweetsToday,
+										ctFileSaves: serverStats.ctFileSaves
+										};
+									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+									httpResponse.end (utils.jsonStringify (myStatus));    
+									break;
+								case "/connect": 
+									var twitter = new twitterAPI ({
+										consumerKey: twitterConsumerKey,
+										consumerSecret: twitterConsumerSecret,
+										callback: "http://" + myDomain + "/callbackFromTwitter?redirectUrl=" + encodeURIComponent (parsedUrl.query.redirect_url)
+										});
+									twitter.getRequestToken (function (error, requestToken, requestTokenSecret, results) {
 										if (error) {
-											errorResponse (error);    
+											errorResponse (error); //6/30/14 by DW
 											}
 										else {
-											if (flIncludeBody) {
-												data.filedata = data.Body.toString (); 
+											saveRequestToken (requestToken, requestTokenSecret);
+											
+											var twitterOauthUrl = "https://twitter.com/oauth/authenticate?oauth_token=" + requestToken;
+											httpResponse.writeHead (302, {"location": twitterOauthUrl});
+											httpResponse.end ("302 REDIRECT");    
+											}
+										});
+									break;
+								case "/callbackfromtwitter":
+									
+									var twitter = new twitterAPI ({
+										consumerKey: twitterConsumerKey,
+										consumerSecret: twitterConsumerSecret,
+										callback: undefined
+										});
+									
+									var myRequestToken = parsedUrl.query.oauth_token;
+									var myTokenSecret = findRequestToken (myRequestToken, true);
+									
+									
+									twitter.getAccessToken (myRequestToken, myTokenSecret, parsedUrl.query.oauth_verifier, function (error, accessToken, accessTokenSecret, results) {
+										if (error) {
+											console.log ("twitter.getAccessToken: error == " + error.message);
+											}
+										else {
+											
+											var url = parsedUrl.query.redirectUrl + "?oauth_token=" + encode (accessToken) + "&oauth_token_secret=" + encode (accessTokenSecret) + "&user_id=" + encode (results.user_id) + "&screen_name=" + encode (results.screen_name);
+											
+											httpResponse.writeHead (302, {"location": url});
+											httpResponse.end ("302 REDIRECT");    
+											}
+										});
+									break;
+								case "/getmytweets":
+									getTwitterTimeline ("user");
+									break;
+								case "/getmymentions":
+									getTwitterTimeline ("mentions");
+									break;
+								case "/tweet":
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var twitterStatus = parsedUrl.query.status;
+									var inReplyToId = parsedUrl.query.in_reply_to_status_id;
+									var params = {status: twitterStatus, in_reply_to_status_id: inReplyToId};
+									var twitter = newTwitter ();
+									
+									if (tweetContainsBlockedTag (twitterStatus)) { //11/9/14 by DW
+										httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+										httpResponse.end ("Tweet contains a blocked tag.");    
+										}
+									else {
+										twitter.statuses ("update", params, accessToken, accessTokenSecret, function (error, data, response) {
+											if (error) {
+												httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+												httpResponse.end (utils.jsonStringify (error));    
+												serverStats.ctTweetErrors++;
+												statsChanged ();
 												}
-											delete data.Body;
+											else {
+												httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+												addOurDataToReturnObject (data);
+												httpResponse.end (utils.jsonStringify (data));    
+												addTweetToLog (data, startTime);
+												saveTweet (data); //1/15/15 by DW
+												}
+											});
+										}
+									
+									break;
+								case "/getembedcode": //6/20/14 by DW
+									
+									var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + parsedUrl.query.id;
+									
+									function addParam (name) {
+										if (parsedUrl.query [name] != undefined) {
+											url += "&" + name + "=" + parsedUrl.query [name];
+											}
+										}
+									addParam ("maxwidth");
+									addParam ("hide_media");
+									addParam ("hide_thread");
+									addParam ("omit_script");
+									addParam ("align");
+									addParam ("related");
+									addParam ("lang");
+									
+									request (url, function (error, response, body) {
+										if (!error && (response.statusCode == 200)) {
+											httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (body);    
+											}
+										else {
+											httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (utils.jsonStringify (error));    
+											}
+										});
+									break;
+								case "/getuserinfo": //6/21/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var screenName = parsedUrl.query.screen_name;
+									var params = {screen_name: screenName};
+									var twitter = newTwitter ();
+									twitter.users ("show", params, accessToken, accessTokenSecret, function (error, data, response) {
+										if (error) {
+											errorResponse (error);
+											}
+										else {
 											dataResponse (data);
 											}
 										});
-									}
-								}, flNotWhitelisted);
-							break;
-						case "/derefurl": //7/31/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var shortUrl = parsedUrl.query.url;
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								if (screenName === undefined) {
-									errorResponse ({message: "Can't get the deref the URL because the accessToken is not valid."});    
-									}
-								else {
-									var theRequest = {
-										method: "HEAD", 
-										url: shortUrl, 
-										followAllRedirects: true
-										};
-									request (theRequest, function (error, response) {
+									break;
+								case "/gettweetinfo": //6/25/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var params = {id: parsedUrl.query.id};
+									var twitter = newTwitter ();
+									twitter.statuses ("show", params, accessToken, accessTokenSecret, function (error, data, response) {
 										if (error) {
-											errorResponse ({message: "Can't get the deref the URL because there was an error making the HTTP request."});    
+											errorResponse (error);
 											}
 										else {
-											var theResponse = {
-												url: shortUrl,
-												longurl: response.request.href
-												};
-											dataResponse (theResponse);
+											dataResponse (data);
 											}
 										});
-									}
-								});
-							break;
-						case "/shortenurl": //8/25/14 by DW
-							var longUrl = parsedUrl.query.url;
-							var apiUrl = "http://api.bitly.com/v3/shorten";
-							var apiKey = bitlyApiKey, username = bitlyApiUsername; //1/17/15 by DW -- removed hard-coded constants
-							if ((apiKey == undefined) || (username == undefined)) {
-								errorResponse ({message: "Can't shorten the URL because the server is not configured to shorten URLs."});    
-								}
-							else {
-								function encode (s) {
-									return (encodeURIComponent (s));
-									}
-								apiUrl += "?login=" + encode (username)
-								apiUrl += "&apiKey=" + encode (apiKey)
-								apiUrl += "&longUrl=" + encode (longUrl)
-								apiUrl += "&format=json"
-								request (apiUrl, function (error, response, body) {
-									if (!error && (response.statusCode == 200)) {
-										var jstruct = JSON.parse (body);
-										if (jstruct.status_code != 200) {
-											errorResponse ({message: "Can't shorten the URL because bitly returned an error code of " + jstruct.status_code + "."});    
-											}
-										else {
-											var theResponse = {
-												shortUrl: jstruct.data.url,
-												longUrl: longUrl
-												};
-											dataResponse (theResponse);
-											}
-										}
-									else { 
-										errorResponse ({message: "Can't shorten the URL because there was an error making the HTTP request."});    
-										}
-									});
-								}
-							break;
-						case "/getrecentposts": //9/16/14 by DW
-							var twitter = newTwitter ();
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var ctposts = 25; //parsedUrl.query.ctposts;
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								if (screenName === undefined) {
-									errorResponse ({message: "Can't get recent posts because the accessToken is not valid."});    
-									}
-								else {
-									var s3path = getS3UsersPath (true) + screenName + "/";
-									s3.getObject (s3path + "postsData.json", function (error, data) {
+									break;
+								case "/retweet": //7/3/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var params = {id: parsedUrl.query.id};
+									var twitter = newTwitter ();
+									twitter.statuses ("retweet", params, accessToken, accessTokenSecret, function (error, data, response) {
 										if (error) {
-											errorResponse (error);    
+											errorResponse (error);
 											}
 										else {
-											var postsData = JSON.parse (data.Body.toString ());
-											var lastpostnum = postsData.nextfilenum - 1;
-											var postsArray = [], ct = 0;
-											function getOnePost (postnum) {
-												var filepath = s3path + "posts/" + utils.padWithZeros (postnum, 7) + ".json";
-												
-												
-												s3.getObject (filepath, function (error, data) {
-													if (!error) {
-														var jstruct = JSON.parse (data.Body.toString ());
-														
-														
-														postsArray [postsArray.length] = jstruct;
-														if ((++ct < ctposts) && (postnum > 0)) {
-															getOnePost (postnum - 1);
-															}
-														else {
-															dataResponse (postsArray);
-															}
+											dataResponse (data);
+											}
+										});
+									break;
+								case "/getmyscreenname": //7/9/14 by DW -- mostly for testing the new cached getScreenName function
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										dataResponse ({screenName: screenName});
+										});
+									break;
+								case "/getfile": //8/9/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var relpath = parsedUrl.query.relpath;
+									var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+									var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
+									var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
+											}
+										else {
+											var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
+											s3.getObject (s3path, function (error, data) {
+												if (error) {
+													errorResponse (error);    
+													}
+												else {
+													if (flIncludeBody) {
+														data.filedata = data.Body.toString (); 
 														}
-													});
-												}
-											getOnePost (lastpostnum);
+													delete data.Body;
+													dataResponse (data);
+													}
+												});
+											}
+										}, flNotWhitelisted);
+									break;
+								case "/derefurl": //7/31/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var shortUrl = parsedUrl.query.url;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get the deref the URL because the accessToken is not valid."});    
+											}
+										else {
+											var theRequest = {
+												method: "HEAD", 
+												url: shortUrl, 
+												followAllRedirects: true
+												};
+											request (theRequest, function (error, response) {
+												if (error) {
+													errorResponse ({message: "Can't get the deref the URL because there was an error making the HTTP request."});    
+													}
+												else {
+													var theResponse = {
+														url: shortUrl,
+														longurl: response.request.href
+														};
+													dataResponse (theResponse);
+													}
+												});
 											}
 										});
-									}
-								});
-							break;
-						case "/iswhitelisted": //11/18/14 by DW
-							var screenName = parsedUrl.query.screen_name;
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end (utils.jsonStringify (isWhitelistedUser (screenName)));    
-							break;
-						case "/configuration":
-							var params = {};
-							var twitter = newTwitter ();
-							twitter.help ("configuration", params, accessToken, accessTokenSecret, function (error, data, response) {
-								if (error) {
-									httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (error.message);    
-									}
-								else {
+									break;
+								case "/shortenurl": //8/25/14 by DW
+									var longUrl = parsedUrl.query.url;
+									var apiUrl = "http://api.bitly.com/v3/shorten";
+									var apiKey = bitlyApiKey, username = bitlyApiUsername; //1/17/15 by DW -- removed hard-coded constants
+									if ((apiKey == undefined) || (username == undefined)) {
+										errorResponse ({message: "Can't shorten the URL because the server is not configured to shorten URLs."});    
+										}
+									else {
+										function encode (s) {
+											return (encodeURIComponent (s));
+											}
+										apiUrl += "?login=" + encode (username)
+										apiUrl += "&apiKey=" + encode (apiKey)
+										apiUrl += "&longUrl=" + encode (longUrl)
+										apiUrl += "&format=json"
+										request (apiUrl, function (error, response, body) {
+											if (!error && (response.statusCode == 200)) {
+												var jstruct = JSON.parse (body);
+												if (jstruct.status_code != 200) {
+													errorResponse ({message: "Can't shorten the URL because bitly returned an error code of " + jstruct.status_code + "."});    
+													}
+												else {
+													var theResponse = {
+														shortUrl: jstruct.data.url,
+														longUrl: longUrl
+														};
+													dataResponse (theResponse);
+													}
+												}
+											else { 
+												errorResponse ({message: "Can't shorten the URL because there was an error making the HTTP request."});    
+												}
+											});
+										}
+									break;
+								case "/getrecentposts": //9/16/14 by DW
+									var twitter = newTwitter ();
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var ctposts = 25; //parsedUrl.query.ctposts;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get recent posts because the accessToken is not valid."});    
+											}
+										else {
+											var s3path = getS3UsersPath (true) + screenName + "/";
+											s3.getObject (s3path + "postsData.json", function (error, data) {
+												if (error) {
+													errorResponse (error);    
+													}
+												else {
+													var postsData = JSON.parse (data.Body.toString ());
+													var lastpostnum = postsData.nextfilenum - 1;
+													var postsArray = [], ct = 0;
+													function getOnePost (postnum) {
+														var filepath = s3path + "posts/" + utils.padWithZeros (postnum, 7) + ".json";
+														
+														
+														s3.getObject (filepath, function (error, data) {
+															if (!error) {
+																var jstruct = JSON.parse (data.Body.toString ());
+																
+																
+																postsArray [postsArray.length] = jstruct;
+																if ((++ct < ctposts) && (postnum > 0)) {
+																	getOnePost (postnum - 1);
+																	}
+																else {
+																	dataResponse (postsArray);
+																	}
+																}
+															});
+														}
+													getOnePost (lastpostnum);
+													}
+												});
+											}
+										});
+									break;
+								case "/iswhitelisted": //11/18/14 by DW
+									var screenName = parsedUrl.query.screen_name;
 									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									addOurDataToReturnObject (data);
-									httpResponse.end (utils.jsonStringify (data));    
-									}
-								});
-							break;
-						case "/returnwhenready": //12/15/14 by DW -- long polling
-							pushLongpoll (parsedUrl.query.url, httpResponse, clientIp)
-							break;
-						case "/stats": //12/16/14 by DW
-							httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end (utils.jsonStringify (serverStats));    
-							break;
-						case "/getfilelist": //12/21/14 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
-							getScreenName (accessToken, accessTokenSecret, function (screenName) {
-								if (screenName === undefined) {
-									errorResponse ({message: "Can't get the file list because the accessToken is not valid."});    
-									}
-								else {
-									var s3path = getS3UsersPath (flprivate) + screenName + "/";
-									getUserFileList (s3path, function (error, theList) {
+									httpResponse.end (utils.jsonStringify (isWhitelistedUser (screenName)));    
+									break;
+								case "/configuration":
+									var params = {};
+									var twitter = newTwitter ();
+									twitter.help ("configuration", params, accessToken, accessTokenSecret, function (error, data, response) {
 										if (error) {
-											errorResponse (error);    
-											}
-										else { 
-											var returnedList = new Array (); //return a processed array -- 3/5/15 by DW
-											for (var i = 0; i < theList.length; i++) {
-												var obj = new Object (), s3obj = theList [i];
-												//set obj.path -- start copying into the object path when we pass the user's screen name
-													var splitlist = s3obj.Key.split ("/"), flcopy = false, objectpath = "";
-													for (var j = 0; j < splitlist.length; j++) {
-														if (flcopy) {
-															if (objectpath.length > 0) {
-																objectpath += "/";
-																}
-															objectpath += splitlist [j];
-															}
-														else {
-															if (splitlist [j] == screenName) {
-																flcopy = true;
-																}
-															}
-														}
-													obj.path = objectpath;
-												obj.whenLastChange = s3obj.LastModified;
-												obj.ctChars = s3obj.Size;
-												returnedList [i] = obj;
-												}
-											dataResponse (returnedList);
-											}
-										});
-									}
-								});
-							break; 
-						case "/api.js": //1/20/15 by DW
-							httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
-							fs.readFile ("api.js", function (err, data) {
-								if (err) {
-									httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (err.message);    
-									}
-								else {
-									httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (data.toString ());    
-									}
-								});
-							break;
-						
-						case "/addcomment": //2/21/15 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var snAuthor = parsedUrl.query.author;
-							var idPost = parsedUrl.query.idpost;
-							var urlOpmlFile = parsedUrl.query.urlopmlfile;
-							var flNotWhitelisted = true; //2/23/15 by DW
-							getScreenName (accessToken, accessTokenSecret, function (snCommenter) {
-								addComment (snCommenter, snAuthor, idPost, urlOpmlFile, function (error, jstruct) {
-									if (jstruct !== undefined) {
-										dataResponse (jstruct);
-										}
-									else {
-										errorResponse (error);    
-										}
-									});
-								}, flNotWhitelisted);
-							break;
-						case "/getcomments": //2/21/15 by DW
-							var accessToken = parsedUrl.query.oauth_token;
-							var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-							var snAuthor = parsedUrl.query.author;
-							var idPost = parsedUrl.query.idpost;
-							var flNotWhitelisted = true; //2/23/15 by DW
-							getScreenName (accessToken, accessTokenSecret, function (snReader) {
-								getComments (snAuthor, idPost, function (error, jstruct) {
-									if (jstruct !== undefined) {
-										dataResponse (jstruct);
-										}
-									else {
-										console.log ("/getcomments: error == ", JSON.stringify (error, undefined, 4));
-										if (error.statusCode == 404) {
-											dataResponse (new Array ());
+											httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (error.message);    
 											}
 										else {
-											errorResponse (error);    
+											httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+											addOurDataToReturnObject (data);
+											httpResponse.end (utils.jsonStringify (data));    
 											}
-										}
-									});
-								}, flNotWhitelisted);
+										});
+									break;
+								case "/returnwhenready": //12/15/14 by DW -- long polling
+									pushLongpoll (parsedUrl.query.url, httpResponse, clientIp)
+									break;
+								case "/stats": //12/16/14 by DW
+									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+									httpResponse.end (utils.jsonStringify (serverStats));    
+									break;
+								case "/getfilelist": //12/21/14 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get the file list because the accessToken is not valid."});    
+											}
+										else {
+											var s3path = getS3UsersPath (flprivate) + screenName + "/";
+											getUserFileList (s3path, function (error, theList) {
+												if (error) {
+													errorResponse (error);    
+													}
+												else { 
+													var returnedList = new Array (); //return a processed array -- 3/5/15 by DW
+													for (var i = 0; i < theList.length; i++) {
+														var obj = new Object (), s3obj = theList [i];
+														//set obj.path -- start copying into the object path when we pass the user's screen name
+															var splitlist = s3obj.Key.split ("/"), flcopy = false, objectpath = "";
+															for (var j = 0; j < splitlist.length; j++) {
+																if (flcopy) {
+																	if (objectpath.length > 0) {
+																		objectpath += "/";
+																		}
+																	objectpath += splitlist [j];
+																	}
+																else {
+																	if (splitlist [j] == screenName) {
+																		flcopy = true;
+																		}
+																	}
+																}
+															obj.path = objectpath;
+														obj.whenLastChange = s3obj.LastModified;
+														obj.ctChars = s3obj.Size;
+														returnedList [i] = obj;
+														}
+													dataResponse (returnedList);
+													}
+												});
+											}
+										});
+									break; 
+								case "/api.js": //1/20/15 by DW
+									httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
+									fs.readFile ("api.js", function (err, data) {
+										if (err) {
+											httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (err.message);    
+											}
+										else {
+											httpResponse.writeHead (200, {"Content-Type": "application/javascript", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (data.toString ());    
+											}
+										});
+									break;
+								case "/addcomment": //2/21/15 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var snAuthor = parsedUrl.query.author;
+									var idPost = parsedUrl.query.idpost;
+									var urlOpmlFile = parsedUrl.query.urlopmlfile;
+									var flNotWhitelisted = true; //2/23/15 by DW
+									getScreenName (accessToken, accessTokenSecret, function (snCommenter) {
+										addComment (snCommenter, snAuthor, idPost, urlOpmlFile, function (error, jstruct) {
+											if (jstruct !== undefined) {
+												dataResponse (jstruct);
+												}
+											else {
+												errorResponse (error);    
+												}
+											});
+										}, flNotWhitelisted);
+									break;
+								case "/getcomments": //2/21/15 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var snAuthor = parsedUrl.query.author;
+									var idPost = parsedUrl.query.idpost;
+									var flNotWhitelisted = true; //2/23/15 by DW
+									getScreenName (accessToken, accessTokenSecret, function (snReader) {
+										getComments (snAuthor, idPost, function (error, jstruct) {
+											if (jstruct !== undefined) {
+												dataResponse (jstruct);
+												}
+											else {
+												console.log ("/getcomments: error == ", JSON.stringify (error, undefined, 4));
+												if (error.statusCode == 404) {
+													dataResponse (new Array ());
+													}
+												else {
+													errorResponse (error);    
+													}
+												}
+											});
+										}, flNotWhitelisted);
+									break;
+								case "/opmlcomments": //2/23/15 by DW
+									var username = parsedUrl.query.user, returnedstring = "";
+									var s3path = "/liveblog.co/users/" + username + "/comments/";
+									console.log ("/opmlcomments: s3path == " + s3path);
+									getUserCommentsOpml (s3path, function (opmltext) {
+										httpResponse.writeHead (200, {"Content-Type": "text/xml", "Access-Control-Allow-Origin": "*"});
+										httpResponse.end (opmltext);    
+										});
+									
+									
+									
+									
+									
+									break;
+								case "/isnameavailable": //7/12/15 by DW
+									names.isNameAvailable (parsedUrl.query.name, function (theName, flAvailable, msg) {
+										var jstruct = {
+											name: theName,
+											flAvailable: flAvailable,
+											msg: msg
+											};
+										httpResponse.writeHead (200, {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"});
+										httpResponse.end (utils.jsonStringify (jstruct));
+										});
+									break;
+								case "/newoutlinename": //7/12/15 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										names.reserveName (parsedUrl.query.name, parsedUrl.query.url, screenName, function (theName, flNameWasCreated, msg) {
+											var jstruct = {
+												name: theName,
+												flNameWasCreated: flNameWasCreated,
+												msg: msg
+												};
+											httpResponse.writeHead (200, {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"});
+											httpResponse.end (utils.jsonStringify (jstruct));
+											});
+										});
+									break;
+								case "/lookupname": //7/13/15 by DW
+									names.lookupName (parsedUrl.query.name, function (data) {
+										httpResponse.writeHead (200, {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"});
+										httpResponse.end (utils.jsonStringify (data));
+										});
+									break;
+								default: //404 not found
+									httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+									httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
+									break;
+								}
 							break;
-						case "/opmlcomments": //2/23/15 by DW
-							var username = parsedUrl.query.user, returnedstring = "";
-							var s3path = "/liveblog.co/users/" + username + "/comments/";
-							console.log ("/opmlcomments: s3path == " + s3path);
-							getUserCommentsOpml (s3path, function (opmltext) {
-								httpResponse.writeHead (200, {"Content-Type": "text/xml", "Access-Control-Allow-Origin": "*"});
-								httpResponse.end (opmltext);    
-								});
-							
-							
-							
-							
-							
-							break;
-						
-						default: //404 not found
-							httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-							httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
 						}
-					break;
-				}
+					}
+				});
 			}
 		else {
 			httpResponse.writeHead (503, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
@@ -1219,13 +1254,15 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.bitlyApiUsername !== undefined) {
 				bitlyApiUsername = config.bitlyApiUsername;
 				}
+			if (config.userDomain !== undefined) { //7/13/15 by DW
+				userDomain = config.userDomain;
+				}
 			}
 		if (callback !== undefined) {
 			callback ();
 			}
 		});
 	}
-
 function startup () {
 	function notDefined (value, name) {
 		if (value === undefined) {
@@ -1270,10 +1307,12 @@ function startup () {
 					}
 				}
 		
+		
 		loadServerStats (function () {
 			loadServerPrefs (function () {
 				readUserWhitelist (function () {
 					
+					names.init (s3PrivatePath); //7/12/15 by DW
 					http.createServer (handleHttpRequest).listen (myPort);
 					
 					setInterval (everySecond, 1000); 

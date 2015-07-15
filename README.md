@@ -12,8 +12,6 @@ Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installi
 
 And Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
 
-
-
 #### The idea
 
 I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
@@ -22,15 +20,11 @@ A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> pr
 
 BTW, my name is Dave Winer. This is <a href="http://scripting.com/">where</a> I live on the net. ;-)
 
-
-
 #### Demo app
 
 There's a <a href="http://macwrite.org/">demo app</a> which you can try now. 
 
 The <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub.
-
-
 
 #### API
 
@@ -38,15 +32,11 @@ The api.js file provides glue for browser-based JavaScript apps.
 
 You can also access it in api.nodestorage.io and include it from apps if you want. 
 
-
-
 #### Breakage alerts
 
 Once an API is done, I believe in no-breakage. I think all changes made from the point where it's complete can be done continuously, meaning old versions of the API can continue to be supported. I do not believe in deprecation. 
 
 However, the API here is not yet frozen, so be on the alert for breakage. But I want to freeze it fairly quickly. Look for this note to disappear. ;-)
-
-
 
 #### Parameters
 
@@ -68,8 +58,6 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 9. TZ
 
-
-
 #### Setup
 
 1. You have to set up an app on apps.twitter.com. The goal is to get the twitterConsumerKey and twitterConsumerSecret values. That's the connection between Twitter and the Storage app.
@@ -82,15 +70,15 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 5. TZ is the timezone the server is running in. I have it set for my server to *America/New_York.*
 
-
-
 #### Notes
 
 1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does.
 
-
-
 #### Updates
+
+##### v0.75 - 7/15/15 by DW
+
+New functionality to support named outlines. 
 
 ##### v0.74 - 5/20/15 by DW
 
@@ -117,8 +105,6 @@ New stats for longpolling, in serverStats.json. <a href="http://liveblog.co/data
 Added a readout of free memory as the second item in the server log. 
 
 In this <a href="http://scripting.com/2015/01/24/freemem.png">screen shot</a> the arrow points to the free memory readout. 
-
-
 
 #### Questions, problems
 
