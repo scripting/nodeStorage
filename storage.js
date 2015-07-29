@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.75x", myProductName = "nodeStorage"; 
+var myVersion = "0.77j", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -31,6 +31,7 @@ var twitterAPI = require ("node-twitter-api");
 var fs = require ("fs");
 var request = require ("request");
 var s3 = require ("./lib/s3.js");
+var store = require ("./lib/store.js"); //7/28/15 by DW
 var utils = require ("./lib/utils.js");
 var names = require ("./lib/names.js");
 var dns = require ("dns");
@@ -50,6 +51,8 @@ var os = require ("os");
 	var bitlyApiKey = process.env.bitlyApiKey;
 	var bitlyApiUsername = process.env.bitlyApiUsername;
 	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
+	var flLocalFilesystem = false; //7/28/15 DW
+	var basePublicUrl = undefined; //7/29/15 by DW
 
 var fnameConfig = "config.json"; //config, another way of setting environment variables -- 5/8/15 by DW
 
@@ -216,11 +219,13 @@ function httpReadUrl (url, callback) {
 		flStatsDirty = true;
 		}
 	function loadStruct (fname, struct, callback) {
-		s3.getObject (s3Path + fname, function (error, data) {
-			if (data != null) {
-				var oldStruct = JSON.parse (data.Body);
-				for (var x in oldStruct) { 
-					struct [x] = oldStruct [x];
+		store.getObject (s3Path + fname, function (error, data) {
+			if (!error) {
+				if (data != null) {
+					var oldStruct = JSON.parse (data.Body);
+					for (var x in oldStruct) { 
+						struct [x] = oldStruct [x];
+						}
 					}
 				}
 			if (callback != undefined) {
@@ -229,7 +234,7 @@ function httpReadUrl (url, callback) {
 			});
 		}
 	function saveStruct (fname, struct, callback) {
-		s3.newObject (s3Path + fname, utils.jsonStringify (struct));
+		store.newObject (s3Path + fname, utils.jsonStringify (struct));
 		}
 	function loadServerStats (callback) {
 		loadStruct (fnameStats, serverStats, function () {
@@ -352,7 +357,7 @@ function saveTweet (theTweet) { //7/2/14 by DW
 			var idTweet = theTweet.id_str;
 			if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
 				var filepath = s3Path + fnameTweetsFolder + utils.getDatePath (new Date (), true) + idTweet + ".json";
-				s3.newObject (filepath, utils.jsonStringify (theTweet));
+				store.newObject (filepath, utils.jsonStringify (theTweet));
 				}
 			}
 		catch (tryError) {
@@ -410,7 +415,7 @@ function getS3Acl (flPrivate) { //8/3/14 by DW
 	}
 function getUserFileList (s3path, callback) { //12/21/14 by DW
 	var now = new Date (), theList = new Array ();
-	s3.listObjects (s3path, function (obj) {
+	store.listObjects (s3path, function (obj) {
 		if (obj.flLastObject != undefined) {
 			if (callback != undefined) {
 				callback (undefined, theList);
@@ -423,7 +428,7 @@ function getUserFileList (s3path, callback) { //12/21/14 by DW
 	}
 function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
 	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
-	s3.getObject (s3path, function (error, data) {
+	store.getObject (s3path, function (error, data) {
 		var jstruct, flnew = true, jstructsub;
 		if (error) {
 			jstruct = new Array ();
@@ -456,7 +461,7 @@ function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2
 		jstructsub.urlOpmlFile = urlOpmlFile;
 		
 		
-		s3.newObject (s3path, utils.jsonStringify (jstruct), "application/json", getS3Acl (flprivate), function (error, data) {
+		store.newObject (s3path, utils.jsonStringify (jstruct), "application/json", getS3Acl (flprivate), function (error, data) {
 			if (error) {
 				if (callback != undefined) {
 					callback (error, undefined);
@@ -478,7 +483,7 @@ function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2
 	}
 function getComments (snAuthor, idPost, callback) {
 	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json";
-	s3.getObject (s3path, function (error, data) {
+	store.getObject (s3path, function (error, data) {
 		if (error) {
 			if (callback != undefined) {
 				callback (error, undefined);
@@ -504,7 +509,7 @@ function getUserCommentsOpml (s3path, callback) {
 		add ("<title>Comments</title>");
 		add ("</head>"); indentlevel--;
 	add ("<body>"); indentlevel++;
-	s3.listObjects (s3path, function (obj) { 
+	store.listObjects (s3path, function (obj) { 
 		if (obj.flLastObject != undefined) {
 			add ("</body>"); indentlevel--;
 			add ("</opml>"); indentlevel--;
@@ -683,12 +688,12 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												var metadata = {whenLastUpdate: new Date ().toString ()};
 												
 												
-												s3.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+												store.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
 													if (error) {
 														errorResponse (error);    
 														}
 													else {
-														metadata.url = "http:/" + s3path;
+														metadata.url = store.getUrl (s3path); //"http:/" + s3path;
 														dataResponse (metadata);
 														serverStats.ctFileSaves++;
 														statsChanged ();
@@ -903,7 +908,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										else {
 											var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-											s3.getObject (s3path, function (error, data) {
+											store.getObject (s3path, function (error, data) {
 												if (error) {
 													errorResponse (error);    
 													}
@@ -993,7 +998,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										else {
 											var s3path = getS3UsersPath (true) + screenName + "/";
-											s3.getObject (s3path + "postsData.json", function (error, data) {
+											store.getObject (s3path + "postsData.json", function (error, data) {
 												if (error) {
 													errorResponse (error);    
 													}
@@ -1005,7 +1010,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 														var filepath = s3path + "posts/" + utils.padWithZeros (postnum, 7) + ".json";
 														
 														
-														s3.getObject (filepath, function (error, data) {
+														store.getObject (filepath, function (error, data) {
 															if (!error) {
 																var jstruct = JSON.parse (data.Body.toString ());
 																
@@ -1197,9 +1202,11 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										httpResponse.end (utils.jsonStringify (data));
 										});
 									break;
-								default: //404 not found
-									httpResponse.writeHead (404, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end ("\"" + parsedUrl.pathname.toLowerCase () + "\" is not one of the endpoints defined by this server.");
+								default: //try to serve the object from the store -- 7/28/15 by DW
+									store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW
+										httpResponse.writeHead (code, headers);
+										httpResponse.end (bodytext);
+										});
 									break;
 								}
 							break;
@@ -1221,6 +1228,7 @@ function loadConfig (callback) { //5/8/15 by DW
 	fs.readFile (fnameConfig, function (err, data) {
 		if (!err) {
 			var config = JSON.parse (data.toString ());
+			console.log ("\n\nloadConfig: config == " + JSON.stringify (config, undefined, 4) + "\n\n"); //5/20/15 by DW
 			if (config.enabled !== undefined) {
 				flEnabled = utils.getBoolean (config.enabled);
 				}
@@ -1257,6 +1265,20 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.userDomain !== undefined) { //7/13/15 by DW
 				userDomain = config.userDomain;
 				}
+			if (config.basePublicUrl !== undefined) { //7/29/15 by DW
+				basePublicUrl = config.basePublicUrl;
+				}
+			if (config.where !== undefined) { //7/28/15 by DW
+				if ((config.where.publicPath === undefined) || (config.where.privatePath === undefined)) {
+					console.log ("Can't use config.where because config.where.publicPath and/or config.where.privatePath were not specified.");
+					}
+				else {
+					flLocalFilesystem = utils.getBoolean (config.where.flUseLocalFilesystem);
+					s3Path = config.where.publicPath;
+					s3PrivatePath = config.where.privatePath;
+					}
+				}
+			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
 		if (callback !== undefined) {
 			callback ();

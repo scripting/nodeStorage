@@ -76,6 +76,10 @@ However, the API here is not yet frozen, so be on the alert for breakage. But I 
 
 #### Updates
 
+##### v0.77 - 7/29/15 by DW
+
+We can now store user data in the local file system. Previous versions could only store data in Amazon S3. The changes are documented in <a href="http://nodestorage.smallpict.com/2015/07/29/nodestorageInTheFilesystem.html">this post</a>. 
+
 ##### v0.75 - 7/15/15 by DW
 
 New functionality to support named outlines. 
