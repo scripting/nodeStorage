@@ -8,11 +8,11 @@ A simple server-side JavaScript storage system using Twitter identity, running i
 
 #### Overview
 
-2. User identity through Twitter. 
-
 1. Public and private data. 
 
 3. Store data in local filesystem or on Amazon S3.
+
+2. User identity through Twitter. 
 
 4. The back-end of an open source blogging system, with <a href="http://myword.io/editor/">MyWord Editor</a> as the front-end. 
 
