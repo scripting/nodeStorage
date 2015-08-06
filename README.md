@@ -12,15 +12,15 @@ A simple server-side JavaScript storage system using Twitter identity, running i
 
 1. Public and private data. 
 
-3. Store in local filesystem or on Amazon S3.
+3. Store data in local filesystem or on Amazon S3.
 
-4. Forms the back-end of an open source blogging system, with <a href="http://myword.io/editor/">MyWord Editor</a> as the front-end. 
+4. The back-end of an open source blogging system, with <a href="http://myword.io/editor/">MyWord Editor</a> as the front-end. 
 
-5. Written by <a href="http://davewiner.com/">Dave Winer</a>, first deployed in June 2014, supports a small set of browser-based JavaScript software. Hope to expand to become a community of apps. 
+5. Written by <a href="http://davewiner.com/">Dave Winer</a>, first deployed in June 2014, supports a <a href="http://scripting.com/2014/07/16/myLatestSoftwareSnacks.html">small set</a> of browser-based JavaScript software. Hope to expand to become a community of apps. 
 
 #### How to set up
 
-Here's <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up NodeStorage on Ubuntu, but probably works on many other Unix systems. It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
+Here's <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up a NodeStorage server on Ubuntu, but probably works on many other Unix systems. It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
 
 It's a good guide for installing on any Unix system, but has been tested on Ubuntu.
 
