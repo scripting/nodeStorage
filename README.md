@@ -14,15 +14,15 @@ A simple server-side JavaScript storage system using Twitter identity, running i
 
 3. Store in local filesystem or on Amazon S3.
 
-4. Forms the back-end of an open source Medium-like blogging system, with <a href="http://myword.io/editor/">MyWord Editor</a> as the front-end. 
+4. Forms the back-end of an open source blogging system, with <a href="http://myword.io/editor/">MyWord Editor</a> as the front-end. 
 
 5. Written by <a href="http://davewiner.com/">Dave Winer</a>, first deployed in June 2014, supports a small set of browser-based JavaScript software. Hope to expand to become a community of apps. 
 
 #### How to set up
 
-A <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up NodeStorage on Ubuntu, but probably works on many other Unix systems. 
+Here's <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up NodeStorage on Ubuntu, but probably works on many other Unix systems. It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
 
-It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
+It's a good guide for installing on any Unix system, but has been tested on Ubuntu.
 
 #### Links
 
@@ -32,13 +32,13 @@ It doesn't assume you have Node.js installed or a Git client. It shows you how t
 
 4. Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">guide</a> to setting up a new nodeStorage server. 
 
-5. And Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
+5. Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
 
 #### Demo app #1
 
-1. There's a simple <a href="http://macwrite.org/">demo app</a> which you can try now. It's a very simple text editor, with other commands that test the interface to the Twitter API. 
+1. A minimal <a href="http://macwrite.org/">demo app</a>. 
 
-2. The <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub.
+2. The <a href="https://github.com/scripting/macwrite">full source</a> for the demo app is available on GitHub. MIT License.
 
 #### Demo app #2
 
