@@ -30,9 +30,11 @@ It's a good guide for installing on any Unix system, but has been tested on Ubun
 
 2. A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> provides another perspective.
 
-4. Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">guide</a> to setting up a new nodeStorage server. 
+3. Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">guide</a> to setting up a new nodeStorage server. 
 
-5. Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
+4. Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
+
+5. <a href="http://nodestorage.smallpict.com/2015/08/07/whyUseTwitterForIdentity.html">Why use Twitter for identity?</a>
 
 #### Demo app #1
 
