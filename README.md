@@ -58,6 +58,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.78 - 9/3/15 by DW
+
+Notes coming soon.
+
 ##### v0.77 - 7/29/15 by DW
 
 We can now store user data in the local file system. Previous versions could only store data in Amazon S3. The changes are documented in <a href="http://nodestorage.smallpict.com/2015/07/29/nodestorageInTheFilesystem.html">this post</a>. 

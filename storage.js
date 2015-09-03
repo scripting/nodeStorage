@@ -23,13 +23,14 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.77j", myProductName = "nodeStorage"; 
+var myVersion = "0.78r", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
 var twitterAPI = require ("node-twitter-api");
 var fs = require ("fs");
 var request = require ("request");
+var querystring = require ("querystring"); //8/31/15 by DW
 var s3 = require ("./lib/s3.js");
 var store = require ("./lib/store.js"); //7/28/15 by DW
 var utils = require ("./lib/utils.js");
@@ -78,9 +79,13 @@ var serverStats = {
 	ctCurrentLongPolls: 0,  //12/16/14 by DW
 	ctLongPollsToday: 0,  //12/17/14 by DW
 	currentLogPolls: new Array (), //1/29/15 by DW
+	ctChatPosts: 0, //8/25/15 by DW
+	ctChatPostsToday: 0, //8/29/15 by DW
+	whenLastChatPost: new Date (0), //8/25/15 by DW
 	recentTweets: []
 	};
 var fnameStats = "data/serverStats.json", flStatsDirty = false, maxrecentTweets = 500; 
+
 
 var serverPrefs = {
 	flArchiveTweets: true
@@ -91,6 +96,11 @@ var userDomain = undefined; //7/13/15 by DW
 
 var requestTokens = []; //used in the OAuth dance
 var screenNameCache = []; 
+
+var flWatchAppDateChange = false, fnameApp = "storage.js", origAppModDate; //8/26/15 by DW -- can only be sent through config.json
+var domainIncomingWebhook; //8/28/15 by DW
+var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, anyone can
+var flScheduledEveryMinute = false; //9/2/15 by DW
 
 function httpReadUrl (url, callback) {
 	request (url, function (error, response, body) {
@@ -161,7 +171,7 @@ function httpReadUrl (url, callback) {
 	
 	function getLongpollTimeout () {
 		if (longPollTimeoutSecs == undefined) { //the environment variable wasn't defined
-			return (Number (20000.0)); //20 seconds
+			return (60000); //60 seconds
 			}
 		else {
 			return (Number (longPollTimeoutSecs) * 1000.0);
@@ -234,7 +244,11 @@ function httpReadUrl (url, callback) {
 			});
 		}
 	function saveStruct (fname, struct, callback) {
-		store.newObject (s3Path + fname, utils.jsonStringify (struct));
+		store.newObject (s3Path + fname, utils.jsonStringify (struct), "application/json", undefined, function () {
+			if (callback !== undefined) {
+				callback ();
+				}
+			});
 		}
 	function loadServerStats (callback) {
 		loadStruct (fnameStats, serverStats, function () {
@@ -272,6 +286,346 @@ function httpReadUrl (url, callback) {
 				callback ();
 				}
 			});
+		}
+//chat -- 8/25/15 by DW
+	var flChatEnabled = false;
+	var fnameChatLog = "data/chatLog.json";
+	var chatLog = new Array (), maxChatLog = 250;
+	var todaysChatLog = {
+		today: new Date (0),
+		theLog: new Array ()
+		};
+	var flChatLogDirty = false;
+	
+	function postChatMessage (screenName, chatText, iconUrl, iconEmoji, flTwitterName, callback) {
+		var now = new Date (), idChatPost;
+		if (chatLog.length >= maxChatLog) {
+			chatLog.splice (0, 1); //remove first item
+			}
+		var chatItem = {
+			name: screenName,
+			text: chatText,
+			id: serverStats.ctChatPosts++,
+			when: now
+			};
+		if (iconUrl !== undefined) {
+			chatItem.iconUrl = iconUrl;
+			}
+		if (iconEmoji !== undefined) {
+			chatItem.iconEmoji = iconEmoji;
+			}
+		if (!flTwitterName) {
+			chatItem.flNotTwitterName = !flTwitterName; //the "name" field of struct is not a twitter screen name
+			}
+		chatLog [chatLog.length] = chatItem;
+		callback (chatItem.id); //pass it the id of the new post
+		serverStats.whenLastChatPost = now;
+		if (!utils.sameDay (todaysChatLog.today, now)) { //date rollover
+			todaysChatLog.today = now;
+			todaysChatLog.theLog = new Array ();
+			serverStats.ctChatPostsToday = 0;
+			}
+		todaysChatLog.theLog [todaysChatLog.theLog.length] = chatItem;
+		serverStats.ctChatPostsToday++;
+		flStatsDirty = true;
+		flChatLogDirty = true;
+		
+		checkLongpollsForUrl ("chatlog", utils.jsonStringify (chatLog)); //anyone who's waiting for "chatlog" to update will be notified now
+		
+		outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
+		}
+	function saveChatLog (callback) {
+		flChatLogDirty = false;
+		saveStruct (fnameChatLog, chatLog, function () {
+			var f = "data/" + utils.getDatePath () + "todaysChatlog.json";
+			saveStruct (f, todaysChatLog, function () {
+				});
+			});
+		}
+	function loadChatLog (callback) {
+		if (flChatEnabled) {
+			loadStruct (fnameChatLog, chatLog, function () {
+				var f = "data/" + utils.getDatePath () + "todaysChatlog.json";
+				loadStruct (f, todaysChatLog, function () {
+					callback ();
+					});
+				});
+			}
+		else {
+			callback ();
+			}
+		}
+//webhooks -- 8/28/15 by DW
+	var webhooks = {
+		incoming: {}, 
+		outgoing: {}
+		};
+	var flWebhooksDirty = false, fnameWebhooks = "data/hooks.json";
+	var webhookNotEnabledError = "Can't create the webhook because the feature is not enabled on the server, or you are not authorized to create one."; //8/31/15 by DW
+	var webhookAccessTokenError = "Can't create a new webhook because the accessToken is not valid."; //8/31/15 by DW
+	
+	function loadWebhooks (callback) {
+		store.getObject (s3PrivatePath + fnameWebhooks, function (error, data) {
+			if ((!error) && (data != null)) {
+				webhooks = JSON.parse (data.Body);
+				console.log ("loadWebhooks: webhooks == " + utils.jsonStringify (webhooks));
+				}
+			callback ();
+			});
+		}
+	function saveWebhooks () {
+		flWebhooksDirty = false;
+		store.newObject (s3PrivatePath + fnameWebhooks, utils.jsonStringify (webhooks));
+		}
+	function okToCreateHook (screenName) {
+		if (usersWhoCanCreateWebhooks !== undefined) {
+			for (var i = 0; i < usersWhoCanCreateWebhooks.length; i++) {
+				if (usersWhoCanCreateWebhooks [i].toLowerCase () == screenName.toLowerCase ()) {
+					return (true);
+					}
+				}
+			}
+		return (false);
+		}
+	function newIncomingHook (screenName, channel, description, customName, urlCustomIcon, customEmoji, callback) {
+		var id, urlwebhook;
+		if (channel == undefined) {
+			channel = "default";
+			}
+		if (description == undefined) {
+			description = "";
+			}
+		while (true) {
+			id = utils.getRandomPassword (8);
+			if (webhooks.incoming [id] == undefined) {
+				var newHook = {
+					name: screenName, //the user who created the hook
+					channel: channel, //maybe someday we'll have more than one channel
+					description: description,
+					whenCreated: new Date (),
+					ctCalls: 0, whenLastCall: new Date (0)
+					};
+				
+				if (customName != undefined) {
+					newHook.customName = customName;
+					}
+				if (urlCustomIcon != undefined) {
+					newHook.urlCustomIcon = urlCustomIcon;
+					}
+				if (customEmoji != undefined) {
+					newHook.customEmoji = customEmoji;
+					}
+				webhooks.incoming [id] = newHook;
+				urlwebhook = "http://" + domainIncomingWebhook + "/" + id;
+				callback (urlwebhook); 
+				flWebhooksDirty = true;
+				return;
+				}
+			}
+		}
+	function newOutgoingHook (screenName, channel, triggerWords, urlsToCall, description, customName, urlCustomIcon, customEmoji, callback) {
+		var id, urlwebhook;
+		if (channel == undefined) {
+			channel = "default";
+			}
+		if (description == undefined) {
+			description = "";
+			}
+		console.log ("newOutgoingHook: params == " + screenName + ", " +  channel + ", " +  triggerWords + ", " +  urlsToCall + ", " +  description + ", " +  customName + ", " +  urlCustomIcon + ", " +  customEmoji);
+		while (true) {
+			id = utils.getRandomPassword (24);
+			if (webhooks.incoming [id] === undefined) {
+				var newHook = {
+					name: screenName, //the user who created the hook
+					channel: channel, //maybe someday we'll have more than one channel
+					description: description,
+					token: id,
+					whenCreated: new Date (),
+					ctCalls: 0, whenLastCall: new Date (0)
+					};
+				
+				if (triggerWords !== undefined) {
+					newHook.triggerWords = triggerWords;
+					}
+				if (urlsToCall !== undefined) {
+					newHook.urlsToCall = urlsToCall;
+					}
+				if (customName !== undefined) {
+					newHook.customName = customName;
+					}
+				if (urlCustomIcon !== undefined) {
+					newHook.urlCustomIcon = urlCustomIcon;
+					}
+				if (customEmoji !== undefined) {
+					newHook.customEmoji = customEmoji;
+					}
+				console.log ("newOutgoingHook: newHook == " + utils.jsonStringify (newHook));
+				webhooks.outgoing [id] = newHook;
+				callback (id); 
+				flWebhooksDirty = true;
+				return;
+				}
+			}
+		}
+	function incomingWebhookCall (host, lowerpath, payload, callback) {
+		var now = new Date ();
+		function slackProcessText (s) {
+			function processPart (s) {
+				var parts = s.split ("|");
+				if (parts.length == 2) {
+					return ("<a href=\"" + parts [0] + "\">" + parts [1] + "</a>");
+					}
+				return ("<a href=\"" + s + "\">" + s + "</a>");
+				}
+			var outputstring = "";
+			while (s.length > 0) {
+				var ch = s [0];
+				if (ch == "<") {
+					var ix = s.indexOf (">");
+					if (ix >= 0) { 
+						var part = s.slice (1, ix);
+						s = s.substr (ix + 1); //pop off the text betw angle brackets, including the angle brackets
+						outputstring += processPart (part);
+						}
+					}
+				else {
+					s = s.substr (1); //pop off first character
+					outputstring += ch;
+					}
+				}
+			return (outputstring);
+			}
+		if (domainIncomingWebhook == undefined) {
+			callback (false); //we don't consume the call
+			}
+		else {
+			if (host == domainIncomingWebhook) {
+				var key = utils.stringDelete (lowerpath, 1, 1); //pop off leading slash
+				var theHook = webhooks.incoming [key];
+				if (theHook == undefined) {
+					callback (true, 404, "text/plain", "Can't call the web hook because it has not been defined.");
+					}
+				else {
+					var jstruct;
+					try {jstruct = JSON.parse (payload);}
+						catch (err) {
+							callback (true, 400, "text/plain", "Can't call the web hook because the payload is not correctly formatted JSON.");
+							return;
+							}
+					if (jstruct.text != undefined) {
+						var screenName = "incoming-webhook-bot", iconUrl = undefined, iconEmoji = undefined, flTwitterName = true;
+						
+						theHook.ctCalls++;
+						theHook.whenLastCall = now;
+						flWebhooksDirty = true;
+						
+						//first, apply the defaults for the hook
+							if (theHook.customName !== undefined) {
+								screenName = theHook.customName;
+								flTwitterName = false;
+								}
+							if (theHook.urlCustomIcon !== undefined) {
+								iconUrl = theHook.urlCustomIcon;
+								}
+							if (theHook.customEmoji !== undefined) {
+								iconEmoji = theHook.customEmoji;
+								}
+						//second, apply the values sent with the message (they override the other values
+							if (jstruct.username != undefined) {
+								screenName = jstruct.username;
+								flTwitterName = false;
+								}
+							if (jstruct.icon_url != undefined) {
+								iconUrl = jstruct.icon_url;
+								}
+							if (jstruct.icon_emoji != undefined) {
+								iconEmoji = jstruct.icon_emoji;
+								}
+						
+						postChatMessage (screenName, slackProcessText (jstruct.text),  iconUrl, iconEmoji, flTwitterName, function (id) {
+							callback (true, 200, "text/plain", "We love you Burt!");
+							});
+						}
+					else {
+						callback (true, 400, "text/plain", "Can't call the web hook because there is no \"text\" object in the payload struct.");
+						}
+					}
+				}
+			else {
+				callback (false); //we don't consume the call
+				}
+			}
+		}
+	function outgoingWebhookCall (screenName, chatText, idMessage, iconUrl, iconEmoji, flTwitterName, webhookCallback) {
+		var callArray = [];
+		var outgoingData = {
+			token: undefined,
+			team_id: 0,
+			team_domain: "",
+			channel_id: "",
+			channel_name: "braintrust", //this is wrong -- 8/31/15 by DW
+			timestamp: Number (new Date ()) + "." + idMessage,
+			user_id: screenName,
+			user_name: screenName,
+			text: chatText,
+			trigger_word: ""
+			};
+		function buildCallArray (chatText) {
+			var lowerChatText = chatText.toLowerCase ();
+			for (var x in webhooks.outgoing) {
+				var theHook = webhooks.outgoing [x];
+				var urls = theHook.urlsToCall, parts = urls.split ("\n");
+				var triggers = theHook.triggerWords, flTriggered = false;
+				if ((triggers !== undefined) && (triggers.length > 0)) {
+					var wordsList = triggers.split (",");
+					for (var ixlist = 0; ixlist < wordsList.length; ixlist++) {
+						var thisWord = utils.trimWhitespace (wordsList [ixlist]).toLowerCase ();
+						if (utils.beginsWith (lowerChatText, thisWord)) {
+							flTriggered = true;
+							break;
+							}
+						else {
+							}
+						}
+					}
+				else {
+					flTriggered = true; //no trigger words
+					}
+				if (flTriggered) {
+					for (var i = 0; i < parts.length; i++) {
+						callArray [callArray.length] = {
+							url: parts [i],
+							token: x,
+							hook: theHook
+							};
+						}
+					}
+				}
+			}
+		function callNextHook (ix) {
+			if (ix < callArray.length) {
+				var theCall = callArray [ix];
+				outgoingData.token = theCall.token;
+				var rq = {
+					uri: theCall.url,
+					body: querystring.stringify (outgoingData)
+					};
+				request.post (rq, function (err, res, body) {
+					console.log ("callNextHook: token == " + outgoingData.token + ", res.statusCode == " + res.statusCode);
+					theCall.hook.ctCalls++;
+					theCall.hook.whenLastCall = new Date ();
+					flWebhooksDirty = true;
+					callNextHook (ix + 1);
+					});
+				}
+			else {
+				if (webhookCallback !== undefined) {
+					webhookCallback ();
+					}
+				}
+			}
+		buildCallArray (chatText);
+		callNextHook (0);
 		}
 
 function newTwitter (myCallback) {
@@ -529,14 +883,37 @@ function getUserCommentsOpml (s3path, callback) {
 			}
 		});
 	}
+function everyMinute () {
+	var now = new Date ();
+	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion);
+	readUserWhitelist (); //11/18/14 by DW
+	}
 function everySecond () {
+	if (!flScheduledEveryMinute) { //9/2/15 by DW
+		if (new Date ().getSeconds () == 0) {
+			setInterval (everyMinute, 60000); 
+			flScheduledEveryMinute = true;
+			everyMinute (); //it's the top of the minute, we have to do one now
+			}
+		}
 	checkLongpolls ();
 	if (flStatsDirty) {
 		saveServerStats ();
 		}
-	}
-function everyMinute () {
-	readUserWhitelist (); //11/18/14 by DW
+	if (flChatLogDirty) { //8/25/15 by DW
+		saveChatLog ();
+		}
+	if (flWatchAppDateChange) { //8/26/15 by DW
+		utils.getFileModDate (fnameApp, function (theModDate) {
+			if (theModDate != origAppModDate) {
+				console.log ("everySecond: " + fnameApp + " has been updated. " + myProductName + " is quitting now.");
+				process.exit (0);
+				}
+			});
+		}
+	if (flWebhooksDirty) {
+		saveWebhooks ();
+		}
 	}
 function handleHttpRequest (httpRequest, httpResponse) {
 	try {
@@ -544,6 +921,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 		var startTime = now, flStatsSaved = false, host, lowerhost, port, referrer;
 		var lowerpath = parsedUrl.pathname.toLowerCase (), clientIp = httpRequest.connection.remoteAddress;
 		
+		function doHttpReturn (code, type, s) { //8/28/15 by DW
+			httpResponse.writeHead (code, {"Content-Type": type, "Access-Control-Allow-Origin": "*"});
+			httpResponse.end (s);    
+			}
 		function addOurDataToReturnObject (returnObject) {
 			return; //disabled -- 2/21/15 by DW
 			
@@ -644,72 +1025,104 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								body += data;
 								});
 							httpRequest.on ("end", function () {
-								switch (parsedUrl.pathname.toLowerCase ()) {
-									case "/statuswithmedia": //6/30/14 by DW -- used in Little Card Editor
-										var params = {
-											url: "https://api.twitter.com/1.1/statuses/update_with_media.json",
-											oauth: {
-												consumer_key: twitterConsumerKey,
-												consumer_secret: twitterConsumerSecret,
-												token: parsedUrl.query.oauth_token,
-												token_secret: parsedUrl.query.oauth_token_secret
-												}
-											}
-										function requestCallback (error, response, body) {
-											if (error) {
-												errorResponse (error);
-												}
-											else {
-												saveTweet (body); //7/2/14 by DW
-												dataResponse (body);
-												console.log (utils.jsonStringify (body));    
-												}
-											}
-										var r = request.post (params, requestCallback);
-										var form = r.form ();
-										var buffer = new Buffer (body, "base64"); 
-										form.append ("status", parsedUrl.query.status);
-										form.append ("media[]", buffer, {filename: "picture.png"});
-										break;
-									case "/publishfile": //8/3/14 by DW
-										var twitter = newTwitter ();
-										var accessToken = parsedUrl.query.oauth_token;
-										var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-										var relpath = parsedUrl.query.relpath;
-										var type = parsedUrl.query.type;
-										var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
-										var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-										getScreenName (accessToken, accessTokenSecret, function (screenName) {
-											if (screenName === undefined) {
-												errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
-												}
-											else {
-												var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
-												var metadata = {whenLastUpdate: new Date ().toString ()};
-												
-												
-												store.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+								var payload = parsedUrl.query.payload;
+								if (payload == undefined) {
+									payload = body;
+									}
+								incomingWebhookCall (host, lowerpath, payload, function (flMatch, code, contentType, data) {
+									if (flMatch) {
+										doHttpReturn (code, contentType, data);
+										}
+									else {
+										switch (parsedUrl.pathname.toLowerCase ()) {
+											case "/statuswithmedia": //6/30/14 by DW -- used in Little Card Editor
+												var params = {
+													url: "https://api.twitter.com/1.1/statuses/update_with_media.json",
+													oauth: {
+														consumer_key: twitterConsumerKey,
+														consumer_secret: twitterConsumerSecret,
+														token: parsedUrl.query.oauth_token,
+														token_secret: parsedUrl.query.oauth_token_secret
+														}
+													}
+												function requestCallback (error, response, body) {
 													if (error) {
-														errorResponse (error);    
+														errorResponse (error);
 														}
 													else {
-														metadata.url = store.getUrl (s3path); //"http:/" + s3path;
-														dataResponse (metadata);
-														serverStats.ctFileSaves++;
-														statsChanged ();
-														if (!flprivate) { //12/15/14 by DW
-															checkLongpollsForUrl (metadata.url, body);
-															}
+														saveTweet (body); //7/2/14 by DW
+														dataResponse (body);
+														console.log (utils.jsonStringify (body));    
 														}
-													}, metadata);
-												}
-											}, flNotWhitelisted);
-										break;
-									default: 
-										httpResponse.writeHead (200, {"Content-Type": "text/html"});
-										httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
-										break;
-									}
+													}
+												var r = request.post (params, requestCallback);
+												var form = r.form ();
+												var buffer = new Buffer (body, "base64"); 
+												form.append ("status", parsedUrl.query.status);
+												form.append ("media[]", buffer, {filename: "picture.png"});
+												break;
+											case "/publishfile": //8/3/14 by DW
+												var twitter = newTwitter ();
+												var accessToken = parsedUrl.query.oauth_token;
+												var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+												var relpath = parsedUrl.query.relpath;
+												var type = parsedUrl.query.type;
+												var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+												var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+												getScreenName (accessToken, accessTokenSecret, function (screenName) {
+													if (screenName === undefined) {
+														errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
+														}
+													else {
+														var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
+														var metadata = {whenLastUpdate: new Date ().toString ()};
+														
+														
+														store.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+															if (error) {
+																errorResponse (error);    
+																}
+															else {
+																metadata.url = store.getUrl (s3path); //"http:/" + s3path;
+																dataResponse (metadata);
+																serverStats.ctFileSaves++;
+																statsChanged ();
+																if (!flprivate) { //12/15/14 by DW
+																	checkLongpollsForUrl (metadata.url, body);
+																	}
+																}
+															}, metadata);
+														}
+													}, flNotWhitelisted);
+												break;
+											case "/chat": //8/25/15 by DW
+												if (flChatEnabled) {
+													var accessToken = parsedUrl.query.oauth_token;
+													var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+													var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+													var chatText = parsedUrl.query.text;
+													getScreenName (accessToken, accessTokenSecret, function (screenName) {
+														if (screenName === undefined) {
+															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
+															}
+														else {
+															postChatMessage (screenName, chatText, undefined, undefined, true, function (idMessage) {
+																dataResponse ({id: idMessage});
+																});
+															}
+														}, flNotWhitelisted);
+													}
+												else {
+													errorResponse ({message: "Can't post the chat message because the feature is not enabled on the server."});    
+													}
+												break;
+											default: 
+												httpResponse.writeHead (200, {"Content-Type": "text/html"});
+												httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
+												break;
+											}
+										}
+									});
 								});
 							break;
 						case "GET":
@@ -1202,6 +1615,61 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										httpResponse.end (utils.jsonStringify (data));
 										});
 									break;
+								case "/chatlog": //8/26/15 by DW
+									dataResponse (chatLog);
+									break;
+								
+								case "/newincomingwebhook": //8/28/15 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var channel = parsedUrl.query.channel;
+									var description = parsedUrl.query.description;
+									var customName = parsedUrl.query.customname;
+									var urlCustomIcon = parsedUrl.query.urlcustomicon;
+									var customEmoji = parsedUrl.query.customemoji;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: webhookAccessTokenError});    
+											}
+										else {
+											if ((flChatEnabled) && (domainIncomingWebhook !== undefined) && (okToCreateHook (screenName))) {
+												newIncomingHook (screenName, channel, description, customName, urlCustomIcon, customEmoji, function (urlhook) {
+													dataResponse (urlhook);
+													});
+												}
+											else {
+												errorResponse ({message: webhookNotEnabledError});    
+												}
+											}
+										});
+									break;
+								case "/newoutgoingwebhook": //8/31/15 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var channel = parsedUrl.query.channel;
+									var triggerWords = parsedUrl.query.triggerwords;
+									var urlsToCall = parsedUrl.query.urlstocall;
+									var description = parsedUrl.query.description;
+									var customName = parsedUrl.query.customname;
+									var urlCustomIcon = parsedUrl.query.urlcustomicon;
+									var customEmoji = parsedUrl.query.customemoji;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: webhookAccessTokenError});    
+											}
+										else {
+											if ((flChatEnabled) && (okToCreateHook (screenName))) {
+												newOutgoingHook (screenName, channel, triggerWords, urlsToCall, description, customName, urlCustomIcon, customEmoji, function (token) {
+													dataResponse (token);
+													});
+												}
+											else {
+												errorResponse ({message: webhookNotEnabledError});    
+												}
+											}
+										});
+									break;
+								
 								default: //try to serve the object from the store -- 7/28/15 by DW
 									store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW
 										httpResponse.writeHead (code, headers);
@@ -1278,6 +1746,28 @@ function loadConfig (callback) { //5/8/15 by DW
 					s3PrivatePath = config.where.privatePath;
 					}
 				}
+			if (config.flChatEnabled !== undefined) { //8/25/15 by DW
+				flChatEnabled = utils.getBoolean (config.flChatEnabled);
+				}
+			if (config.flWatchAppDateChange !== undefined) { //8/26/15 by DW
+				flWatchAppDateChange = utils.getBoolean (config.flWatchAppDateChange);
+				}
+			if (config.fnameApp !== undefined) { //8/26/15 by DW
+				fnameApp = config.fnameApp;
+				}
+			if (config.domainIncomingWebhook !== undefined) { //8/28/15 by DW
+				domainIncomingWebhook = config.domainIncomingWebhook;
+				}
+			if (config.maxChatLog !== undefined) { //8/29/15 by DW
+				var theMax = Number (config.maxChatLog);
+				if (theMax != NaN) {
+					maxChatLog = theMac;
+					}
+				}
+			if (config.usersWhoCanCreateWebhooks !== undefined) { //8/30/15 by DW
+				usersWhoCanCreateWebhooks = config.usersWhoCanCreateWebhooks;
+				}
+			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
 		if (callback !== undefined) {
@@ -1329,16 +1819,21 @@ function startup () {
 					}
 				}
 		
-		
-		loadServerStats (function () {
-			loadServerPrefs (function () {
-				readUserWhitelist (function () {
-					
-					names.init (s3PrivatePath); //7/12/15 by DW
-					http.createServer (handleHttpRequest).listen (myPort);
-					
-					setInterval (everySecond, 1000); 
-					setInterval (everyMinute, 60000); 
+		utils.getFileModDate (fnameApp, function (appModDate) { //set origAppModDate -- 8/26/15 by DW
+			origAppModDate = appModDate;
+			loadServerStats (function () {
+				loadServerPrefs (function () {
+					loadWebhooks (function () { //8/28/15M by DW
+						loadChatLog (function () { //8/25/15 by DW
+							readUserWhitelist (function () {
+								
+								names.init (s3PrivatePath); //7/12/15 by DW
+								http.createServer (handleHttpRequest).listen (myPort);
+								
+								setInterval (everySecond, 1000); 
+								});
+							});
+						});
 					});
 				});
 			});
