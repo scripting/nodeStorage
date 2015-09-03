@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.78r", myProductName = "nodeStorage"; 
+var myVersion = "0.78s", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -363,6 +363,7 @@ function httpReadUrl (url, callback) {
 	var flWebhooksDirty = false, fnameWebhooks = "data/hooks.json";
 	var webhookNotEnabledError = "Can't create the webhook because the feature is not enabled on the server, or you are not authorized to create one."; //8/31/15 by DW
 	var webhookAccessTokenError = "Can't create a new webhook because the accessToken is not valid."; //8/31/15 by DW
+	var nameWebhookDefaultChannel = "default"; //we only have one channel, this is its name, can be overridden with a config.json setting -- 9/3/15 by DW
 	
 	function loadWebhooks (callback) {
 		store.getObject (s3PrivatePath + fnameWebhooks, function (error, data) {
@@ -390,7 +391,7 @@ function httpReadUrl (url, callback) {
 	function newIncomingHook (screenName, channel, description, customName, urlCustomIcon, customEmoji, callback) {
 		var id, urlwebhook;
 		if (channel == undefined) {
-			channel = "default";
+			channel = nameWebhookDefaultChannel;
 			}
 		if (description == undefined) {
 			description = "";
@@ -426,7 +427,7 @@ function httpReadUrl (url, callback) {
 	function newOutgoingHook (screenName, channel, triggerWords, urlsToCall, description, customName, urlCustomIcon, customEmoji, callback) {
 		var id, urlwebhook;
 		if (channel == undefined) {
-			channel = "default";
+			channel = nameWebhookDefaultChannel;
 			}
 		if (description == undefined) {
 			description = "";
@@ -563,7 +564,7 @@ function httpReadUrl (url, callback) {
 			team_id: 0,
 			team_domain: "",
 			channel_id: "",
-			channel_name: "braintrust", //this is wrong -- 8/31/15 by DW
+			channel_name: nameWebhookDefaultChannel, 
 			timestamp: Number (new Date ()) + "." + idMessage,
 			user_id: screenName,
 			user_name: screenName,
@@ -1766,6 +1767,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.usersWhoCanCreateWebhooks !== undefined) { //8/30/15 by DW
 				usersWhoCanCreateWebhooks = config.usersWhoCanCreateWebhooks;
+				}
+			if (config.nameWebhookDefaultChannel !== undefined) { //9/3/15 by DW
+				nameWebhookDefaultChannel = config.nameWebhookDefaultChannel;
 				}
 			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);

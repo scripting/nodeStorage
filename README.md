@@ -60,7 +60,15 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 ##### v0.78 - 9/3/15 by DW
 
-Notes coming soon.
+New routines support a basic chat capability.
+
+Slack-compatible incoming and outgoing webhooks.
+
+Can be configured to watch for a change to the mod date of storage.js, which causes it to quit (presumably to be relaunched by the OS or forever). Makes installing updates automatic.
+
+By default, longpolls timeout after 60 seconds, previously it was 20 seconds.
+
+The everyMinute script now runs at the top of the minute. Previously it was a function of when the app was launched. It also announces itself with the current time and the version of nodeStorage.
 
 ##### v0.77 - 7/29/15 by DW
 
