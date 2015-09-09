@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.78s", myProductName = "nodeStorage"; 
+var myVersion = "0.79a", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -330,7 +330,7 @@ function httpReadUrl (url, callback) {
 		flStatsDirty = true;
 		flChatLogDirty = true;
 		
-		checkLongpollsForUrl ("chatlog", utils.jsonStringify (chatLog)); //anyone who's waiting for "chatlog" to update will be notified now
+		checkLongpollsForUrl ("chatlog", utils.jsonStringify (chatItem)); //anyone who's waiting for "chatlog" to update will be notified now
 		
 		outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
 		}
