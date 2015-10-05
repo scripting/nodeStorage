@@ -123,6 +123,7 @@ function twGetUserInfo (userScreenName, callback) { //6/21/14 by DW
 			},
 		error: function (status) { 
 			console.log ("twGetUserInfo: error == " + JSON.stringify (status, undefined, 4));
+			callback (undefined); //10/3/15 by DW
 			},
 		dataType: "json"
 		});
