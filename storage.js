@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.82r", myProductName = "nodeStorage"; 
+var myVersion = "0.83q", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -36,6 +36,7 @@ var store = require ("./lib/store.js"); //7/28/15 by DW
 var utils = require ("./lib/utils.js");
 var names = require ("./lib/names.js");
 var rss = require ("./lib/rss.js");
+var callbacks = require ("./lib/callbacks.js");
 var dns = require ("dns");
 var os = require ("os");
 
@@ -86,7 +87,7 @@ var serverStats = {
 	recentTweets: []
 	};
 var fnameStats = "data/serverStats.json", flStatsDirty = false, maxrecentTweets = 500; 
-var fnameRss = "rss.xml"; //10/6/15 by DW
+var s3RssPath = "rss.xml"; //10/6/15 by DW
 
 
 var serverPrefs = {
@@ -104,6 +105,8 @@ var domainIncomingWebhook; //8/28/15 by DW
 var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, anyone can
 var flScheduledEveryMinute = false; //9/2/15 by DW
 var urlPublicFolder; //10/6/15 by DW
+var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /
+
 
 function httpReadUrl (url, callback) {
 	request (url, function (error, response, body) {
@@ -303,9 +306,8 @@ function httpReadUrl (url, callback) {
 		appDomain: "nodestorage.io"
 		}
 	var fnameChatLog = "data/chatLog.json";
-	var folderSavedMessages = "data/items/";
 	var chatLog = new Array (), maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250
-	var maxLogLengthForClient = 200; //we won't return more than this number of log items to the client
+	var maxLogLengthForClient = 100; //we won't return more than this number of log items to the client
 	var todaysChatLog = {
 		today: new Date (0),
 		theLog: new Array ()
@@ -313,14 +315,38 @@ function httpReadUrl (url, callback) {
 	var flChatLogDirty = false;
 	var chatNotEnabledError = "Can't post the chat message because the feature is not enabled on the server.";
 	
-	
-	function getItemFile (id) { //10/5/15 by DW
-		return (folderSavedMessages + utils.padWithZeros (id, 5) + ".json");
+	function bumpChatUpdateCount (item) { //10/18/15 by DW
+		item.whenLastUpdate = new Date ();
+		if (item.ctUpdates === undefined) { 
+			item.ctUpdates = 1;
+			}
+		else {
+			item.ctUpdates++;
+			}
 		}
-	function saveChatMessage (item) {
+	function getItemFile (id) { //10/5/15 by DW
+		return ("data/" + utils.getDatePath () + utils.padWithZeros (id, 5) + ".json");
+		}
+	function saveChatMessage (item, callback) { 
 		var path = s3Path + getItemFile (item.id);
 		store.newObject (path, utils.jsonStringify (item), "application/json", undefined, function () {
-			console.log ("saveChatMessage: saved file at " + path);
+			if (urlPublicFolder !== undefined) { //10/19/15 by DW
+				if (item.urlJson === undefined) {
+					item.urlJson = urlPublicFolder + getItemFile (item.id);
+					saveChatMessage (item, callback); //recurse, so the item gets saved again, this time with the urlJson element set -- 10/22/15 by DW
+					flChatLogDirty = true;
+					}
+				else {
+					if (callback !== undefined) {
+						callback ();
+						}
+					}
+				}
+			else {
+				if (callback !== undefined) {
+					callback ();
+					}
+				}
 			});
 		}
 	function findChatMessage (id, callback) { //9/15/15 by DW
@@ -416,16 +442,13 @@ function httpReadUrl (url, callback) {
 		serverStats.ctChatPostsToday++;
 		flStatsDirty = true;
 		flChatLogDirty = true;
-		
-		checkLongpollsForUrl ("chatlog", utils.jsonStringify (itemToReturn)); //anyone who's waiting for "chatlog" to update will be notified now
-		
-		saveChatMessage (itemToReturn); //10/8/15 by DW
-		
-		if (itemToReturn.idLatestReply !== undefined) { //9/22/15 by DW
-			delete itemToReturn.idLatestReply;
-			}
-		
-		outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
+		saveChatMessage (itemToReturn, function () {
+			checkLongpollsForUrl ("chatlog", utils.jsonStringify (itemToReturn)); //anyone who's waiting for "chatlog" to update will be notified now
+			if (itemToReturn.idLatestReply !== undefined) { //9/22/15 by DW
+				delete itemToReturn.idLatestReply;
+				}
+			outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
+			});
 		}
 	function editChatMessage (screenName, chatText, payload, idMessage, callback) { //9/11/15 by DW
 		findChatMessage (idMessage, function (flFound, item, subs, theTopItem) {
@@ -442,6 +465,7 @@ function httpReadUrl (url, callback) {
 							return;
 							}
 						}
+					bumpChatUpdateCount (item); //10/18/15 by DW
 					callback (undefined, "We were able to update the post.");
 					console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
 					checkLongpollsForUrl ("chatlog", utils.jsonStringify (theTopItem)); //anyone who's waiting for "chatlog" to update will be notified now
@@ -457,8 +481,6 @@ function httpReadUrl (url, callback) {
 				callback ("Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.");
 				}
 			});
-		
-		
 		}
 	function likeChatMessage (screenName, idToLike, callback) { //9/27/15 by DW
 		var now = new Date ();
@@ -477,6 +499,7 @@ function httpReadUrl (url, callback) {
 					delete item.likes [screenName];
 					fl = false;
 					}
+				bumpChatUpdateCount (item); //10/18/15 by DW
 				flChatLogDirty = true;
 				callback (fl); //return true if we liked, false if we unliked
 				checkLongpollsForUrl ("chatlog", utils.jsonStringify (theTopItem)); //anyone who's waiting for "chatlog" to update will be notified now
@@ -489,14 +512,24 @@ function httpReadUrl (url, callback) {
 			});
 		}
 	function getChatlogForClient () { //9/20/15 by DW
-		var shortlog = new Array ();
+		var jstruct = new Object (), urlChatLog = undefined;
+		if (urlPublicFolder !== undefined) { //set urlChatLog -- 10/22/15 by DW
+			urlChatLog = urlPublicFolder + fnameChatLog;
+			}
+		jstruct.metadata = {
+			productName: myProductName,
+			version: myVersion, 
+			url: urlChatLog,
+			now: new Date ()
+			};
+		jstruct.chatLog = new Array ();
 		for (var i = chatLog.length - 1; i >= 0; i--) {
-			shortlog.unshift (chatLog [i]); //insert at beginning of the array
-			if (shortlog.length >= maxLogLengthForClient) {
+			jstruct.chatLog.unshift (chatLog [i]); //insert at beginning of the array
+			if (jstruct.chatLog.length >= maxLogLengthForClient) {
 				break;
 				}
 			}
-		return (shortlog);
+		return (jstruct);
 		}
 	function writeIndividualFiles () { //10/5/15 by DW -- for possible future use
 		var indentlevel = 0;
@@ -601,10 +634,10 @@ function httpReadUrl (url, callback) {
 		}
 	function buildChatLogRss (callback) { //10/6/15 by DW
 		var xmltext = rss.chatLogToRss (chatRssHeadElements, chatLog);
-		store.newObject (s3Path + fnameRss, xmltext, "text/xml", undefined, function () {
+		store.newObject (s3Path + s3RssPath, xmltext, "text/xml", undefined, function () {
 			var urlFeed = undefined;
 			if (urlPublicFolder !== undefined) {
-				urlFeed = urlPublicFolder + fnameRss;
+				urlFeed = urlPublicFolder + s3RssPath;
 				}
 			if (callback !== undefined) {
 				callback (urlFeed);
@@ -1382,6 +1415,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 																statsChanged ();
 																if (!flprivate) { //12/15/14 by DW
 																	checkLongpollsForUrl (metadata.url, body);
+																	callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
 																	}
 																}
 															}, metadata);
@@ -2021,11 +2055,25 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
-								default: //try to serve the object from the store -- 7/28/15 by DW
-									store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW
-										httpResponse.writeHead (code, headers);
-										httpResponse.end (bodytext);
-										});
+								default:
+									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
+										request (urlHomePageContent, function (error, response, body) {
+											if (error) {
+												httpResponse.writeHead (500, {"Content-Type": "text/plain"});
+												httpResponse.end ("Error accessing home page content: " + error.message);    
+												}
+											else {
+												httpResponse.writeHead (response.statusCode, {"Content-Type": response.headers ["content-type"]});
+												httpResponse.end (body);    
+												}
+											});
+										}
+									else {
+										store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
+											httpResponse.writeHead (code, headers);
+											httpResponse.end (bodytext);
+											});
+										}
 									break;
 								}
 							break;
@@ -2127,7 +2175,12 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.urlPublicFolder !== undefined) { //10/6/15 by DW
 				urlPublicFolder = config.urlPublicFolder;
 				}
-			
+			if (config.urlHomePageContent !== undefined) { //10/11/15 by DW
+				urlHomePageContent = config.urlHomePageContent;
+				}
+			if (config.s3RssPath !== undefined) { //10/12/15 by DW
+				s3RssPath = config.s3RssPath;
+				}
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
 		if (callback !== undefined) {
