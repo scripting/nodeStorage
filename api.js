@@ -562,6 +562,182 @@ function twGetComments (snAuthor, idPost, callback) {
 				}, ctSecondsTimeout * 1000);
 			}
 		}
+	function twWatchChatLog (nameChatLog, callback) { //10/26/15 by DW
+		twWatchForChange ("chatlog:" + nameChatLog, function (s) {
+			console.log ("twWatchChatLog: nameChatLog == " + nameChatLog);
+			if (callback !== undefined) {
+				callback (s);
+				}
+			});
+		}
+	function twPostChatMessage (s, payload, idMsgReplyingTo, nameChatLog, callback) { //8/30/15 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			chatLog: nameChatLog, //10/26/15 by DW
+			flNotWhitelisted: false,
+			text: s
+			}
+		if (payload !== undefined) {
+			paramtable.payload = jsonStringify (payload);
+			}
+		if (idMsgReplyingTo !== undefined) {
+			paramtable.idMsgReplyingTo = idMsgReplyingTo;
+			}
+		var url = twGetDefaultServer () + "chat?" + twBuildParamList (paramtable);
+		$.ajax ({
+			type: "POST",
+			url: url,
+			success: function (data) {
+				if (callback != undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twPostChatMessage: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
+	function twEditChatMessage (s, payload, id, nameChatLog, callback) {
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			chatLog: nameChatLog, //10/26/15 by DW
+			flNotWhitelisted: false,
+			text: s,
+			id: id
+			}
+		if (payload !== undefined) {
+			paramtable.payload = jsonStringify (payload);
+			}
+		var url = twGetDefaultServer () + "editchatmessage?" + twBuildParamList (paramtable);
+		$.ajax ({
+			type: "POST",
+			url: url,
+			success: function (data) {
+				if (callback != undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twEditChatMessage: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
+	function twGetChatLog (nameChatLog, callback) { //8/30/15 by DW
+		var apiUrl = twGetDefaultServer () + "chatlog?chatLog=" + encodeURIComponent (nameChatLog), whenstart = new Date ();
+		readHttpFile (apiUrl, function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twGetChatLog: length == " + jstruct.chatLog.length);
+			console.log ("twGetChatLog: metadata == " + JSON.stringify (jstruct.metadata, undefined, 4));
+			callback (jstruct.chatLog, jstruct.metadata); //new metadata parameter -- 10/23/15 by DW
+			});
+		}
+	function twGetChatLogList (callback) { //10/29/15 by DW
+		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twGetChatLogList: " + JSON.stringify (jstruct, undefined, 4));
+			callback (jstruct); 
+			});
+		}
+	function twGetChatMessage (id, nameChatLog, callback) { //9/20/15 by DW
+		var apiUrl = twGetDefaultServer () + "getchatmessage?id=" + id + "&chatLog=" + encodeURIComponent (nameChatLog), whenstart = new Date ();
+		readHttpFile (apiUrl, function (data) {
+			var msgdata = JSON.parse (data);
+			console.log ("twGetChatMessage: " + secondsSince (whenstart) + " secs.");
+			callback (msgdata.item);
+			});
+		}
+	function twChatLike (id, nameChatLog, callback) { //9/27/15 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			chatLog: nameChatLog, //10/26/15 by DW
+			flNotWhitelisted: false,
+			id: id
+			}
+		var url = twGetDefaultServer () + "chatlike?" + twBuildParamList (paramtable);
+		$.ajax ({
+			type: "GET",
+			url: url,
+			success: function (data) {
+				if (callback != undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twChatLike: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
+	function twNewIncomingHook (description, channel, customName, urlCustomIcon, customEmoji, callback) { //8/30/15 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			flNotWhitelisted: false
+			}
+		if ((channel !== undefined) && (channel.length > 0)) {
+			paramtable.channel = channel;
+			}
+		if ((description !== undefined) && (description.length > 0)) {
+			paramtable.description = description;
+			}
+		if ((customName !== undefined) && (customName.length > 0)) {
+			paramtable.customname = customName;
+			}
+		if ((urlCustomIcon !== undefined) && (urlCustomIcon.length > 0)) {
+			paramtable.urlcustomicon = urlCustomIcon;
+			}
+		if ((customEmoji !== undefined) && (customEmoji.length > 0)) {
+			paramtable.customemoji = customEmoji;
+			}
+		var url = twGetDefaultServer () + "newincomingwebhook?" + twBuildParamList (paramtable);
+		console.log ("twNewIncomingHook: url == " + url);
+		$.ajax ({
+			type: "GET",
+			url: url,
+			success: function (data) {
+				if (callback != undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twNewIncomingHook: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
 	function twNewOutgoingHook (description, channel, triggerWords, urlsToCall, customName, urlCustomIcon, customEmoji, callback) {
 		var paramtable = {
 			oauth_token: localStorage.twOauthToken,
@@ -601,119 +777,6 @@ function twGetComments (snAuthor, idPost, callback) {
 				},
 			error: function (status, something, otherthing) { 
 				console.log ("twNewOutgoingHook: error == " + JSON.stringify (status, undefined, 4));
-				if (callback != undefined) {
-					var err = {
-						code: status.status,
-						message: JSON.parse (status.responseText).message
-						};
-					callback (err, undefined);
-					}
-				},
-			dataType: "json"
-			});
-		}
-	function twEditChatMessage (s, payload, id, callback) {
-		var paramtable = {
-			oauth_token: localStorage.twOauthToken,
-			oauth_token_secret: localStorage.twOauthTokenSecret,
-			flNotWhitelisted: false,
-			text: s,
-			id: id
-			}
-		if (payload !== undefined) {
-			paramtable.payload = jsonStringify (payload);
-			}
-		var url = twGetDefaultServer () + "editchatmessage?" + twBuildParamList (paramtable);
-		$.ajax ({
-			type: "POST",
-			url: url,
-			success: function (data) {
-				if (callback != undefined) {
-					callback (undefined, data);
-					}
-				},
-			error: function (status, something, otherthing) { 
-				console.log ("twEditChatMessage: error == " + JSON.stringify (status, undefined, 4));
-				if (callback != undefined) {
-					var err = {
-						code: status.status,
-						message: JSON.parse (status.responseText).message
-						};
-					callback (err, undefined);
-					}
-				},
-			dataType: "json"
-			});
-		}
-	function twPostChatMessage (s, payload, idMsgReplyingTo, callback) { //8/30/15 by DW
-		var paramtable = {
-			oauth_token: localStorage.twOauthToken,
-			oauth_token_secret: localStorage.twOauthTokenSecret,
-			flNotWhitelisted: false,
-			text: s
-			}
-		if (payload !== undefined) {
-			paramtable.payload = jsonStringify (payload);
-			}
-		if (idMsgReplyingTo !== undefined) {
-			paramtable.idMsgReplyingTo = idMsgReplyingTo;
-			}
-		var url = twGetDefaultServer () + "chat?" + twBuildParamList (paramtable);
-		$.ajax ({
-			type: "POST",
-			url: url,
-			success: function (data) {
-				if (callback != undefined) {
-					callback (undefined, data);
-					}
-				},
-			error: function (status, something, otherthing) { 
-				console.log ("twPostChatMessage: error == " + JSON.stringify (status, undefined, 4));
-				if (callback != undefined) {
-					var err = {
-						code: status.status,
-						message: JSON.parse (status.responseText).message
-						};
-					callback (err, undefined);
-					}
-				},
-			dataType: "json"
-			});
-		}
-	function twGetChatLog (callback) { //8/30/15 by DW
-		readHttpFile (twGetDefaultServer () + "chatlog", function (data) {
-			var jstruct = JSON.parse (data);
-			console.log ("twGetChatLog: length == " + jstruct.chatLog.length);
-			console.log ("twGetChatLog: metadata == " + JSON.stringify (jstruct.metadata, undefined, 4));
-			callback (jstruct.chatLog);
-			});
-		}
-	function twGetChatMessage (id, callback) { //9/20/15 by DW
-		var apiUrl = twGetDefaultServer () + "getchatmessage?id=" + id, whenstart = new Date ();
-		readHttpFile (apiUrl, function (data) {
-			var msgdata = JSON.parse (data);
-			console.log ("twGetChatMessage: " + secondsSince (whenstart) + " secs.");
-			callback (msgdata.item);
-			});
-		}
-	function twChatLike (id, callback) { //9/27/15 by DW
-		var paramtable = {
-			oauth_token: localStorage.twOauthToken,
-			oauth_token_secret: localStorage.twOauthTokenSecret,
-			flNotWhitelisted: false,
-			id: id
-			}
-		var url = twGetDefaultServer () + "chatlike?" + twBuildParamList (paramtable);
-		$.ajax ({
-			type: "GET",
-			url: url,
-			success: function (data) {
-				if (callback != undefined) {
-					callback (undefined, data);
-					}
-				},
-			error: function (status, something, otherthing) { 
-				console.log ("twChatLike: error == " + JSON.stringify (status, undefined, 4));
 				if (callback != undefined) {
 					var err = {
 						code: status.status,

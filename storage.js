@@ -23,11 +23,12 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.83q", myProductName = "nodeStorage"; 
+var myVersion = "0.84p", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
 var twitterAPI = require ("node-twitter-api");
+var websocket = require ("nodejs-websocket"); //11/11/15 by DW
 var fs = require ("fs");
 var request = require ("request");
 var querystring = require ("querystring"); //8/31/15 by DW
@@ -106,6 +107,7 @@ var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, anyone can
 var flScheduledEveryMinute = false; //9/2/15 by DW
 var urlPublicFolder; //10/6/15 by DW
 var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /
+var websocketPort; //11/11/15 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -172,6 +174,55 @@ function httpReadUrl (url, callback) {
 		}
 	
 	
+//websockets -- 11/11/15 by DW
+	var waitingWebSocketCalls = new Array ();
+	
+	function pushWebSocket (urlToWatchFor, wsConnection) {
+		var ctMilliseconds = getLongpollTimeout ();
+		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
+		waitingWebSocketCalls [waitingWebSocketCalls.length] = {
+			url: urlToWatchFor,
+			whenTimeout: whenExpires,
+			theConnection: wsConnection
+			}
+		}
+	function checkWebSocketCalls () { //expire timed-out calls
+		var now = new Date ();
+		for (var i = waitingWebSocketCalls.length - 1; i >= 0; i--) {
+			var obj = waitingWebSocketCalls [i];
+			if (now >= obj.whenTimeout) {
+				console.log ("Timing-out webSocket request #" + i);
+				
+				try {
+					obj.theConnection.sendText ("timeout");
+					}
+				catch (err) {
+					}
+				
+				waitingWebSocketCalls.splice (i, 1);
+				}
+			}
+		}
+	function checkWebSocketCallsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
+		for (var i = waitingWebSocketCalls.length - 1; i >= 0; i--) {
+			var obj = waitingWebSocketCalls [i];
+			if (obj.url == url) {
+				console.log ("WebSocket request #" + i + " is returning because the resource updated.");
+				try {
+					obj.theConnection.sendText ("update\r" + filetext);
+					}
+				catch (err) {
+					}
+				waitingWebSocketCalls.splice (i, 1);
+				}
+			}
+		}
+	function handleWebSocketConnection (conn) {
+		conn.on ("text", function (urlToWatchFor) {
+			console.log ("handleWebSocketConnection: urlToWatchFor == " + urlToWatchFor);
+			pushWebSocket (urlToWatchFor, conn);
+			});
+		}
 //long polling -- 12/15/14 by DW
 	var waitingLongpolls = new Array ();
 	
@@ -209,6 +260,7 @@ function httpReadUrl (url, callback) {
 				flStatsDirty = true;
 				}
 			}
+		checkWebSocketCalls (); //11/11/15 by DW
 		}
 	function checkLongpollsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
 		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
@@ -223,6 +275,7 @@ function httpReadUrl (url, callback) {
 				flStatsDirty = true;
 				}
 			}
+		checkWebSocketCallsForUrl (url, filetext); //11/11/15 by DW
 		}
 	
 	
@@ -305,15 +358,44 @@ function httpReadUrl (url, callback) {
 		maxFeedItems: 100,
 		appDomain: "nodestorage.io"
 		}
-	var fnameChatLog = "data/chatLog.json";
-	var chatLog = new Array (), maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250
+	var fnameChatLog = "data/chatLog.json", fnameChatLogPrefs = "data/chatLogPrefs.json";
+	var maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250
 	var maxLogLengthForClient = 100; //we won't return more than this number of log items to the client
-	var todaysChatLog = {
-		today: new Date (0),
-		theLog: new Array ()
-		};
-	var flChatLogDirty = false;
+	var flChatLogDirty = false, nameDirtyChatLog;
+	
+	var chatLogArray; //10/26/15 by DW
+	
+	
+	
 	var chatNotEnabledError = "Can't post the chat message because the feature is not enabled on the server.";
+	
+	function getChatLogList () { //10/29/15 by DW
+		var jstruct = new Object ();
+		for (var i = 0; i < chatLogArray.length; i++) {
+			var log = chatLogArray [i];
+			if (!log.prefs.flPrivate) {
+				jstruct [log.name] = {
+					prefs: log.prefs,
+					usersWhoCanPost: log.usersWhoCanPost,
+					urlPublicFolder: log.urlPublicFolder
+					};
+				}
+			}
+		return (jstruct);
+		}
+	function findChatLog (nameChatLog) {
+		for (var i = 0; i < chatLogArray.length; i++) {
+			var log = chatLogArray [i];
+			if (log.name == nameChatLog) {
+				return (log);
+				}
+			}
+		return (undefined);
+		}
+	function chatLogChanged (nameChatLog) {
+		flChatLogDirty = true;
+		nameDirtyChatLog = nameChatLog;
+		}
 	
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
 		item.whenLastUpdate = new Date ();
@@ -327,14 +409,15 @@ function httpReadUrl (url, callback) {
 	function getItemFile (id) { //10/5/15 by DW
 		return ("data/" + utils.getDatePath () + utils.padWithZeros (id, 5) + ".json");
 		}
-	function saveChatMessage (item, callback) { 
-		var path = s3Path + getItemFile (item.id);
+	function saveChatMessage (nameChatLog, item, callback) { 
+		var theLog = findChatLog (nameChatLog);
+		var path = theLog.s3Path + getItemFile (item.id);
 		store.newObject (path, utils.jsonStringify (item), "application/json", undefined, function () {
-			if (urlPublicFolder !== undefined) { //10/19/15 by DW
+			if (theLog.urlPublicFolder !== undefined) { //10/19/15 by DW
 				if (item.urlJson === undefined) {
-					item.urlJson = urlPublicFolder + getItemFile (item.id);
-					saveChatMessage (item, callback); //recurse, so the item gets saved again, this time with the urlJson element set -- 10/22/15 by DW
-					flChatLogDirty = true;
+					item.urlJson = theLog.urlPublicFolder + getItemFile (item.id);
+					saveChatMessage (nameChatLog, item, callback); //recurse, so the item gets saved again, this time with the urlJson element set -- 10/22/15 by DW
+					chatLogChanged (nameChatLog);
 					}
 				else {
 					if (callback !== undefined) {
@@ -349,7 +432,8 @@ function httpReadUrl (url, callback) {
 				}
 			});
 		}
-	function findChatMessage (id, callback) { //9/15/15 by DW
+	function findChatMessage (nameChatLog, id, callback) { //9/15/15 by DW
+		var theLog = findChatLog (nameChatLog);
 		var stack = [];
 		function findInSubs (theArray) {
 			for (var i = 0; i < theArray.length; i++) {
@@ -373,118 +457,164 @@ function httpReadUrl (url, callback) {
 				}
 			return (false);
 			}
-		if (!findInSubs (chatLog)) {
+		if (!findInSubs (theLog.chatLog)) {
 			callback (false);
 			}
 		}
-	function postChatMessage (screenName, chatText, payload, idMsgReplyingTo, iconUrl, iconEmoji, flTwitterName, callback) {
-		var now = new Date (), idChatPost, itemToReturn;
-		
-		var chatItem = {
-			name: screenName,
-			text: chatText,
-			id: serverStats.ctChatPosts++,
-			when: now
-			};
-		if (payload !== undefined) {
-			try {
-				chatItem.payload = JSON.parse (payload);
-				}
-			catch (err) {
-				console.log ("postChatMessage: payload is not valid JSON == " + payload);
-				callback (err, undefined);
-				return;
-				}
-			}
-		if (iconUrl !== undefined) {
-			chatItem.iconUrl = iconUrl;
-			}
-		if (iconEmoji !== undefined) {
-			chatItem.iconEmoji = iconEmoji;
-			}
-		if (!flTwitterName) {
-			chatItem.flNotTwitterName = !flTwitterName; //the "name" field of struct is not a twitter screen name
-			}
-		
-		if (idMsgReplyingTo !== undefined) {
-			console.log ("postChatMessage: idMsgReplyingTo == " + idMsgReplyingTo);
-			
-			findChatMessage (idMsgReplyingTo, function (flFound, item, subs, theTopItem) {
-				if (flFound) {
-					subs [subs.length] = chatItem;
-					itemToReturn = theTopItem;
-					itemToReturn.idLatestReply = chatItem.id; //9/22/15 by DW -- so the client can tell which reply is new
-					console.log ("postChatMessage: itemToReturn == " + utils.jsonStringify (itemToReturn));
-					}
-				else {
-					console.log ("postChatMessage: item to reply to not found.");
-					callback ("Can't reply to the message because it isn't in the server chat log.", undefined);
-					}
-				});
-			
-			}
-		else {
-			if (chatLog.length >= maxChatLog) {
-				chatLog.splice (0, 1); //remove first item
-				}
-			chatLog [chatLog.length] = chatItem;
-			itemToReturn = chatItem;
-			}
-		
-		callback (undefined, chatItem.id); //pass it the id of the new post
-		serverStats.whenLastChatPost = now;
-		if (!utils.sameDay (todaysChatLog.today, now)) { //date rollover
-			todaysChatLog.today = now;
-			todaysChatLog.theLog = new Array ();
-			serverStats.ctChatPostsToday = 0;
-			}
-		todaysChatLog.theLog [todaysChatLog.theLog.length] = chatItem;
-		serverStats.ctChatPostsToday++;
-		flStatsDirty = true;
-		flChatLogDirty = true;
-		saveChatMessage (itemToReturn, function () {
-			checkLongpollsForUrl ("chatlog", utils.jsonStringify (itemToReturn)); //anyone who's waiting for "chatlog" to update will be notified now
-			if (itemToReturn.idLatestReply !== undefined) { //9/22/15 by DW
-				delete itemToReturn.idLatestReply;
-				}
-			outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
-			});
-		}
-	function editChatMessage (screenName, chatText, payload, idMessage, callback) { //9/11/15 by DW
-		findChatMessage (idMessage, function (flFound, item, subs, theTopItem) {
-			if (flFound) {
-				if (item.name.toLowerCase () == screenName.toLowerCase ()) {
-					item.text = chatText;
-					if (payload !== undefined) {
-						try {
-							item.payload = JSON.parse (payload);
-							}
-						catch (err) {
-							console.log ("editChatMessage: payload is not valid JSON == " + payload);
-							callback (err, undefined);
-							return;
-							}
-						}
-					bumpChatUpdateCount (item); //10/18/15 by DW
-					callback (undefined, "We were able to update the post.");
-					console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
-					checkLongpollsForUrl ("chatlog", utils.jsonStringify (theTopItem)); //anyone who's waiting for "chatlog" to update will be notified now
-					saveChatMessage (theTopItem); //10/8/15 by DW
-					flChatLogDirty = true;
-					}
-				else {
-					callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
-					}
+	function countItemsInChatlog (nameChatLog) { //10/28/15 by DW
+		var theLog = findChatLog (nameChatLog);
+		function countInArray (theArray) {
+			if (theArray === undefined) {
+				return (0);
 				}
 			else {
-				console.log ("editChatMessage: item to reply to not found.");
-				callback ("Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.");
+				var ct = 0;
+				for (var i = 0; i < theArray.length; i++) {
+					var item = theArray [i]
+					ct += countInArray (item.subs) + 1;
+					}
+				return (ct);
 				}
-			});
+			}
+		return (countInArray (theLog.chatLog));
 		}
-	function likeChatMessage (screenName, idToLike, callback) { //9/27/15 by DW
+	function releaseChatLongpolls (nameChatLog, itemToReturn) { //anyone  waiting for "chatlog:xxx" to update will be notified 
+		var flDeleteName = itemToReturn.chatLog === undefined;
+		itemToReturn.chatLog = nameChatLog;
+		jsontext = utils.jsonStringify (itemToReturn);
+		delete itemToReturn.chatLog;
+		checkLongpollsForUrl ("chatlog:" + nameChatLog, jsontext); 
+		}
+	function okToPostToChatLog (nameChatLog, screenName) { //10/29/15 by DW
+		var theLog = findChatLog (nameChatLog), lowername = utils.stringLower (screenName);
+		if (theLog.usersWhoCanPost !== undefined) {
+			for (var i = 0; i < theLog.usersWhoCanPost.length; i++) {
+				if (utils.stringLower (theLog.usersWhoCanPost [i]) == lowername) {
+					return (true);
+					}
+				}
+			}
+		return (false);
+		}
+	function postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, iconUrl, iconEmoji, flTwitterName, callback) {
+		if (okToPostToChatLog (nameChatLog, screenName)) {
+			var theLog = findChatLog (nameChatLog);
+			var now = new Date (), idChatPost, itemToReturn;
+			
+			var chatItem = {
+				name: screenName,
+				text: chatText,
+				id: theLog.prefs.serialNum++,
+				when: now
+				};
+			if (payload !== undefined) {
+				try {
+					chatItem.payload = JSON.parse (payload);
+					}
+				catch (err) {
+					console.log ("postChatMessage: payload is not valid JSON == " + payload);
+					callback (err, undefined);
+					return;
+					}
+				}
+			if (iconUrl !== undefined) {
+				chatItem.iconUrl = iconUrl;
+				}
+			if (iconEmoji !== undefined) {
+				chatItem.iconEmoji = iconEmoji;
+				}
+			if (!flTwitterName) {
+				chatItem.flNotTwitterName = !flTwitterName; //the "name" field of struct is not a twitter screen name
+				}
+			
+			if (idMsgReplyingTo !== undefined) {
+				console.log ("postChatMessage: idMsgReplyingTo == " + idMsgReplyingTo);
+				
+				findChatMessage (nameChatLog, idMsgReplyingTo, function (flFound, item, subs, theTopItem) {
+					if (flFound) {
+						subs [subs.length] = chatItem;
+						itemToReturn = theTopItem;
+						itemToReturn.idLatestReply = chatItem.id; //9/22/15 by DW -- so the client can tell which reply is new
+						console.log ("postChatMessage: itemToReturn == " + utils.jsonStringify (itemToReturn));
+						}
+					else {
+						console.log ("postChatMessage: item to reply to not found.");
+						callback ("Can't reply to the message because it isn't in the server chat log.", undefined);
+						}
+					});
+				
+				}
+			else {
+				if (theLog.chatLog.length >= maxChatLog) {
+					theLog.chatLog.splice (0, 1); //remove first item
+					}
+				theLog.chatLog [theLog.chatLog.length] = chatItem;
+				itemToReturn = chatItem;
+				}
+			
+			callback (undefined, chatItem.id); //pass it the id of the new post
+			
+			if (!utils.sameDay (serverStats.whenLastChatPost, now)) { 
+				serverStats.ctChatPostsToday = 0;
+				}
+			serverStats.whenLastChatPost = now;
+			serverStats.ctChatPostsToday++;
+			flStatsDirty = true;
+			
+			
+			chatLogChanged (nameChatLog);
+			saveChatMessage (nameChatLog, itemToReturn, function () {
+				releaseChatLongpolls (nameChatLog, itemToReturn); 
+				if (itemToReturn.idLatestReply !== undefined) { //9/22/15 by DW
+					delete itemToReturn.idLatestReply;
+					}
+				outgoingWebhookCall (screenName, chatText, chatItem.id, iconUrl, iconEmoji, flTwitterName);
+				});
+			}
+		else {
+			callback ("Can't post the message because the user \"" + screenName + "\" does not have permission.", undefined);
+			}
+		}
+	function editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, callback) { //9/11/15 by DW
+		if (okToPostToChatLog (nameChatLog, screenName)) {
+			findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {
+				if (flFound) {
+					if (item.name.toLowerCase () == screenName.toLowerCase ()) {
+						item.text = chatText;
+						if (payload !== undefined) {
+							try {
+								item.payload = JSON.parse (payload);
+								}
+							catch (err) {
+								console.log ("editChatMessage: payload is not valid JSON == " + payload);
+								callback (err, undefined);
+								return;
+								}
+							}
+						bumpChatUpdateCount (item); //10/18/15 by DW
+						console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
+						releaseChatLongpolls (nameChatLog, theTopItem); 
+						saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
+						chatLogChanged (nameChatLog);
+						callback (undefined, "We were able to update the post.");
+						}
+					else {
+						callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
+						}
+					}
+				else {
+					console.log ("editChatMessage: item to reply to not found.");
+					callback ("Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.");
+					}
+				});
+			}
+		else {
+			callback ("Can't update the post because \"" + screenName + "\" doesn't have permission.");
+			}
+		}
+	function likeChatMessage (screenName, nameChatLog, idToLike, callback) { //9/27/15 by DW
 		var now = new Date ();
-		findChatMessage (idToLike, function (flFound, item, subs, theTopItem) {
+		findChatMessage (nameChatLog, idToLike, function (flFound, item, subs, theTopItem) {
 			if (flFound) {
 				var fl = true;
 				if (item.likes === undefined) {
@@ -500,10 +630,10 @@ function httpReadUrl (url, callback) {
 					fl = false;
 					}
 				bumpChatUpdateCount (item); //10/18/15 by DW
-				flChatLogDirty = true;
+				chatLogChanged (nameChatLog);
 				callback (fl); //return true if we liked, false if we unliked
-				checkLongpollsForUrl ("chatlog", utils.jsonStringify (theTopItem)); //anyone who's waiting for "chatlog" to update will be notified now
-				saveChatMessage (theTopItem); //10/8/15 by DW
+				releaseChatLongpolls (nameChatLog, theTopItem); 
+				saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
 				}
 			else {
 				console.log ("likeChatMessage: item to like to not found.");
@@ -511,20 +641,27 @@ function httpReadUrl (url, callback) {
 				}
 			});
 		}
-	function getChatlogForClient () { //9/20/15 by DW
+	function getChatlogForClient (nameChatLog) { //9/20/15 by DW
+		
+		var theLog = findChatLog (nameChatLog);
+		if (theLog === undefined) {
+			return (undefined);
+			}
+		
 		var jstruct = new Object (), urlChatLog = undefined;
-		if (urlPublicFolder !== undefined) { //set urlChatLog -- 10/22/15 by DW
-			urlChatLog = urlPublicFolder + fnameChatLog;
+		if (theLog.urlPublicFolder !== undefined) { //set urlChatLog -- 10/22/15 by DW
+			urlChatLog = theLog.urlPublicFolder + fnameChatLog;
 			}
 		jstruct.metadata = {
 			productName: myProductName,
 			version: myVersion, 
+			name: nameChatLog,
 			url: urlChatLog,
 			now: new Date ()
 			};
 		jstruct.chatLog = new Array ();
-		for (var i = chatLog.length - 1; i >= 0; i--) {
-			jstruct.chatLog.unshift (chatLog [i]); //insert at beginning of the array
+		for (var i = theLog.chatLog.length - 1; i >= 0; i--) {
+			jstruct.chatLog.unshift (theLog.chatLog [i]); //insert at beginning of the array
 			if (jstruct.chatLog.length >= maxLogLengthForClient) {
 				break;
 				}
@@ -632,44 +769,93 @@ function httpReadUrl (url, callback) {
 			}
 		chatLogIndex = loadArray (chatLog);
 		}
-	function buildChatLogRss (callback) { //10/6/15 by DW
-		var xmltext = rss.chatLogToRss (chatRssHeadElements, chatLog);
-		store.newObject (s3Path + s3RssPath, xmltext, "text/xml", undefined, function () {
+	function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW
+		var theLog = findChatLog (nameChatLog);
+		var xmltext = rss.chatLogToRss (theLog.rssHeadElements, theLog.chatLog);
+		store.newObject (theLog.s3Path + s3RssPath, xmltext, "text/xml", undefined, function () {
 			var urlFeed = undefined;
-			if (urlPublicFolder !== undefined) {
-				urlFeed = urlPublicFolder + s3RssPath;
+			if (theLog.urlPublicFolder !== undefined) {
+				urlFeed = theLog.urlPublicFolder + s3RssPath;
 				}
 			if (callback !== undefined) {
 				callback (urlFeed);
 				}
 			});
 		}
-	function saveChatLog (callback) {
-		flChatLogDirty = false;
-		saveStruct (fnameChatLog, chatLog, function () {
-			var f = "data/" + utils.getDatePath () + "todaysChatlog.json";
-			saveStruct (f, todaysChatLog, function () {
-				buildChatLogRss (function (urlFeed) {
-					if (chatRssHeadElements.flRssCloudEnabled) {
-						var domain = chatRssHeadElements.rssCloudDomain;
-						var port = chatRssHeadElements.rssCloudPort;
-						var path = chatRssHeadElements.rssCloudPath;
+	function saveChatLog (nameChatLog, callback) {
+		var theLog = findChatLog (nameChatLog);
+		var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
+		store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
+			console.log ("saveChatLog: chatlogpath == " + chatlogpath);
+			store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
+				console.log ("saveChatLog: prefspath == " + prefspath);
+				buildChatLogRss (nameChatLog, function (urlFeed) {
+					if (theLog.rssHeadElements.flRssCloudEnabled) {
+						var domain = theLog.rssHeadElements.rssCloudDomain;
+						var port = theLog.rssHeadElements.rssCloudPort;
+						var path = theLog.rssHeadElements.rssCloudPath;
 						var urlServer = "http://" + domain + ":" + port + path;
 						console.log ("saveChatLog: urlServer == " + urlServer + ", urlFeed == " + urlFeed);
 						rss.cloudPing (urlServer, urlFeed);
+						if (callback !== undefined) {
+							callback ();
+							}
 						}
 					});
 				});
 			});
+		
+		}
+	function chatLogEverySecond () {
+		if (flChatLogDirty) {
+			saveChatLog (nameDirtyChatLog);
+			flChatLogDirty = false; 
+			nameDirtyChatLog = undefined;
+			}
+		for (var i = 0; i < chatLogArray.length; i++) {
+			var log = chatLogArray [i];
+			if (log.flDirty) {
+				saveChatLog (log.name);
+				log.flDirty = false;
+				}
+			}
 		}
 	function loadChatLog (callback) {
 		if (flChatEnabled) {
-			loadStruct (fnameChatLog, chatLog, function () {
-				var f = "data/" + utils.getDatePath () + "todaysChatlog.json";
-				loadStruct (f, todaysChatLog, function () {
+			console.log ("loadChatLog: chatLogArray = " + utils.jsonStringify (chatLogArray));
+			function loadNextLog (ix) {
+				if (ix == chatLogArray.length) {
 					callback ();
-					});
-				});
+					}
+				else {
+					var log = chatLogArray [ix];
+					log.flDirty = false;
+					var chatlogpath = log.s3Path + fnameChatLog;
+					console.log ("loadChatLog: path == " + chatlogpath);
+					store.getObject (chatlogpath, function (error, data) {
+						if ((!error) && (data != null)) {
+							log.chatLog = JSON.parse (data.Body);
+							}
+						var prefspath = log.s3Path + fnameChatLogPrefs;
+						store.getObject (prefspath, function (error, data) {
+							if ((!error) && (data != null)) {
+								log.prefs = JSON.parse (data.Body);
+								}
+							else {
+								console.log ("loadChatLog: creating new prefs file, prefspath == " + prefspath);
+								log.prefs = {
+									serialNum: countItemsInChatlog (log.name),
+									whenLogPrefsCreated: new Date ()
+									};
+								log.flDirty = true;
+								}
+							loadNextLog (ix + 1);
+							});
+						});
+					}
+				}
+			loadNextLog (0);
+			
 			}
 		else {
 			callback ();
@@ -835,6 +1021,7 @@ function httpReadUrl (url, callback) {
 							}
 					if (jstruct.text != undefined) {
 						var screenName = "incoming-webhook-bot", iconUrl = undefined, iconEmoji = undefined, flTwitterName = true;
+						var channel = theHook.channel; //10/29/15 by DW -- we now have more than one chatlog per server
 						
 						theHook.ctCalls++;
 						theHook.whenLastCall = now;
@@ -863,7 +1050,7 @@ function httpReadUrl (url, callback) {
 								iconEmoji = jstruct.icon_emoji;
 								}
 						
-						postChatMessage (screenName, slackProcessText (jstruct.text),  undefined, undefined, iconUrl, iconEmoji, flTwitterName, function (id) {
+						postChatMessage (screenName, channel, slackProcessText (jstruct.text),  undefined, undefined, iconUrl, iconEmoji, flTwitterName, function (id) {
 							callback (true, 200, "text/plain", "We love you Burt!");
 							});
 						}
@@ -1214,6 +1401,8 @@ function everyMinute () {
 	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion);
 	readUserWhitelist (); //11/18/14 by DW
 	}
+
+
 function everySecond () {
 	if (!flScheduledEveryMinute) { //9/2/15 by DW
 		if (new Date ().getSeconds () == 0) {
@@ -1226,9 +1415,7 @@ function everySecond () {
 	if (flStatsDirty) {
 		saveServerStats ();
 		}
-	if (flChatLogDirty) { //8/25/15 by DW
-		saveChatLog ();
-		}
+	chatLogEverySecond ();
 	if (flWatchAppDateChange) { //8/26/15 by DW
 		utils.getFileModDate (fnameApp, function (theModDate) {
 			if (theModDate != origAppModDate) {
@@ -1430,13 +1617,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													var chatText = parsedUrl.query.text;
 													var payload = parsedUrl.query.payload;
 													var idMsgReplyingTo = parsedUrl.query.idMsgReplyingTo;
+													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
 													getScreenName (accessToken, accessTokenSecret, function (screenName) {
 														if (screenName === undefined) {
 															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
 															}
 														else {
 															console.log ("/chat: idMsgReplyingTo == " + idMsgReplyingTo);
-															postChatMessage (screenName, chatText, payload, idMsgReplyingTo, undefined, undefined, true, function (err, idMessage) {
+															postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, undefined, undefined, true, function (err, idMessage) {
 																if (err) {
 																	errorResponse ({message: err.message});    
 																	}
@@ -1459,12 +1647,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													var chatText = parsedUrl.query.text;
 													var idMessage = parsedUrl.query.id;
 													var payload = parsedUrl.query.payload;
+													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
 													getScreenName (accessToken, accessTokenSecret, function (screenName) {
 														if (screenName === undefined) {
 															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
 															}
 														else {
-															editChatMessage (screenName, chatText, payload, idMessage, function (err, msg) {
+															editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, function (err, msg) {
 																if (err) {
 																	errorResponse ({message: err.message});    
 																	}
@@ -1979,10 +2168,21 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										});
 									break;
 								case "/chatlog": //8/26/15 by DW
-									dataResponse (getChatlogForClient ());
+									var name = parsedUrl.query.chatLog;
+									var jstruct = getChatlogForClient (name);
+									if (jstruct === undefined) {
+										errorResponse ({message: "Can't get the chatlog named \"" + name + "\" because it doesn't exist."});    
+										}
+									else {
+										dataResponse (jstruct);
+										}
+									break;
+								case "/chatloglist": //10/29/15 by DW
+									dataResponse (getChatLogList ());
 									break;
 								case "/getchatmessage": //9/20/15 by DW
-									findChatMessage (parsedUrl.query.id, function (flFound, item, subs, theTopItem) {
+									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
+									findChatMessage (nameChatLog, parsedUrl.query.id, function (flFound, item, subs, theTopItem) {
 										if (flFound) {
 											dataResponse ({
 												item: item
@@ -1996,13 +2196,19 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								case "/chatlike": //9/27/15 by DW
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
 									var id = parsedUrl.query.id;
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
-										likeChatMessage (screenName, id, function (fl) {
-											dataResponse ({
-												flLiked: fl
+										if (flChatEnabled) {
+											likeChatMessage (screenName, nameChatLog, id, function (fl) {
+												dataResponse ({
+													flLiked: fl
+													});
 												});
-											});
+											}
+										else {
+											errorResponse ({message: webhookNotEnabledError});    
+											}
 										});
 									break;
 								case "/newincomingwebhook": //8/28/15 by DW
@@ -2055,6 +2261,18 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
+								
+								case "/test1": //10/27/15 by DW
+									postChatMessage ("davewiner", "blork", "Oh the buzzing of the bees", undefined, undefined, undefined, undefined, true, function (err, idMessage) {
+										if (err) {
+											errorResponse ({message: err.message});    
+											}
+										else {
+											dataResponse ({id: idMessage});
+											}
+										});
+									break;
+								
 								default:
 									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
 										request (urlHomePageContent, function (error, response, body) {
@@ -2181,6 +2399,15 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.s3RssPath !== undefined) { //10/12/15 by DW
 				s3RssPath = config.s3RssPath;
 				}
+			if (config.websocketPort !== undefined) { //11/11/15 by DW
+				websocketPort = config.websocketPort;
+				}
+			
+			if (config.chatLogs !== undefined) { //10/26/15 by DW
+				chatLogArray = config.chatLogs;
+				}
+			
+			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
 		if (callback !== undefined) {
@@ -2242,7 +2469,10 @@ function startup () {
 								
 								names.init (s3PrivatePath); //7/12/15 by DW
 								http.createServer (handleHttpRequest).listen (myPort);
-								
+								if (websocketPort !== undefined) { //11/11/15 by DW
+									console.log ("startup: websockets port is " + websocketPort);
+									websocket.createServer (handleWebSocketConnection).listen (websocketPort);
+									}
 								setInterval (everySecond, 1000); 
 								});
 							});
@@ -2253,4 +2483,3 @@ function startup () {
 		});
 	}
 startup ();
-
