@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.84p", myProductName = "nodeStorage"; 
+var myVersion = "0.84s", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -221,6 +221,10 @@ function httpReadUrl (url, callback) {
 		conn.on ("text", function (urlToWatchFor) {
 			console.log ("handleWebSocketConnection: urlToWatchFor == " + urlToWatchFor);
 			pushWebSocket (urlToWatchFor, conn);
+			});
+		conn.on ("close", function () {
+			});
+		conn.on ("error", function (err) {
 			});
 		}
 //long polling -- 12/15/14 by DW
