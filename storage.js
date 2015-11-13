@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.84s", myProductName = "nodeStorage"; 
+var myVersion = "0.85c", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -191,7 +191,6 @@ function httpReadUrl (url, callback) {
 		for (var i = waitingWebSocketCalls.length - 1; i >= 0; i--) {
 			var obj = waitingWebSocketCalls [i];
 			if (now >= obj.whenTimeout) {
-				console.log ("Timing-out webSocket request #" + i);
 				
 				try {
 					obj.theConnection.sendText ("timeout");
@@ -219,7 +218,9 @@ function httpReadUrl (url, callback) {
 		}
 	function handleWebSocketConnection (conn) {
 		conn.on ("text", function (urlToWatchFor) {
-			console.log ("handleWebSocketConnection: urlToWatchFor == " + urlToWatchFor);
+			//log the request
+				var freemem = gigabyteString (os.freemem ()), method = "WS", now = new Date (); 
+				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + urlToWatchFor);
 			pushWebSocket (urlToWatchFor, conn);
 			});
 		conn.on ("close", function () {
