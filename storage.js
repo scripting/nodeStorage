@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85c", myProductName = "nodeStorage"; 
+var myVersion = "0.85d", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -218,9 +218,11 @@ function httpReadUrl (url, callback) {
 		}
 	function handleWebSocketConnection (conn) {
 		conn.on ("text", function (urlToWatchFor) {
-			//log the request
+			getDomainName (conn.socket.remoteAddress, function (theName) { //log the request
 				var freemem = gigabyteString (os.freemem ()), method = "WS", now = new Date (); 
-				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + urlToWatchFor);
+				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + urlToWatchFor + " " + theName);
+				});
+				
 			pushWebSocket (urlToWatchFor, conn);
 			});
 		conn.on ("close", function () {
@@ -1146,6 +1148,27 @@ function httpReadUrl (url, callback) {
 		callNextHook (0);
 		}
 
+
+function getDomainName (clientIp, callback) { //11/14/15 by DW
+	if (clientIp === undefined) {
+		if (callback !== undefined) {
+			callback ("undefined");
+			}
+		}
+	else {
+		dns.reverse (clientIp, function (err, domains) {
+			var name = clientIp;
+			if (!err) {
+				if (domains.length > 0) {
+					name = domains [0];
+					}
+				}
+			if (callback !== undefined) {
+				callback (name);
+				}
+			});
+		}
+	}
 function newTwitter (myCallback) {
 	var twitter = new twitterAPI ({
 		consumerKey: twitterConsumerKey,
@@ -1518,15 +1541,9 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				}
 			
 		//log the request
-			dns.reverse (clientIp, function (err, domains) {
-				var client = httpRequest.connection.remoteAddress;
-				var freemem = gigabyteString (os.freemem ()); //1/24/15 by DW
-				if (!err) {
-					if (domains.length > 0) {
-						client = domains [0];
-						}
-					}
-				console.log (now.toLocaleTimeString () + " " + freemem + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath + " " + referrer + " " + client);
+			getDomainName (clientIp, function (theName) { //log the request
+				var freemem = gigabyteString (os.freemem ()); 
+				console.log (now.toLocaleTimeString () + " " + freemem + " " + httpRequest.method + " " + host + ":" + port + " " + lowerpath + " " + referrer + " " + theName);
 				});
 		
 		if (flEnabled) { 
