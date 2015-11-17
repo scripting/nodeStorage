@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85d", myProductName = "nodeStorage"; 
+var myVersion = "0.85f", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -610,8 +610,9 @@ function httpReadUrl (url, callback) {
 						}
 					}
 				else {
-					console.log ("editChatMessage: item to reply to not found.");
-					callback ("Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.");
+					var theErrorString = "Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.";
+					console.log ("editChatMessage: " + theErrorString);
+					callback ({message: theErrorString});
 					}
 				});
 			}
