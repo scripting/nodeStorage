@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85f", myProductName = "nodeStorage"; 
+var myVersion = "0.85j", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -370,7 +370,7 @@ function httpReadUrl (url, callback) {
 	var maxLogLengthForClient = 100; //we won't return more than this number of log items to the client
 	var flChatLogDirty = false, nameDirtyChatLog;
 	
-	var chatLogArray; //10/26/15 by DW
+	var chatLogArray = new Array (); //10/26/15 by DW
 	
 	
 	
@@ -842,7 +842,12 @@ function httpReadUrl (url, callback) {
 					console.log ("loadChatLog: path == " + chatlogpath);
 					store.getObject (chatlogpath, function (error, data) {
 						if ((!error) && (data != null)) {
-							log.chatLog = JSON.parse (data.Body);
+							try {
+								log.chatLog = JSON.parse (data.Body);
+								}
+							catch (err) {
+								log.chatLog = [];
+								}
 							}
 						var prefspath = log.s3Path + fnameChatLogPrefs;
 						store.getObject (prefspath, function (error, data) {
