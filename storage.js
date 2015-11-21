@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85j", myProductName = "nodeStorage"; 
+var myVersion = "0.85o", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -381,9 +381,11 @@ function httpReadUrl (url, callback) {
 		for (var i = 0; i < chatLogArray.length; i++) {
 			var log = chatLogArray [i];
 			if (!log.prefs.flPrivate) {
+				var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply);
 				jstruct [log.name] = {
 					prefs: log.prefs,
 					usersWhoCanPost: log.usersWhoCanPost,
+					flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW
 					urlPublicFolder: log.urlPublicFolder
 					};
 				}
@@ -402,6 +404,10 @@ function httpReadUrl (url, callback) {
 	function chatLogChanged (nameChatLog) {
 		flChatLogDirty = true;
 		nameDirtyChatLog = nameChatLog;
+		}
+	function chatAnyoneCanReply (nameChatLog) { //11/21/15 by DW
+		var theLog = findChatLog (nameChatLog);
+		return (utils.getBoolean (theLog.flAnyoneCanReply));
 		}
 	
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
@@ -492,7 +498,7 @@ function httpReadUrl (url, callback) {
 		delete itemToReturn.chatLog;
 		checkLongpollsForUrl ("chatlog:" + nameChatLog, jsontext); 
 		}
-	function okToPostToChatLog (nameChatLog, screenName) { //10/29/15 by DW
+	function okToPostToChatLog (nameChatLog, screenName, flReply) { //10/29/15 by DW
 		var theLog = findChatLog (nameChatLog), lowername = utils.stringLower (screenName);
 		if (theLog.usersWhoCanPost !== undefined) {
 			for (var i = 0; i < theLog.usersWhoCanPost.length; i++) {
@@ -501,10 +507,15 @@ function httpReadUrl (url, callback) {
 					}
 				}
 			}
+		if (flReply && utils.getBoolean (theLog.flAnyoneCanReply)) { //11/20/15 by DW
+			return (true);
+			}
 		return (false);
 		}
 	function postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, iconUrl, iconEmoji, flTwitterName, callback) {
-		if (okToPostToChatLog (nameChatLog, screenName)) {
+		var flReply = idMsgReplyingTo !== undefined;
+		
+		if (okToPostToChatLog (nameChatLog, screenName, flReply)) {
 			var theLog = findChatLog (nameChatLog);
 			var now = new Date (), idChatPost, itemToReturn;
 			
@@ -534,7 +545,7 @@ function httpReadUrl (url, callback) {
 				chatItem.flNotTwitterName = !flTwitterName; //the "name" field of struct is not a twitter screen name
 				}
 			
-			if (idMsgReplyingTo !== undefined) {
+			if (flReply) {
 				console.log ("postChatMessage: idMsgReplyingTo == " + idMsgReplyingTo);
 				
 				findChatMessage (nameChatLog, idMsgReplyingTo, function (flFound, item, subs, theTopItem) {
@@ -583,42 +594,38 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, callback) { //9/11/15 by DW
-		if (okToPostToChatLog (nameChatLog, screenName)) {
-			findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {
-				if (flFound) {
-					if (item.name.toLowerCase () == screenName.toLowerCase ()) {
-						item.text = chatText;
-						if (payload !== undefined) {
-							try {
-								item.payload = JSON.parse (payload);
-								}
-							catch (err) {
-								console.log ("editChatMessage: payload is not valid JSON == " + payload);
-								callback (err, undefined);
-								return;
-								}
+		findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {
+			if (flFound) {
+				if (item.name.toLowerCase () == screenName.toLowerCase ()) {
+					item.text = chatText;
+					if (payload !== undefined) {
+						try {
+							item.payload = JSON.parse (payload);
 							}
-						bumpChatUpdateCount (item); //10/18/15 by DW
-						console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
-						releaseChatLongpolls (nameChatLog, theTopItem); 
-						saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
-						chatLogChanged (nameChatLog);
-						callback (undefined, "We were able to update the post.");
+						catch (err) {
+							console.log ("editChatMessage: payload is not valid JSON == " + payload);
+							callback (err, undefined);
+							return;
+							}
 						}
-					else {
-						callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
-						}
+					bumpChatUpdateCount (item); //10/18/15 by DW
+					console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
+					releaseChatLongpolls (nameChatLog, theTopItem); 
+					saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
+					chatLogChanged (nameChatLog);
+					callback (undefined, "We were able to update the post.");
 					}
 				else {
-					var theErrorString = "Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.";
-					console.log ("editChatMessage: " + theErrorString);
-					callback ({message: theErrorString});
+					callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
 					}
-				});
-			}
-		else {
-			callback ("Can't update the post because \"" + screenName + "\" doesn't have permission.");
-			}
+				}
+			else {
+				var theErrorString = "Can't update the post because an item with id == " + idMessage + " isn't in the server's chat log.";
+				console.log ("editChatMessage: " + theErrorString);
+				callback ({message: theErrorString});
+				}
+			});
+		
 		}
 	function likeChatMessage (screenName, nameChatLog, idToLike, callback) { //9/27/15 by DW
 		var now = new Date ();
@@ -1645,7 +1652,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													var chatText = parsedUrl.query.text;
 													var payload = parsedUrl.query.payload;
 													var idMsgReplyingTo = parsedUrl.query.idMsgReplyingTo;
-													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
+													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
+													
+													flNotWhitelisted = false; //11/21/15 by DW
+													if (idMsgReplyingTo !== undefined) { //it's a reply -- 11/21/15 by DW
+														flNotWhitelisted = chatAnyoneCanReply (nameChatLog);
+														}
+													
 													getScreenName (accessToken, accessTokenSecret, function (screenName) {
 														if (screenName === undefined) {
 															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
@@ -1675,7 +1688,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													var chatText = parsedUrl.query.text;
 													var idMessage = parsedUrl.query.id;
 													var payload = parsedUrl.query.payload;
-													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
+													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
+													
+													flNotWhitelisted = chatAnyoneCanReply (nameChatLog); //11/21/15 by DW -- we won't let you edit if you didn't create the message
+													
 													getScreenName (accessToken, accessTokenSecret, function (screenName) {
 														if (screenName === undefined) {
 															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
@@ -2224,18 +2240,20 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								case "/chatlike": //9/27/15 by DW
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
+									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
 									var id = parsedUrl.query.id;
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
-										if (flChatEnabled) {
-											likeChatMessage (screenName, nameChatLog, id, function (fl) {
-												dataResponse ({
-													flLiked: fl
+										if (screenName !== undefined) { //11/21/15 by DW
+											if (flChatEnabled) {
+												likeChatMessage (screenName, nameChatLog, id, function (fl) {
+													dataResponse ({
+														flLiked: fl
+														});
 													});
-												});
-											}
-										else {
-											errorResponse ({message: webhookNotEnabledError});    
+												}
+											else {
+												errorResponse ({message: webhookNotEnabledError});    
+												}
 											}
 										});
 									break;

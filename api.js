@@ -659,9 +659,15 @@ function twGetComments (snAuthor, idPost, callback) {
 	function twGetChatMessage (id, nameChatLog, callback) { //9/20/15 by DW
 		var apiUrl = twGetDefaultServer () + "getchatmessage?id=" + id + "&chatLog=" + encodeURIComponent (nameChatLog), whenstart = new Date ();
 		readHttpFile (apiUrl, function (data) {
-			var msgdata = JSON.parse (data);
-			console.log ("twGetChatMessage: " + secondsSince (whenstart) + " secs.");
-			callback (msgdata.item);
+			if (data === undefined) { //error -- 11/20/15 by DW
+				console.log ("twGetChatMessage: error reading HTTP file.");
+				callback (undefined);
+				}
+			else {
+				var msgdata = JSON.parse (data);
+				console.log ("twGetChatMessage: " + secondsSince (whenstart) + " secs.");
+				callback (msgdata.item);
+				}
 			});
 		}
 	function twChatLike (id, nameChatLog, callback) { //9/27/15 by DW
