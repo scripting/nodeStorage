@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85q", myProductName = "nodeStorage"; 
+var myVersion = "0.85r", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -1617,7 +1617,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												var relpath = parsedUrl.query.relpath;
 												var type = parsedUrl.query.type;
 												var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
-												var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+												var flNotWhitelisted = false; //11/24/15 AM by DW
 												getScreenName (accessToken, accessTokenSecret, function (screenName) {
 													if (screenName === undefined) {
 														errorResponse ({message: "Can't save the file because the accessToken is not valid."});    
@@ -1911,7 +1911,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var relpath = parsedUrl.query.relpath;
 									var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
 									var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
-									var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
+									var flNotWhitelisted = false; //11/24/15 AM by DW
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
 										if (screenName === undefined) {
 											errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
@@ -2131,7 +2131,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var snAuthor = parsedUrl.query.author;
 									var idPost = parsedUrl.query.idpost;
 									var urlOpmlFile = parsedUrl.query.urlopmlfile;
-									var flNotWhitelisted = true; //2/23/15 by DW
+									var flNotWhitelisted = false; //11/24/15 AM by DW
 									getScreenName (accessToken, accessTokenSecret, function (snCommenter) {
 										addComment (snCommenter, snAuthor, idPost, urlOpmlFile, function (error, jstruct) {
 											if (jstruct !== undefined) {
@@ -2148,7 +2148,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 									var snAuthor = parsedUrl.query.author;
 									var idPost = parsedUrl.query.idpost;
-									var flNotWhitelisted = true; //2/23/15 by DW
+									var flNotWhitelisted = false; //11/24/15 AM by DW
 									getScreenName (accessToken, accessTokenSecret, function (snReader) {
 										getComments (snAuthor, idPost, function (error, jstruct) {
 											if (jstruct !== undefined) {
