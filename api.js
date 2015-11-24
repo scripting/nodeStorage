@@ -619,6 +619,7 @@ function twGetComments (snAuthor, idPost, callback) {
 			paramtable.payload = jsonStringify (payload);
 			}
 		var url = twGetDefaultServer () + "editchatmessage?" + twBuildParamList (paramtable);
+		console.log ("twEditChatMessage: url == " + url); //11/23/15 by DW
 		$.ajax ({
 			type: "POST",
 			url: url,

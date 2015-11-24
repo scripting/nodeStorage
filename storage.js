@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85o", myProductName = "nodeStorage"; 
+var myVersion = "0.85q", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -386,7 +386,8 @@ function httpReadUrl (url, callback) {
 					prefs: log.prefs,
 					usersWhoCanPost: log.usersWhoCanPost,
 					flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW
-					urlPublicFolder: log.urlPublicFolder
+					urlPublicFolder: log.urlPublicFolder,
+					urlRssFeed: log.urlPublicFolder + s3RssPath //11/22/15 by DW
 					};
 				}
 			}
@@ -2242,6 +2243,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
 									var id = parsedUrl.query.id;
+									var flNotWhitelisted = chatAnyoneCanReply (nameChatLog); //11/21/15 by DW
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
 										if (screenName !== undefined) { //11/21/15 by DW
 											if (flChatEnabled) {
@@ -2255,7 +2257,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												errorResponse ({message: webhookNotEnabledError});    
 												}
 											}
-										});
+										else {
+											errorResponse ({message: "Can't 'like' the message because your accessToken isn't valid."});    
+											}
+										}, flNotWhitelisted);
 									break;
 								case "/newincomingwebhook": //8/28/15 by DW
 									var accessToken = parsedUrl.query.oauth_token;
