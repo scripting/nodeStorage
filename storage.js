@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.85r", myProductName = "nodeStorage"; 
+var myVersion = "0.85t", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -571,7 +571,7 @@ function httpReadUrl (url, callback) {
 				itemToReturn = chatItem;
 				}
 			
-			callback (undefined, chatItem.id); //pass it the id of the new post
+			callback (undefined, chatItem.id, itemToReturn); //pass it the id of the new post, and (11/26/15, the item we'll return via WebSockets)
 			
 			if (!utils.sameDay (serverStats.whenLastChatPost, now)) { 
 				serverStats.ctChatPostsToday = 0;
@@ -614,7 +614,7 @@ function httpReadUrl (url, callback) {
 					releaseChatLongpolls (nameChatLog, theTopItem); 
 					saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
 					chatLogChanged (nameChatLog);
-					callback (undefined, "We were able to update the post.");
+					callback (undefined, "We were able to update the post.", theTopItem);
 					}
 				else {
 					callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
@@ -1666,12 +1666,12 @@ function handleHttpRequest (httpRequest, httpResponse) {
 															}
 														else {
 															console.log ("/chat: idMsgReplyingTo == " + idMsgReplyingTo);
-															postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, undefined, undefined, true, function (err, idMessage) {
+															postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, undefined, undefined, true, function (err, idMessage, itemToReturn) {
 																if (err) {
 																	errorResponse ({message: err.message});    
 																	}
 																else {
-																	dataResponse ({id: idMessage});
+																	dataResponse ({id: idMessage, item: itemToReturn});
 																	}
 																});
 															}
@@ -1698,12 +1698,12 @@ function handleHttpRequest (httpRequest, httpResponse) {
 															errorResponse ({message: "Can't post the chat message because the accessToken is not valid."});    
 															}
 														else {
-															editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, function (err, msg) {
+															editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, function (err, msg, itemToReturn) {
 																if (err) {
 																	errorResponse ({message: err.message});    
 																	}
 																else {
-																	dataResponse ({msg: msg});
+																	dataResponse ({msg: msg, item: itemToReturn});
 																	}
 																});
 															}
