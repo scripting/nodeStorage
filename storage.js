@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.86a", myProductName = "nodeStorage"; 
+var myVersion = "0.86c", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -174,62 +174,92 @@ function httpReadUrl (url, callback) {
 		}
 	
 	
-//websockets -- 11/11/15 by DW
-	var waitingWebSocketCalls = new Array ();
+
+//websockets rewrite -- 11/29/15 by DW
+	var theWsServer;
 	
-	function pushWebSocket (urlToWatchFor, wsConnection) {
-		var ctMilliseconds = getLongpollTimeout ();
-		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
-		waitingWebSocketCalls [waitingWebSocketCalls.length] = {
-			url: urlToWatchFor,
-			whenTimeout: whenExpires,
-			theConnection: wsConnection
-			}
-		}
 	function checkWebSocketCalls () { //expire timed-out calls
+		}
+	function checkWebSocketCallsForUrl (url, filetext) { 
+		for (var i = 0; i < theWsServer.connections.length; i++) {
+			var conn = theWsServer.connections [i];
+			if (conn.chatLogData !== undefined) { //it's one of ours
+				if (conn.chatLogData.urlToWatch !== undefined) { //we're watching a url
+					if (conn.chatLogData.urlToWatch == url) { //it's our url
+						try {
+							conn.sendText ("update\r" + filetext);
+							console.log ("socket #" + i + ": received update");
+							}
+						catch (err) {
+							console.log ("socket #" + i + ": error updating");
+							}
+						}
+					}
+				}
+			}
+		}
+	function handleWebSocketConnection (conn) { 
 		var now = new Date ();
-		for (var i = waitingWebSocketCalls.length - 1; i >= 0; i--) {
-			var obj = waitingWebSocketCalls [i];
-			if (now >= obj.whenTimeout) {
-				
-				try {
-					obj.theConnection.sendText ("timeout");
-					}
-				catch (err) {
-					}
-				
-				waitingWebSocketCalls.splice (i, 1);
-				}
-			}
-		}
-	function checkWebSocketCallsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
-		for (var i = waitingWebSocketCalls.length - 1; i >= 0; i--) {
-			var obj = waitingWebSocketCalls [i];
-			if (obj.url == url) {
-				console.log ("WebSocket request #" + i + " is returning because the resource updated.");
-				try {
-					obj.theConnection.sendText ("update\r" + filetext);
-					}
-				catch (err) {
-					}
-				waitingWebSocketCalls.splice (i, 1);
-				}
-			}
-		}
-	function handleWebSocketConnection (conn) {
-		conn.on ("text", function (urlToWatchFor) {
+		
+		function logToConsole (conn, verb, value) {
 			getDomainName (conn.socket.remoteAddress, function (theName) { //log the request
-				var freemem = gigabyteString (os.freemem ()), method = "WS", now = new Date (); 
-				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + urlToWatchFor + " " + theName);
+				var freemem = gigabyteString (os.freemem ()), method = "WS:" + verb, now = new Date (); 
+				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + value + " " + theName);
+				conn.chatLogData.domain = theName; 
 				});
-				
-			pushWebSocket (urlToWatchFor, conn);
+			}
+		
+		conn.chatLogData = {
+			whenStarted: now
+			};
+		conn.on ("text", function (s) {
+			var words = s.split (" ");
+			if (words.length > 1) { //new protocol as of 11/29/15 by DW
+				conn.chatLogData.whenLastUpdate = now;
+				conn.chatLogData.lastVerb = words [0];
+				switch (words [0]) {
+					case "watch":
+						conn.chatLogData.urlToWatch = utils.trimWhitespace (words [1]);
+						logToConsole (conn, conn.chatLogData.lastVerb, conn.chatLogData.urlToWatch);
+						break;
+					}
+				}
+			else {
+				conn.close ();
+				}
 			});
 		conn.on ("close", function () {
 			});
-		conn.on ("error", function (err) {
+		conn.on ("error", function () {
+			console.log ("'error' message received.");
 			});
 		}
+	function webSocketStartup (thePort) {
+		theWsServer = websocket.createServer (handleWebSocketConnection);
+		theWsServer.listen (thePort);
+		}
+	function countOpenSockets () {
+		return (theWsServer.connections.length);
+		}
+	function getOpenSocketsArray () { //return an array with data about open sockets
+		var theArray = new Array ();
+		for (var i = 0; i < theWsServer.connections.length; i++) {
+			var conn = theWsServer.connections [i];
+			if (conn.chatLogData !== undefined) { //it's one of ours
+				theArray [theArray.length] = {
+					arrayIndex: i,
+					lastVerb: conn.chatLogData.lastVerb,
+					urlToWatch: conn.chatLogData.urlToWatch,
+					domain: conn.chatLogData.domain,
+					whenStarted: utils.viewDate (conn.chatLogData.whenStarted),
+					whenLastUpdate: utils.viewDate (conn.chatLogData.whenLastUpdate)
+					};
+				}
+			}
+		return (theArray);
+		}
+
+
 //long polling -- 12/15/14 by DW
 	var waitingLongpolls = new Array ();
 	
@@ -1440,7 +1470,7 @@ function getUserCommentsOpml (s3path, callback) {
 	}
 function everyMinute () {
 	var now = new Date ();
-	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion);
+	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion + ", " + countOpenSockets () + " open sockets");
 	readUserWhitelist (); //11/18/14 by DW
 	}
 
@@ -2312,18 +2342,9 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
-								
-								case "/test1": //10/27/15 by DW
-									postChatMessage ("davewiner", "blork", "Oh the buzzing of the bees", undefined, undefined, undefined, undefined, true, function (err, idMessage) {
-										if (err) {
-											errorResponse ({message: err.message});    
-											}
-										else {
-											dataResponse ({id: idMessage});
-											}
-										});
+								case "/opensockets": //11/29/15 by DW -- for debugging
+									dataResponse (getOpenSocketsArray ());
 									break;
-								
 								default:
 									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
 										request (urlHomePageContent, function (error, response, body) {
@@ -2522,7 +2543,7 @@ function startup () {
 								http.createServer (handleHttpRequest).listen (myPort);
 								if (websocketPort !== undefined) { //11/11/15 by DW
 									console.log ("startup: websockets port is " + websocketPort);
-									websocket.createServer (handleWebSocketConnection).listen (websocketPort);
+									webSocketStartup (websocketPort); //11/29/15 by DW
 									}
 								setInterval (everySecond, 1000); 
 								});
