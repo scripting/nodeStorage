@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.86c", myProductName = "nodeStorage"; 
+var myVersion = "0.86f", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -181,6 +181,7 @@ function httpReadUrl (url, callback) {
 	function checkWebSocketCalls () { //expire timed-out calls
 		}
 	function checkWebSocketCallsForUrl (url, filetext) { 
+		var ctUpdates = 0;
 		for (var i = 0; i < theWsServer.connections.length; i++) {
 			var conn = theWsServer.connections [i];
 			if (conn.chatLogData !== undefined) { //it's one of ours
@@ -188,14 +189,16 @@ function httpReadUrl (url, callback) {
 					if (conn.chatLogData.urlToWatch == url) { //it's our url
 						try {
 							conn.sendText ("update\r" + filetext);
-							console.log ("socket #" + i + ": received update");
+							ctUpdates++;
 							}
 						catch (err) {
-							console.log ("socket #" + i + ": error updating");
 							}
 						}
 					}
 				}
+			}
+		if (ctUpdates > 0) {
+			console.log ("checkWebSocketCallsForUrl: " + ctUpdates + " sockets were updated.");
 			}
 		}
 	function handleWebSocketConnection (conn) { 
@@ -204,6 +207,9 @@ function httpReadUrl (url, callback) {
 		function logToConsole (conn, verb, value) {
 			getDomainName (conn.socket.remoteAddress, function (theName) { //log the request
 				var freemem = gigabyteString (os.freemem ()), method = "WS:" + verb, now = new Date (); 
+				if (theName === undefined) {
+					theName = conn.socket.remoteAddress;
+					}
 				console.log (now.toLocaleTimeString () + " " + freemem + " " + method + " " + value + " " + theName);
 				conn.chatLogData.domain = theName; 
 				});
@@ -230,8 +236,8 @@ function httpReadUrl (url, callback) {
 			});
 		conn.on ("close", function () {
 			});
-		conn.on ("error", function () {
-			console.log ("'error' message received.");
+		conn.on ("error", function (err) {
+			conn.close (); //11/30/15 by DW -- https://github.com/scripting/betterWebSocketsDemo/issues/2#issuecomment-160658118
 			});
 		}
 	function webSocketStartup (thePort) {
@@ -397,7 +403,7 @@ function httpReadUrl (url, callback) {
 		}
 	var fnameChatLog = "data/chatLog.json", fnameChatLogPrefs = "data/chatLogPrefs.json";
 	var maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250
-	var maxLogLengthForClient = 100; //we won't return more than this number of log items to the client
+	var maxLogLengthForClient = 50; //we won't return more than this number of log items to the client
 	var flChatLogDirty = false, nameDirtyChatLog;
 	
 	var chatLogArray = new Array (); //10/26/15 by DW
@@ -577,8 +583,6 @@ function httpReadUrl (url, callback) {
 				}
 			
 			if (flReply) {
-				console.log ("postChatMessage: idMsgReplyingTo == " + idMsgReplyingTo);
-				
 				findChatMessage (nameChatLog, idMsgReplyingTo, function (flFound, item, subs, theTopItem) {
 					if (flFound) {
 						subs [subs.length] = chatItem;
@@ -640,7 +644,6 @@ function httpReadUrl (url, callback) {
 							}
 						}
 					bumpChatUpdateCount (item); //10/18/15 by DW
-					console.log ("editChatMessage: idMessage == " + idMessage + ", chatText == " + chatText);
 					releaseChatLongpolls (nameChatLog, theTopItem); 
 					saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
 					chatLogChanged (nameChatLog);
@@ -832,16 +835,13 @@ function httpReadUrl (url, callback) {
 		var theLog = findChatLog (nameChatLog);
 		var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
 		store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
-			console.log ("saveChatLog: chatlogpath == " + chatlogpath);
 			store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
-				console.log ("saveChatLog: prefspath == " + prefspath);
 				buildChatLogRss (nameChatLog, function (urlFeed) {
 					if (theLog.rssHeadElements.flRssCloudEnabled) {
 						var domain = theLog.rssHeadElements.rssCloudDomain;
 						var port = theLog.rssHeadElements.rssCloudPort;
 						var path = theLog.rssHeadElements.rssCloudPath;
 						var urlServer = "http://" + domain + ":" + port + path;
-						console.log ("saveChatLog: urlServer == " + urlServer + ", urlFeed == " + urlFeed);
 						rss.cloudPing (urlServer, urlFeed);
 						if (callback !== undefined) {
 							callback ();
@@ -850,7 +850,6 @@ function httpReadUrl (url, callback) {
 					});
 				});
 			});
-		
 		}
 	function chatLogEverySecond () {
 		if (flChatLogDirty) {
