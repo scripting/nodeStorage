@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.86f", myProductName = "nodeStorage"; 
+var myVersion = "0.86g", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -237,7 +237,6 @@ function httpReadUrl (url, callback) {
 		conn.on ("close", function () {
 			});
 		conn.on ("error", function (err) {
-			conn.close (); //11/30/15 by DW -- https://github.com/scripting/betterWebSocketsDemo/issues/2#issuecomment-160658118
 			});
 		}
 	function webSocketStartup (thePort) {
