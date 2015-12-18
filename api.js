@@ -920,3 +920,9 @@ function twStorageStartup (appPrefs, callback) {
 			}
 		});
 	}
+function twSetPrefs (thePrefs, callback) { //11/23/15 by DW
+	twStorageToPrefs (thePrefs, function () {
+		callback ();
+		twPrefsToStorage (thePrefs); 
+		});
+	}

@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.86g", myProductName = "nodeStorage"; 
+var myVersion = "0.86t", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -103,7 +103,8 @@ var screenNameCache = [];
 
 var flWatchAppDateChange = false, fnameApp = "storage.js", origAppModDate; //8/26/15 by DW -- can only be sent through config.json
 var domainIncomingWebhook; //8/28/15 by DW
-var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, anyone can
+var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, no one can
+var usersWhoCanModerate; //11/30/15 by DW -- if it's undefined, no one can
 var flScheduledEveryMinute = false; //9/2/15 by DW
 var urlPublicFolder; //10/6/15 by DW
 var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /
@@ -174,31 +175,32 @@ function httpReadUrl (url, callback) {
 		}
 	
 	
-
 //websockets rewrite -- 11/29/15 by DW
 	var theWsServer;
 	
 	function checkWebSocketCalls () { //expire timed-out calls
 		}
 	function checkWebSocketCallsForUrl (url, filetext) { 
-		var ctUpdates = 0;
-		for (var i = 0; i < theWsServer.connections.length; i++) {
-			var conn = theWsServer.connections [i];
-			if (conn.chatLogData !== undefined) { //it's one of ours
-				if (conn.chatLogData.urlToWatch !== undefined) { //we're watching a url
-					if (conn.chatLogData.urlToWatch == url) { //it's our url
-						try {
-							conn.sendText ("update\r" + filetext);
-							ctUpdates++;
-							}
-						catch (err) {
+		if (theWsServer !== undefined) {
+			var ctUpdates = 0;
+			for (var i = 0; i < theWsServer.connections.length; i++) {
+				var conn = theWsServer.connections [i];
+				if (conn.chatLogData !== undefined) { //it's one of ours
+					if (conn.chatLogData.urlToWatch !== undefined) { //we're watching a url
+						if (conn.chatLogData.urlToWatch == url) { //it's our url
+							try {
+								conn.sendText ("update\r" + filetext);
+								ctUpdates++;
+								}
+							catch (err) {
+								}
 							}
 						}
 					}
 				}
-			}
-		if (ctUpdates > 0) {
-			console.log ("checkWebSocketCallsForUrl: " + ctUpdates + " sockets were updated.");
+			if (ctUpdates > 0) {
+				console.log ("checkWebSocketCallsForUrl: " + ctUpdates + " sockets were updated.");
+				}
 			}
 		}
 	function handleWebSocketConnection (conn) { 
@@ -244,7 +246,12 @@ function httpReadUrl (url, callback) {
 		theWsServer.listen (thePort);
 		}
 	function countOpenSockets () {
-		return (theWsServer.connections.length);
+		if (theWsServer === undefined) { //12/18/15 by DW
+			return (0);
+			}
+		else {
+			return (theWsServer.connections.length);
+			}
 		}
 	function getOpenSocketsArray () { //return an array with data about open sockets
 		var theArray = new Array ();
@@ -263,8 +270,6 @@ function httpReadUrl (url, callback) {
 			}
 		return (theArray);
 		}
-
-
 //long polling -- 12/15/14 by DW
 	var waitingLongpolls = new Array ();
 	
@@ -401,15 +406,15 @@ function httpReadUrl (url, callback) {
 		appDomain: "nodestorage.io"
 		}
 	var fnameChatLog = "data/chatLog.json", fnameChatLogPrefs = "data/chatLogPrefs.json";
+	var chatNotEnabledError = "Can't post the chat message because the feature is not enabled on the server.";
 	var maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250
 	var maxLogLengthForClient = 50; //we won't return more than this number of log items to the client
 	var flChatLogDirty = false, nameDirtyChatLog;
 	
+	
 	var chatLogArray = new Array (); //10/26/15 by DW
 	
 	
-	
-	var chatNotEnabledError = "Can't post the chat message because the feature is not enabled on the server.";
 	
 	function getChatLogList () { //10/29/15 by DW
 		var jstruct = new Object ();
@@ -419,7 +424,7 @@ function httpReadUrl (url, callback) {
 				var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply);
 				jstruct [log.name] = {
 					prefs: log.prefs,
-					usersWhoCanPost: log.usersWhoCanPost,
+					usersWhoCanPost: log.usersWhoCanPost, 
 					flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW
 					urlPublicFolder: log.urlPublicFolder,
 					urlRssFeed: log.urlPublicFolder + s3RssPath //11/22/15 by DW
@@ -445,7 +450,6 @@ function httpReadUrl (url, callback) {
 		var theLog = findChatLog (nameChatLog);
 		return (utils.getBoolean (theLog.flAnyoneCanReply));
 		}
-	
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
 		item.whenLastUpdate = new Date ();
 		if (item.ctUpdates === undefined) { 
@@ -455,16 +459,16 @@ function httpReadUrl (url, callback) {
 			item.ctUpdates++;
 			}
 		}
-	function getItemFile (id) { //10/5/15 by DW
-		return ("data/" + utils.getDatePath () + utils.padWithZeros (id, 5) + ".json");
+	function getItemFile (item) { //10/5/15 by DW
+		return ("data/" + utils.getDatePath (item.when) + utils.padWithZeros (item.id, 5) + ".json");
 		}
 	function saveChatMessage (nameChatLog, item, callback) { 
 		var theLog = findChatLog (nameChatLog);
-		var path = theLog.s3Path + getItemFile (item.id);
+		var path = theLog.s3Path + getItemFile (item);
 		store.newObject (path, utils.jsonStringify (item), "application/json", undefined, function () {
 			if (theLog.urlPublicFolder !== undefined) { //10/19/15 by DW
 				if (item.urlJson === undefined) {
-					item.urlJson = theLog.urlPublicFolder + getItemFile (item.id);
+					item.urlJson = theLog.urlPublicFolder + getItemFile (item);
 					saveChatMessage (nameChatLog, item, callback); //recurse, so the item gets saved again, this time with the urlJson element set -- 10/22/15 by DW
 					chatLogChanged (nameChatLog);
 					}
@@ -548,6 +552,23 @@ function httpReadUrl (url, callback) {
 			}
 		return (false);
 		}
+	function okToModerate (screenName) { //11/30/15 by DW
+		if (usersWhoCanModerate !== undefined) {
+			for (var i = 0; i < usersWhoCanModerate.length; i++) {
+				if (usersWhoCanModerate [i].toLowerCase () == screenName.toLowerCase ()) {
+					return (true);
+					}
+				}
+			}
+		return (false);
+		}
+	function okToEdit (item, screenName) { //11/30/15 by DW
+		if (item.name.toLowerCase () == screenName.toLowerCase ()) {
+			return (true);
+			}
+		return (okToModerate (screenName));
+		}
+	
 	function postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, iconUrl, iconEmoji, flTwitterName, callback) {
 		var flReply = idMsgReplyingTo !== undefined;
 		
@@ -630,7 +651,7 @@ function httpReadUrl (url, callback) {
 	function editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, callback) { //9/11/15 by DW
 		findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {
 			if (flFound) {
-				if (item.name.toLowerCase () == screenName.toLowerCase ()) {
+				if (okToEdit (item, screenName)) { //(item.name.toLowerCase () == screenName.toLowerCase ()) {
 					item.text = chatText;
 					if (payload !== undefined) {
 						try {
@@ -731,7 +752,7 @@ function httpReadUrl (url, callback) {
 				}
 			}
 		function writefile (newitem) {
-			var f = getItemFile (newitem.id);
+			var f = getItemFile (newitem);
 			fs.writeFile (f, utils.jsonStringify (newitem), function (err) {
 				if (err) {
 					console.log ("writeIndividualFiles: error writing file == " + err.message + ", file == " + f);
@@ -757,65 +778,6 @@ function httpReadUrl (url, callback) {
 				}
 			}
 		doArray (chatLog);
-		}
-	function loadChatMessage (id, flLoadSubs, callback) { //10/5/15 by DW -- for possible future use
-		if (flLoadSubs === undefined) {
-			flLoadSubs = true;
-			}
-		function loadItem (id, callback) {
-			var f = getItemFile (id);
-			fs.readFile (f, function (err, data) {
-				if (err) {
-					console.log ("loadChatMessage: error reading file == " + f + ", err.message == " + err.message);
-					callback (undefined);
-					}
-				else {
-					var jstruct = JSON.parse (data.toString ());
-					if (flLoadSubs) {
-						if (jstruct.subs !== undefined) {
-							function getNextSub (subs, ix) {
-								if (ix < subs.length) {
-									loadItem (subs [ix], function (substruct) {
-										subs [ix] = substruct;
-										getNextSub (subs, ix + 1);
-										});
-									}
-								else {
-									callback (jstruct);
-									}
-								}
-							getNextSub (jstruct.subs, 0);
-							}
-						else {
-							callback (jstruct);
-							}
-						}
-					else {
-						callback (jstruct);
-						}
-					}
-				});
-			}
-		loadItem (id, function (jstruct) {
-			callback (jstruct);
-			});
-		}
-	function buildChatLogIndex (callback) { //10/5/15 by DW -- for possible future use
-		function loadArray (sourceArray) {
-			var destArray = new Array ();
-			for (var i = 0; i < sourceArray.length; i++) {
-				var sourceitem = sourceArray [i];
-				destArray [i] = {
-					id: sourceitem.id
-					};
-				var destitem = destArray [i];
-				if ((sourceitem.subs !== undefined) && (sourceitem.subs.length > 0)) {
-					destitem.subs = loadArray (sourceitem.subs);
-					}
-				}
-			return (destArray);
-			}
-		chatLogIndex = loadArray (chatLog);
 		}
 	function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW
 		var theLog = findChatLog (nameChatLog);
@@ -864,9 +826,9 @@ function httpReadUrl (url, callback) {
 				}
 			}
 		}
-	function loadChatLog (callback) {
+	function loadChatLogs (callback) {
 		if (flChatEnabled) {
-			console.log ("loadChatLog: chatLogArray = " + utils.jsonStringify (chatLogArray));
+			console.log ("loadChatLogs: chatLogArray = " + utils.jsonStringify (chatLogArray));
 			function loadNextLog (ix) {
 				if (ix == chatLogArray.length) {
 					callback ();
@@ -875,7 +837,7 @@ function httpReadUrl (url, callback) {
 					var log = chatLogArray [ix];
 					log.flDirty = false;
 					var chatlogpath = log.s3Path + fnameChatLog;
-					console.log ("loadChatLog: path == " + chatlogpath);
+					console.log ("loadChatLogs: path == " + chatlogpath);
 					store.getObject (chatlogpath, function (error, data) {
 						if ((!error) && (data != null)) {
 							try {
@@ -891,7 +853,7 @@ function httpReadUrl (url, callback) {
 								log.prefs = JSON.parse (data.Body);
 								}
 							else {
-								console.log ("loadChatLog: creating new prefs file, prefspath == " + prefspath);
+								console.log ("loadChatLogs: creating new prefs file, prefspath == " + prefspath);
 								log.prefs = {
 									serialNum: countItemsInChatlog (log.name),
 									whenLogPrefsCreated: new Date ()
@@ -2472,11 +2434,12 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.websocketPort !== undefined) { //11/11/15 by DW
 				websocketPort = config.websocketPort;
 				}
-			
+			if (config.usersWhoCanModerate !== undefined) { //11/30/15 by DW
+				usersWhoCanModerate = config.usersWhoCanModerate;
+				}
 			if (config.chatLogs !== undefined) { //10/26/15 by DW
 				chatLogArray = config.chatLogs;
 				}
-			
 			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
@@ -2534,7 +2497,7 @@ function startup () {
 			loadServerStats (function () {
 				loadServerPrefs (function () {
 					loadWebhooks (function () { //8/28/15M by DW
-						loadChatLog (function () { //8/25/15 by DW
+						loadChatLogs (function () { //8/25/15 by DW
 							readUserWhitelist (function () {
 								
 								names.init (s3PrivatePath); //7/12/15 by DW
