@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.86t", myProductName = "nodeStorage"; 
+var myVersion = "0.87c", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -568,7 +568,6 @@ function httpReadUrl (url, callback) {
 			}
 		return (okToModerate (screenName));
 		}
-	
 	function postChatMessage (screenName, nameChatLog, chatText, payload, idMsgReplyingTo, iconUrl, iconEmoji, flTwitterName, callback) {
 		var flReply = idMsgReplyingTo !== undefined;
 		
@@ -737,6 +736,29 @@ function httpReadUrl (url, callback) {
 			}
 		return (jstruct);
 		}
+	
+	
+	function getMoreChatLogPosts (nameChatLog, idOldestPost, ctPosts) { //12/31/15 by DW
+		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
+		if (theLog === undefined) {
+			return (undefined);
+			}
+		for (var i = 0; i < theLog.chatLog.length; i++) {
+			if (theLog.chatLog [i].id == idOldestPost) {
+				for (j = i - 1; j >= 0; j--) {
+					if (ct >= ctPosts) {
+						break;
+						}
+					jstruct [jstruct.length] = theLog.chatLog [j];
+					ct++;
+					}
+				return (jstruct);
+				}
+			}
+		return (undefined); //didn't find the item
+		}
+	
+	
 	function writeIndividualFiles () { //10/5/15 by DW -- for possible future use
 		var indentlevel = 0;
 		function copyScalars (source, dest) { 
@@ -2212,6 +2234,18 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										dataResponse (jstruct);
 										}
 									break;
+								case "/morechatlog": //12/31/15; 11:33:12 AM by DW
+									var name = parsedUrl.query.chatLog;
+									var id = parsedUrl.query.idOldestPost;
+									var ct = parsedUrl.query.ctPosts;
+									var jstruct = getMoreChatLogPosts (name, id, ct);
+									if (jstruct === undefined) {
+										errorResponse ({message: "Can't get more chatlog items before id " + id + " because the chatlog doesn't exist or the post doesn't."});
+										}
+									else {
+										dataResponse (jstruct);
+										}
+									break
 								case "/chatloglist": //10/29/15 by DW
 									dataResponse (getChatLogList ());
 									break;

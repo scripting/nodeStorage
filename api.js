@@ -650,6 +650,19 @@ function twGetComments (snAuthor, idPost, callback) {
 			callback (jstruct.chatLog, jstruct.metadata); //new metadata parameter -- 10/23/15 by DW
 			});
 		}
+	function twGetMoreChatLog (nameChatLog, idOldestPost, ctPosts, callback) { //12/31/15 by DW
+		var paramtable = {
+			chatLog: nameChatLog,
+			idOldestPost: idOldestPost,
+			ctPosts: ctPosts
+			}
+		var apiUrl = twGetDefaultServer () + "morechatlog?" + twBuildParamList (paramtable), whenstart = new Date ();
+		readHttpFile (apiUrl, function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twGetMoreChatLog: length == " + jstruct.length);
+			callback (jstruct); 
+			});
+		}
 	function twGetChatLogList (callback) { //10/29/15 by DW
 		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
 			var jstruct = JSON.parse (data);
