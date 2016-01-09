@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.87c", myProductName = "nodeStorage"; 
+var myVersion = "0.88n", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -413,15 +413,72 @@ function httpReadUrl (url, callback) {
 	
 	
 	var chatLogArray = new Array (); //10/26/15 by DW
+	var initialChatLogStruct = { //1/5/16 by DW
+		chatLog: [],
+		rssHeadElements: {
+			"title": "Someone's chatlog",
+			"link": "http://some chatlog address/",
+			"description": "A description of the chatlog.",
+			"language": "en-us",
+			"generator": "1999.io",
+			"docs": "http://cyber.law.harvard.edu/rss/rss.html",
+			"maxFeedItems": 100,
+			"appDomain": "domain.com",
+			"flRssCloudEnabled": true,
+			"rssCloudDomain": "rpc.rsscloud.io",
+			"rssCloudPort": 5337,
+			"rssCloudPath": "/pleaseNotify",
+			"rssCloudRegisterProcedure": "",
+			"rssCloudProtocol": "http-post"
+			},
+		prefs: {
+			serialNum: 1,
+			whenLogPrefsCreated: new Date ()
+			},
+		version: 2, //the first version has no version element here
+		flDirty: true
+		}
 	
 	
 	
+	function openUserChatlog (screenName, callback) { //1/5/16 by DW
+		var theLog = findChatLog (screenName);
+		if (theLog !== undefined) { //it's already open
+			callback (true);
+			}
+		else {
+			var flprivate = true; //might change later
+			var chatlogpath = getS3UsersPath (flprivate) + screenName + "/chatLog.json";
+			store.getObject (chatlogpath, function (error, data) {
+				var chatlogstruct = initialChatLogStruct;
+				
+				if ((!error) && (data != null)) {
+					try {
+						chatlogstruct = JSON.parse (data.Body);
+						console.log ("openUserChatlog: chatlog for " + screenName + " has been opened."); 
+						}
+					catch (err) {
+						console.log ("openUserChatlog: error opening chatlog for " + screenName + "."); 
+						}
+					}
+				
+				chatlogstruct.name = screenName;
+				chatlogstruct.jsonPath = chatlogpath;
+				chatlogstruct.s3Path = "/1999.io/testing/userchatlogs/";
+				chatlogstruct.usersWhoCanPost = [screenName];
+				
+				chatLogArray [chatLogArray.length] = chatlogstruct;
+				
+				callback (true);
+				});
+			}
+		}
 	function getChatLogList () { //10/29/15 by DW
 		var jstruct = new Object ();
 		for (var i = 0; i < chatLogArray.length; i++) {
 			var log = chatLogArray [i];
 			if (!log.prefs.flPrivate) {
-				var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply);
+				var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);
 				jstruct [log.name] = {
 					prefs: log.prefs,
 					usersWhoCanPost: log.usersWhoCanPost, 
@@ -448,7 +505,7 @@ function httpReadUrl (url, callback) {
 		}
 	function chatAnyoneCanReply (nameChatLog) { //11/21/15 by DW
 		var theLog = findChatLog (nameChatLog);
-		return (utils.getBoolean (theLog.flAnyoneCanReply));
+		return (utils.getBoolean (theLog.flAnyoneCanReply) || (theLog.version == 2));
 		}
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
 		item.whenLastUpdate = new Date ();
@@ -547,7 +604,7 @@ function httpReadUrl (url, callback) {
 					}
 				}
 			}
-		if (flReply && utils.getBoolean (theLog.flAnyoneCanReply)) { //11/20/15 by DW
+		if (flReply && (utils.getBoolean (theLog.flAnyoneCanReply) || (theLog.version == 2))) { //11/20/15 by DW
 			return (true);
 			}
 		return (false);
@@ -736,8 +793,6 @@ function httpReadUrl (url, callback) {
 			}
 		return (jstruct);
 		}
-	
-	
 	function getMoreChatLogPosts (nameChatLog, idOldestPost, ctPosts) { //12/31/15 by DW
 		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
 		if (theLog === undefined) {
@@ -757,8 +812,35 @@ function httpReadUrl (url, callback) {
 			}
 		return (undefined); //didn't find the item
 		}
-	
-	
+	function getChatLogIndex (nameChatLog) { //1/2/16 by DW
+		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
+		if (theLog === undefined) {
+			return (undefined);
+			}
+		for (var i = 0; i < theLog.chatLog.length; i++) {
+			var item = theLog.chatLog [i], title = "", urlRendering = "", urlJson = "";
+			if (item.payload !== undefined) {
+				if (item.payload.title !== undefined) {
+					title = item.payload.title;
+					}
+				if (item.payload.urlRendering !== undefined) {
+					urlRendering = item.payload.urlRendering;
+					}
+				}
+			if (item.urlJson !== undefined) {
+				urlJson = item.urlJson;
+				}
+			jstruct [jstruct.length] = {
+				id: item.id,
+				name: item.name,
+				when: item.when,
+				title: title,
+				urlHtml: urlRendering,
+				urlJson: urlJson
+				};
+			}
+		return (jstruct);
+		}
 	function writeIndividualFiles () { //10/5/15 by DW -- for possible future use
 		var indentlevel = 0;
 		function copyScalars (source, dest) { 
@@ -816,23 +898,33 @@ function httpReadUrl (url, callback) {
 		}
 	function saveChatLog (nameChatLog, callback) {
 		var theLog = findChatLog (nameChatLog);
-		var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
-		store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
-			store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
-				buildChatLogRss (nameChatLog, function (urlFeed) {
-					if (theLog.rssHeadElements.flRssCloudEnabled) {
-						var domain = theLog.rssHeadElements.rssCloudDomain;
-						var port = theLog.rssHeadElements.rssCloudPort;
-						var path = theLog.rssHeadElements.rssCloudPath;
-						var urlServer = "http://" + domain + ":" + port + path;
-						rss.cloudPing (urlServer, urlFeed);
-						if (callback !== undefined) {
-							callback ();
-							}
+		function buildRss () {
+			buildChatLogRss (nameChatLog, function (urlFeed) {
+				if (theLog.rssHeadElements.flRssCloudEnabled) {
+					var domain = theLog.rssHeadElements.rssCloudDomain;
+					var port = theLog.rssHeadElements.rssCloudPort;
+					var path = theLog.rssHeadElements.rssCloudPath;
+					var urlServer = "http://" + domain + ":" + port + path;
+					rss.cloudPing (urlServer, urlFeed);
+					if (callback !== undefined) {
+						callback ();
 						}
+					}
+				});
+			}
+		if (theLog.version == 2) {
+			store.newObject (theLog.jsonPath, utils.jsonStringify (theLog), "application/json", undefined, function () {
+				buildRss ();
+				});
+			}
+		else {
+			var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
+			store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
+				store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
+					buildRss ();
 					});
 				});
-			});
+			}
 		}
 	function chatLogEverySecond () {
 		if (flChatLogDirty) {
@@ -858,6 +950,7 @@ function httpReadUrl (url, callback) {
 				else {
 					var log = chatLogArray [ix];
 					log.flDirty = false;
+					log.version = 1; //1/5/16 by DW
 					var chatlogpath = log.s3Path + fnameChatLog;
 					console.log ("loadChatLogs: path == " + chatlogpath);
 					store.getObject (chatlogpath, function (error, data) {
@@ -894,6 +987,31 @@ function httpReadUrl (url, callback) {
 			callback ();
 			}
 		}
+	
+	function publishChatLogFileV1 (nameChatLog, screenName, relpath, type, body, callback) { //1/6/16 by DW
+		var theLog = findChatLog (nameChatLog);
+		var myRelpath = "users/" + screenName + "/" + relpath;
+		var s3path = theLog.s3Path + myRelpath;
+		var flprivate = false; //all our files are public
+		var metadata = {whenLastUpdate: new Date ().toString ()};
+		store.newObject (s3path, body, type, getS3Acl (false), function (error, data) {
+			if (error) {
+				callback (error);    
+				}
+			else {
+				metadata.url = theLog.urlPublicFolder + myRelpath;
+				callback (undefined, metadata);
+				serverStats.ctFileSaves++;
+				statsChanged ();
+				if (!flprivate) { //12/15/14 by DW
+					checkLongpollsForUrl (metadata.url, body);
+					callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
+					}
+				}
+			}, metadata);
+		}
+	
+	
 //webhooks -- 8/28/15 by DW
 	var webhooks = {
 		incoming: {}, 
@@ -1657,6 +1775,51 @@ function handleHttpRequest (httpRequest, httpResponse) {
 														}
 													}, flNotWhitelisted);
 												break;
+											case "/publishchatlogfile": //1/6/16 by DW
+												var accessToken = parsedUrl.query.oauth_token;
+												var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+												var relpath = parsedUrl.query.relpath;
+												var type = parsedUrl.query.type;
+												var nameChatLog = parsedUrl.query.chatLog; 
+												var flprivate = false; //this endpoint is only used to publish, not for private storage
+												getScreenName (accessToken, accessTokenSecret, function (screenName) {
+													if (screenName === undefined) {
+														errorResponse ({message: "Can't publish the file because the accessToken is not valid."});    
+														}
+													else {
+														var theLog = findChatLog (nameChatLog);
+														if (theLog.version == 1) { //special publish method to grandfather-in version 1 format chatlogs
+															publishChatLogFileV1 (nameChatLog, screenName, relpath, type, body, function (err, metadata) {
+																if (err) {
+																	errorResponse ({message: err.message});    
+																	}
+																else {
+																	dataResponse (metadata);
+																	}
+																});
+															}
+														else { //do exactly what we'd do if we weren't publishing for a chatlog
+															var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
+															var metadata = {whenLastUpdate: new Date ().toString ()};
+															store.newObject (s3path, body, type, getS3Acl (flprivate), function (error, data) {
+																if (error) {
+																	errorResponse (error);    
+																	}
+																else {
+																	metadata.url = store.getUrl (s3path); //"http:/" + s3path;
+																	dataResponse (metadata);
+																	serverStats.ctFileSaves++;
+																	statsChanged ();
+																	if (!flprivate) { //12/15/14 by DW
+																		checkLongpollsForUrl (metadata.url, body);
+																		callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
+																		}
+																	}
+																}, metadata);
+															}
+														}
+													});
+												break;
 											case "/chat": //8/25/15 by DW
 												if (flChatEnabled) {
 													var accessToken = parsedUrl.query.oauth_token;
@@ -2234,13 +2397,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										dataResponse (jstruct);
 										}
 									break;
-								case "/morechatlog": //12/31/15; 11:33:12 AM by DW
+								case "/morechatlog": //12/31/15 by DW
 									var name = parsedUrl.query.chatLog;
 									var id = parsedUrl.query.idOldestPost;
 									var ct = parsedUrl.query.ctPosts;
 									var jstruct = getMoreChatLogPosts (name, id, ct);
 									if (jstruct === undefined) {
 										errorResponse ({message: "Can't get more chatlog items before id " + id + " because the chatlog doesn't exist or the post doesn't."});
+										}
+									else {
+										dataResponse (jstruct);
+										}
+									break
+								case "/chatlogindex": //1/2/16 by DW
+									var name = parsedUrl.query.chatLog;
+									var jstruct = getChatLogIndex (name);
+									if (jstruct === undefined) {
+										errorResponse ({message: "Can't get the index for the chatlog named \"" + name + "\" because it doesn't exist."});    
 										}
 									else {
 										dataResponse (jstruct);
@@ -2286,6 +2459,22 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										}, flNotWhitelisted);
 									break;
+								
+								case "/openuserchatlog": //1/5/16 by DW
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										openUserChatlog (screenName, function (fl) {
+											dataResponse (fl);
+											});
+										});
+									break;
+								case "/opennamedchatlog": //1/6/16 by DW
+									openUserChatlog (parsedUrl.query.chatLog, function (fl) {
+										dataResponse (fl);
+										});
+									break;
+								
 								case "/newincomingwebhook": //8/28/15 by DW
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;

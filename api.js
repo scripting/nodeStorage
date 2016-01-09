@@ -663,6 +663,62 @@ function twGetComments (snAuthor, idPost, callback) {
 			callback (jstruct); 
 			});
 		}
+	function twGetChatLogIndex (nameChatLog, callback) { //1/2/16 by DW
+		var paramtable = {
+			chatLog: nameChatLog
+			}
+		var apiUrl = twGetDefaultServer () + "chatlogindex?" + twBuildParamList (paramtable), whenstart = new Date ();
+		readHttpFile (apiUrl, function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twGetChatLogIndex: length == " + jstruct.length);
+			callback (jstruct); 
+			});
+		}
+	function twOpenUserChatLog (callback) { //1/5/16 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret
+			}
+		var apiUrl = twGetDefaultServer () + "openuserchatlog?" + twBuildParamList (paramtable);
+		console.log ("twOpenUserChatLog: apiUrl == " + apiUrl); 
+		readHttpFile (apiUrl, function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twOpenUserChatLog: " + jsonStringify (jstruct));
+			callback (jstruct); 
+			});
+		}
+	function twOpenNamedChatLog (nameChatLog, callback) { //1/6/16 by DW
+		var paramtable = {
+			chatLog: nameChatLog
+			}
+		var apiUrl = twGetDefaultServer () + "opennamedchatlog?" + twBuildParamList (paramtable);
+		console.log ("twOpenNamedChatLog: apiUrl == " + apiUrl); 
+		readHttpFile (apiUrl, function (data) {
+			var jstruct = JSON.parse (data);
+			console.log ("twOpenNamedChatLog: " + jsonStringify (jstruct));
+			callback (jstruct); 
+			});
+		}
+	
+	function twChatLogPublish (nameChatLog, relpath, filedata, type, callback) { //1/6/16 by DW -- special for publishing from a chatlog -- xxx
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			relpath: relpath,
+			type: type,
+			chatLog: nameChatLog
+			}
+		var url = twGetDefaultServer () + "publishchatlogfile?" + twBuildParamList (paramtable);
+		$.post (url, filedata, function (data, status) {
+			if (status == "success") {
+				callback (JSON.parse (data));
+				}
+			else {
+				console.log ("twChatLogPublish: error == " + JSON.stringify (status, undefined, 4));
+				}
+			});
+		}
+	
 	function twGetChatLogList (callback) { //10/29/15 by DW
 		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
 			var jstruct = JSON.parse (data);
