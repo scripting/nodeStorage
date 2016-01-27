@@ -699,8 +699,7 @@ function twGetComments (snAuthor, idPost, callback) {
 			callback (jstruct); 
 			});
 		}
-	
-	function twChatLogPublish (nameChatLog, relpath, filedata, type, callback) { //1/6/16 by DW -- special for publishing from a chatlog -- xxx
+	function twChatLogPublish (nameChatLog, relpath, filedata, type, callback) { //1/6/16 by DW -- special for publishing from a chatlog
 		var paramtable = {
 			oauth_token: localStorage.twOauthToken,
 			oauth_token_secret: localStorage.twOauthTokenSecret,
@@ -718,11 +717,9 @@ function twGetComments (snAuthor, idPost, callback) {
 				}
 			});
 		}
-	
 	function twGetChatLogList (callback) { //10/29/15 by DW
 		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
 			var jstruct = JSON.parse (data);
-			console.log ("twGetChatLogList: " + JSON.stringify (jstruct, undefined, 4));
 			callback (jstruct); 
 			});
 		}

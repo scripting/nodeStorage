@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.88n", myProductName = "nodeStorage"; 
+var myVersion = "0.88w", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -85,6 +85,12 @@ var serverStats = {
 	ctChatPosts: 0, //8/25/15 by DW
 	ctChatPostsToday: 0, //8/29/15 by DW
 	whenLastChatPost: new Date (0), //8/25/15 by DW
+	
+	chatLogStats: { //1/20/16 by DW
+		logStats: new Object () //one for each chatlog
+		},
+	
+	
 	recentTweets: []
 	};
 var fnameStats = "data/serverStats.json", flStatsDirty = false, maxrecentTweets = 500; 
@@ -441,14 +447,34 @@ function httpReadUrl (url, callback) {
 	
 	
 	
+	function initChatLogStats (name) { //1/20/16 by DW
+		if (serverStats.chatLogStats.logStats [name] === undefined) {
+			serverStats.chatLogStats.logStats [name] = {
+				ctReads: 0, whenLastRead: new Date (0), 
+				ctWrites: 0, whenLastWrite: new Date (0)
+				};
+			}
+		return (serverStats.chatLogStats.logStats [name]);
+		}
+	function getChatLogSubset (log) { //1/19/16 by DW
+		var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);
+		return ({
+			prefs: log.prefs,
+			usersWhoCanPost: log.usersWhoCanPost, 
+			flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW
+			urlPublicFolder: log.urlPublicFolder,
+			urlRssFeed: log.urlPublicFolder + s3RssPath //11/22/15 by DW
+			});
+		}
 	function openUserChatlog (screenName, callback) { //1/5/16 by DW
 		var theLog = findChatLog (screenName);
 		if (theLog !== undefined) { //it's already open
-			callback (true);
+			callback (getChatLogSubset (theLog));
 			}
 		else {
 			var flprivate = true; //might change later
 			var chatlogpath = getS3UsersPath (flprivate) + screenName + "/chatLog.json";
+			var whenStartLoad = new Date ();
 			store.getObject (chatlogpath, function (error, data) {
 				var chatlogstruct = initialChatLogStruct;
 				
@@ -459,6 +485,7 @@ function httpReadUrl (url, callback) {
 						}
 					catch (err) {
 						console.log ("openUserChatlog: error opening chatlog for " + screenName + "."); 
+						callback (undefined); //1/19/16 by DW
 						}
 					}
 				
@@ -469,7 +496,16 @@ function httpReadUrl (url, callback) {
 				
 				chatLogArray [chatLogArray.length] = chatlogstruct;
 				
-				callback (true);
+				//stats -- 1/20/16 by DW
+					var myStats = initChatLogStats (screenName);
+					myStats.ctSecsLastRead = utils.secondsSince (whenStartLoad); //1/20/16 by DW
+					myStats.ctReads++;
+					myStats.whenLastRead = whenStartLoad;
+					flStatsDirty = true;
+					
+					console.log ("loadChatLogs: screenName == " + screenName + ", myStats == " + utils.jsonStringify (myStats));
+				
+				callback (getChatLogSubset (chatlogstruct));
 				});
 			}
 		}
@@ -478,14 +514,7 @@ function httpReadUrl (url, callback) {
 		for (var i = 0; i < chatLogArray.length; i++) {
 			var log = chatLogArray [i];
 			if (!log.prefs.flPrivate) {
-				var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);
-				jstruct [log.name] = {
-					prefs: log.prefs,
-					usersWhoCanPost: log.usersWhoCanPost, 
-					flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW
-					urlPublicFolder: log.urlPublicFolder,
-					urlRssFeed: log.urlPublicFolder + s3RssPath //11/22/15 by DW
-					};
+				jstruct [log.name] = getChatLogSubset (log);
 				}
 			}
 		return (jstruct);
@@ -497,6 +526,9 @@ function httpReadUrl (url, callback) {
 				return (log);
 				}
 			}
+		
+		console.log ("findChatLog: the chatlog " + nameChatLog + " was not found."); //1/22/16 by DW
+		
 		return (undefined);
 		}
 	function chatLogChanged (nameChatLog) {
@@ -891,13 +923,22 @@ function httpReadUrl (url, callback) {
 			if (theLog.urlPublicFolder !== undefined) {
 				urlFeed = theLog.urlPublicFolder + s3RssPath;
 				}
+			console.log ("buildChatLogRss: urlFeed == " + urlFeed); //1/22/16 by DW
 			if (callback !== undefined) {
 				callback (urlFeed);
 				}
 			});
 		}
 	function saveChatLog (nameChatLog, callback) {
-		var theLog = findChatLog (nameChatLog);
+		var theLog = findChatLog (nameChatLog), whenStartWrite = new Date ();
+		function doStats () { //1/20/16 by DW
+			var myStats = initChatLogStats (nameChatLog);
+			myStats.ctSecsLastWrite = utils.secondsSince (whenStartWrite); 
+			myStats.ctWrites++;
+			myStats.whenLastWrite = whenStartWrite;
+			flStatsDirty = true;
+			console.log ("saveChatLog: nameChatLog == " + nameChatLog + ", myStats == " + utils.jsonStringify (myStats));
+			}
 		function buildRss () {
 			buildChatLogRss (nameChatLog, function (urlFeed) {
 				if (theLog.rssHeadElements.flRssCloudEnabled) {
@@ -914,6 +955,7 @@ function httpReadUrl (url, callback) {
 			}
 		if (theLog.version == 2) {
 			store.newObject (theLog.jsonPath, utils.jsonStringify (theLog), "application/json", undefined, function () {
+				doStats ();
 				buildRss ();
 				});
 			}
@@ -921,6 +963,7 @@ function httpReadUrl (url, callback) {
 			var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
 			store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
 				store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
+					doStats ();
 					buildRss ();
 					});
 				});
@@ -942,13 +985,12 @@ function httpReadUrl (url, callback) {
 		}
 	function loadChatLogs (callback) {
 		if (flChatEnabled) {
-			console.log ("loadChatLogs: chatLogArray = " + utils.jsonStringify (chatLogArray));
 			function loadNextLog (ix) {
 				if (ix == chatLogArray.length) {
 					callback ();
 					}
 				else {
-					var log = chatLogArray [ix];
+					var log = chatLogArray [ix], whenStartLoad = new Date ();
 					log.flDirty = false;
 					log.version = 1; //1/5/16 by DW
 					var chatlogpath = log.s3Path + fnameChatLog;
@@ -975,6 +1017,16 @@ function httpReadUrl (url, callback) {
 									};
 								log.flDirty = true;
 								}
+							
+							//stats -- 1/20/16 by DW
+								var myStats = initChatLogStats (log.name);
+								myStats.ctSecsLastRead = utils.secondsSince (whenStartLoad); //1/20/16 by DW
+								myStats.ctReads++;
+								myStats.whenLastRead = whenStartLoad;
+								flStatsDirty = true;
+								
+								console.log ("loadChatLogs: log.name == " + log.name + ", myStats == " + utils.jsonStringify (myStats));
+							
 							loadNextLog (ix + 1);
 							});
 						});
@@ -2464,14 +2516,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
-										openUserChatlog (screenName, function (fl) {
-											dataResponse (fl);
+										openUserChatlog (screenName, function (theLog) {
+											dataResponse (theLog);
 											});
 										});
 									break;
 								case "/opennamedchatlog": //1/6/16 by DW
-									openUserChatlog (parsedUrl.query.chatLog, function (fl) {
-										dataResponse (fl);
+									openUserChatlog (parsedUrl.query.chatLog, function (theLog) {
+										dataResponse (theLog);
 										});
 									break;
 								
