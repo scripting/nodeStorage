@@ -1,6 +1,6 @@
 /* The MIT License (MIT)
 	
-	Copyright (c) 2014-2015 Dave Winer
+	Copyright (c) 2014-2016 Dave Winer
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -77,10 +77,14 @@ function twGetOauthParams (flRedirectIfParamsPresent) {
 	return (flTwitterParamsPresent); //6/4/14 by DW
 	}
 function twDisconnectFromTwitter () {
-	localStorage.removeItem ("twOauthToken");
-	localStorage.removeItem ("twOauthTokenSecret");
-	localStorage.removeItem ("twScreenName");
-	localStorage.removeItem ("twUserId");
+	try {
+		localStorage.removeItem ("twOauthToken");
+		localStorage.removeItem ("twOauthTokenSecret");
+		localStorage.removeItem ("twScreenName");
+		localStorage.removeItem ("twUserId");
+		}
+	catch (err) {
+		}
 	}
 function twConnectToTwitter () {
 	var urlServer = twGetDefaultServer ();
@@ -95,10 +99,20 @@ function twConnectToTwitter () {
 	window.location.href = urlRedirectTo;
 	}
 function twIsTwitterConnected () {
-	return (localStorage.twOauthToken != undefined);
+	try {
+		return (localStorage.twOauthToken != undefined);
+		}
+	catch (err) {
+		return (false);
+		}
 	}
 function twGetScreenName () {
-	return (localStorage.twScreenName);
+	try {
+		return (localStorage.twScreenName);
+		}
+	catch (err) {
+		return ("");
+		}
 	}
 function twCheckForRateLimitError (responseText) { //7/10/14 by DW
 	var jstruct = JSON.parse (responseText);
@@ -650,6 +664,36 @@ function twGetComments (snAuthor, idPost, callback) {
 			callback (jstruct.chatLog, jstruct.metadata); //new metadata parameter -- 10/23/15 by DW
 			});
 		}
+	
+	function twSetChatLogMetadata (metadata, callback) { //2/19/16 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			metadata: jsonStringify (metadata)
+			}
+		var url = twGetDefaultServer () + "setchatlogmetadata?" + twBuildParamList (paramtable);
+		$.ajax ({
+			type: "POST",
+			url: url,
+			success: function (data) {
+				if (callback !== undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twSetChatLogMetadata: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
+	
 	function twGetMoreChatLog (nameChatLog, idOldestPost, ctPosts, callback) { //12/31/15 by DW
 		var paramtable = {
 			chatLog: nameChatLog,

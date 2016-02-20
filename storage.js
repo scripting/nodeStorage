@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.88w", myProductName = "nodeStorage"; 
+var myVersion = "0.89e", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -57,6 +57,7 @@ var os = require ("os");
 	var longPollTimeoutSecs = process.env.longPollTimeoutSecs; 
 	var flLocalFilesystem = false; //7/28/15 DW
 	var basePublicUrl = undefined; //7/29/15 by DW
+	var flForceTwitterLogin = false; //2/19/16 by DW
 
 var fnameConfig = "config.json"; //config, another way of setting environment variables -- 5/8/15 by DW
 
@@ -181,6 +182,62 @@ function httpReadUrl (url, callback) {
 		}
 	
 	
+//long polling -- 12/15/14 by DW
+	var waitingLongpolls = new Array ();
+	
+	function getLongpollTimeout () {
+		if (longPollTimeoutSecs == undefined) { //the environment variable wasn't defined
+			return (60000); //60 seconds
+			}
+		else {
+			return (Number (longPollTimeoutSecs) * 1000.0);
+			}
+		}
+	function pushLongpoll (urlToWatchFor, httpResponse, clientIpAddress) {
+		var ctMilliseconds = getLongpollTimeout ();
+		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
+		waitingLongpolls [waitingLongpolls.length] = {
+			url: urlToWatchFor,
+			whenTimeout: whenExpires,
+			client: clientIpAddress,
+			response: httpResponse
+			}
+		serverStats.ctLongPollPushes++; 
+		serverStats.ctLongPollsToday++;
+		flStatsDirty = true;
+		}
+	function checkLongpolls () { //expire timed-out longpolls
+		var now = new Date ();
+		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
+			var obj = waitingLongpolls [i];
+			if (now >= obj.whenTimeout) {
+				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+				obj.response.end ("timeout");    
+				waitingLongpolls.splice (i, 1);
+				serverStats.ctLongPollPops++; 
+				serverStats.ctLongPollTimeouts++; 
+				flStatsDirty = true;
+				}
+			}
+		checkWebSocketCalls (); //11/11/15 by DW
+		}
+	function checkLongpollsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
+		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
+			var obj = waitingLongpolls [i];
+			if (obj.url == url) {
+				console.log ("Request #" + i + " is returning because the resource updated.");
+				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
+				obj.response.end ("update\r" + filetext);    
+				waitingLongpolls.splice (i, 1);
+				serverStats.ctLongPollPops++; 
+				serverStats.ctLongPollUpdates++; 
+				flStatsDirty = true;
+				}
+			}
+		checkWebSocketCallsForUrl (url, filetext); //11/11/15 by DW
+		}
+	
+	
 //websockets rewrite -- 11/29/15 by DW
 	var theWsServer;
 	
@@ -276,62 +333,6 @@ function httpReadUrl (url, callback) {
 			}
 		return (theArray);
 		}
-//long polling -- 12/15/14 by DW
-	var waitingLongpolls = new Array ();
-	
-	function getLongpollTimeout () {
-		if (longPollTimeoutSecs == undefined) { //the environment variable wasn't defined
-			return (60000); //60 seconds
-			}
-		else {
-			return (Number (longPollTimeoutSecs) * 1000.0);
-			}
-		}
-	function pushLongpoll (urlToWatchFor, httpResponse, clientIpAddress) {
-		var ctMilliseconds = getLongpollTimeout ();
-		var whenExpires = new Date (Number (new Date ()) + ctMilliseconds);
-		waitingLongpolls [waitingLongpolls.length] = {
-			url: urlToWatchFor,
-			whenTimeout: whenExpires,
-			client: clientIpAddress,
-			response: httpResponse
-			}
-		serverStats.ctLongPollPushes++; 
-		serverStats.ctLongPollsToday++;
-		flStatsDirty = true;
-		}
-	function checkLongpolls () { //expire timed-out longpolls
-		var now = new Date ();
-		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
-			var obj = waitingLongpolls [i];
-			if (now >= obj.whenTimeout) {
-				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-				obj.response.end ("timeout");    
-				waitingLongpolls.splice (i, 1);
-				serverStats.ctLongPollPops++; 
-				serverStats.ctLongPollTimeouts++; 
-				flStatsDirty = true;
-				}
-			}
-		checkWebSocketCalls (); //11/11/15 by DW
-		}
-	function checkLongpollsForUrl (url, filetext) { //if someone was waiting for the url to change, their wait is over
-		for (var i = waitingLongpolls.length - 1; i >= 0; i--) {
-			var obj = waitingLongpolls [i];
-			if (obj.url == url) {
-				console.log ("Request #" + i + " is returning because the resource updated.");
-				obj.response.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-				obj.response.end ("update\r" + filetext);    
-				waitingLongpolls.splice (i, 1);
-				serverStats.ctLongPollPops++; 
-				serverStats.ctLongPollUpdates++; 
-				flStatsDirty = true;
-				}
-			}
-		checkWebSocketCallsForUrl (url, filetext); //11/11/15 by DW
-		}
-	
-	
 //blocking -- 11/9/14 by DW
 	function tweetContainsBlockedTag (twitterStatus) { //blocking is not present in this version -- 12/16/14 by DW
 		return (false); 
@@ -491,7 +492,13 @@ function httpReadUrl (url, callback) {
 				
 				chatlogstruct.name = screenName;
 				chatlogstruct.jsonPath = chatlogpath;
-				chatlogstruct.s3Path = "/1999.io/testing/userchatlogs/";
+				
+				chatlogstruct.s3Path = getS3UsersPath (false) + screenName + "/"; //where the chatlog's public files, such as the RSS feed, are stored
+				
+				if (urlPublicFolder !== undefined) { //2/19/16 by DW
+					chatlogstruct.urlPublicFolder = urlPublicFolder + "users/" + screenName + "/";
+					}
+				
 				chatlogstruct.usersWhoCanPost = [screenName];
 				
 				chatLogArray [chatLogArray.length] = chatlogstruct;
@@ -549,7 +556,7 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function getItemFile (item) { //10/5/15 by DW
-		return ("data/" + utils.getDatePath (item.when) + utils.padWithZeros (item.id, 5) + ".json");
+		return (utils.getDatePath (item.when) + utils.padWithZeros (item.id, 5) + ".json");
 		}
 	function saveChatMessage (nameChatLog, item, callback) { 
 		var theLog = findChatLog (nameChatLog);
@@ -806,14 +813,15 @@ function httpReadUrl (url, callback) {
 			}
 		
 		var jstruct = new Object (), urlChatLog = undefined;
-		if (theLog.urlPublicFolder !== undefined) { //set urlChatLog -- 10/22/15 by DW
-			urlChatLog = theLog.urlPublicFolder + fnameChatLog;
-			}
 		jstruct.metadata = {
 			productName: myProductName,
 			version: myVersion, 
 			name: nameChatLog,
-			url: urlChatLog,
+			
+			usersWhoCanPost: theLog.usersWhoCanPost, //2/19/16 by DW
+			rssHeadElements: theLog.rssHeadElements, //2/19/16 by DW
+			urlFeed: theLog.urlFeed,  //2/19/16 by DW
+			
 			now: new Date ()
 			};
 		jstruct.chatLog = new Array ();
@@ -922,6 +930,8 @@ function httpReadUrl (url, callback) {
 			var urlFeed = undefined;
 			if (theLog.urlPublicFolder !== undefined) {
 				urlFeed = theLog.urlPublicFolder + s3RssPath;
+				theLog.urlFeed = urlFeed; 
+				theLog.flDirty = true;
 				}
 			console.log ("buildChatLogRss: urlFeed == " + urlFeed); //1/22/16 by DW
 			if (callback !== undefined) {
@@ -937,7 +947,6 @@ function httpReadUrl (url, callback) {
 			myStats.ctWrites++;
 			myStats.whenLastWrite = whenStartWrite;
 			flStatsDirty = true;
-			console.log ("saveChatLog: nameChatLog == " + nameChatLog + ", myStats == " + utils.jsonStringify (myStats));
 			}
 		function buildRss () {
 			buildChatLogRss (nameChatLog, function (urlFeed) {
@@ -1039,7 +1048,6 @@ function httpReadUrl (url, callback) {
 			callback ();
 			}
 		}
-	
 	function publishChatLogFileV1 (nameChatLog, screenName, relpath, type, body, callback) { //1/6/16 by DW
 		var theLog = findChatLog (nameChatLog);
 		var myRelpath = "users/" + screenName + "/" + relpath;
@@ -1062,8 +1070,27 @@ function httpReadUrl (url, callback) {
 				}
 			}, metadata);
 		}
-	
-	
+	function setChatLogMetadata (nameChatLog, metadata, callback) { //2/19/16 by DW
+		var jstruct;
+		try {
+			jstruct = JSON.parse (metadata);
+			}
+		catch (err) {
+			callback (err, undefined);
+			return;
+			}
+		var theLog = findChatLog (nameChatLog);
+		function lookFor (elementName) {
+			if (jstruct [elementName] !== undefined) {
+				theLog [elementName] = jstruct [elementName];
+				theLog.flDirty = true;
+				}
+			}
+		lookFor ("rssHeadElements");
+		lookFor ("usersWhoCanPost");
+		
+		callback (undefined, jstruct);
+		}
 //webhooks -- 8/28/15 by DW
 	var webhooks = {
 		incoming: {}, 
@@ -1343,290 +1370,288 @@ function httpReadUrl (url, callback) {
 		buildCallArray (chatText);
 		callNextHook (0);
 		}
-
-
-function getDomainName (clientIp, callback) { //11/14/15 by DW
-	if (clientIp === undefined) {
-		if (callback !== undefined) {
-			callback ("undefined");
-			}
-		}
-	else {
-		dns.reverse (clientIp, function (err, domains) {
-			var name = clientIp;
-			if (!err) {
-				if (domains.length > 0) {
-					name = domains [0];
-					}
-				}
+//utility functions -- 2/19/16 by DW
+	function getDomainName (clientIp, callback) { //11/14/15 by DW
+		if (clientIp === undefined) {
 			if (callback !== undefined) {
-				callback (name);
+				callback ("undefined");
 				}
-			});
-		}
-	}
-function newTwitter (myCallback) {
-	var twitter = new twitterAPI ({
-		consumerKey: twitterConsumerKey,
-		consumerSecret: twitterConsumerSecret,
-		callback: myCallback
-		});
-	return (twitter);
-	}
-function kilobyteString (num) { //1/24/15 by DW
-	num = Number (num) / 1024;
-	return (num.toFixed (2) + "K");
-	}
-function megabyteString (num) { //1/24/15 by DW
-	var onemeg = 1024 * 1024;
-	if (num <= onemeg) {
-		return (kilobyteString (num));
-		}
-	num = Number (num) / onemeg;
-	return (num.toFixed (2) + "MB");
-	}
-function gigabyteString (num) { //1/24/15 by DW
-	var onegig = 1024 * 1024 * 1024;
-	if (num <= onegig) {
-		return (megabyteString (num));
-		}
-	num = Number (num) / onegig;
-	return (num.toFixed (2) + "GB");
-	}
-function getScreenName (accessToken, accessTokenSecret, callback, flNotWhitelisted) { //7/9/14 by DW
-	function checkWhitelist (name) { //2/23/15 by DW
-		if (flNotWhitelisted) {
-			return (true);
 			}
 		else {
-			return (isWhitelistedUser (name));
+			dns.reverse (clientIp, function (err, domains) {
+				var name = clientIp;
+				if (!err) {
+					if (domains.length > 0) {
+						name = domains [0];
+						}
+					}
+				if (callback !== undefined) {
+					callback (name);
+					}
+				});
 			}
 		}
-	//see if we can get it from the cache first
-		for (var i = 0; i < screenNameCache.length; i++) {
-			var obj = screenNameCache [i];
-			if ((obj.accessToken == accessToken) && (obj.accessTokenSecret == accessTokenSecret)) {
-				obj.ctAccesses++;
-				
-				if (checkWhitelist (obj.screenName)) { //11/18/14 by DW
-					callback (obj.screenName);
-					}
-				else {
-					callback (undefined);
-					}
-				return;
-				}
+	function newTwitter (myCallback) {
+		var twitter = new twitterAPI ({
+			consumerKey: twitterConsumerKey,
+			consumerSecret: twitterConsumerSecret,
+			callback: myCallback
+			});
+		return (twitter);
+		}
+	function kilobyteString (num) { //1/24/15 by DW
+		num = Number (num) / 1024;
+		return (num.toFixed (2) + "K");
+		}
+	function megabyteString (num) { //1/24/15 by DW
+		var onemeg = 1024 * 1024;
+		if (num <= onemeg) {
+			return (kilobyteString (num));
 			}
-	//call Twitter
-		var twitter = newTwitter ();
-		twitter.verifyCredentials (accessToken, accessTokenSecret, function (error, data, response) {
-			if (error) {
-				callback (undefined);    
-				console.log ("getScreenName: error getting name. " + utils.jsonStringify (error)); 
+		num = Number (num) / onemeg;
+		return (num.toFixed (2) + "MB");
+		}
+	function gigabyteString (num) { //1/24/15 by DW
+		var onegig = 1024 * 1024 * 1024;
+		if (num <= onegig) {
+			return (megabyteString (num));
+			}
+		num = Number (num) / onegig;
+		return (num.toFixed (2) + "GB");
+		}
+	function getScreenName (accessToken, accessTokenSecret, callback, flNotWhitelisted) { //7/9/14 by DW
+		function checkWhitelist (name) { //2/23/15 by DW
+			if (flNotWhitelisted) {
+				return (true);
 				}
 			else {
-				var obj = new Object ();
-				obj.accessToken = accessToken;
-				obj.accessTokenSecret = accessTokenSecret;
-				obj.screenName = data.screen_name; //the whole point! ;-)
-				obj.ctAccesses = 0;
-				screenNameCache [screenNameCache.length] = obj;
-				if (checkWhitelist (data.screen_name)) { //11/18/14 by DW
-					callback (data.screen_name);
+				return (isWhitelistedUser (name));
+				}
+			}
+		//see if we can get it from the cache first
+			for (var i = 0; i < screenNameCache.length; i++) {
+				var obj = screenNameCache [i];
+				if ((obj.accessToken == accessToken) && (obj.accessTokenSecret == accessTokenSecret)) {
+					obj.ctAccesses++;
+					
+					if (checkWhitelist (obj.screenName)) { //11/18/14 by DW
+						callback (obj.screenName);
+						}
+					else {
+						callback (undefined);
+						}
+					return;
+					}
+				}
+		//call Twitter
+			var twitter = newTwitter ();
+			twitter.verifyCredentials (accessToken, accessTokenSecret, function (error, data, response) {
+				if (error) {
+					callback (undefined);    
+					console.log ("getScreenName: error getting name. " + utils.jsonStringify (error)); 
 					}
 				else {
-					callback (undefined);
+					var obj = new Object ();
+					obj.accessToken = accessToken;
+					obj.accessTokenSecret = accessTokenSecret;
+					obj.screenName = data.screen_name; //the whole point! ;-)
+					obj.ctAccesses = 0;
+					screenNameCache [screenNameCache.length] = obj;
+					if (checkWhitelist (data.screen_name)) { //11/18/14 by DW
+						callback (data.screen_name);
+						}
+					else {
+						callback (undefined);
+						}
+					
 					}
-				
+				});
+		}
+		
+	function saveTweet (theTweet) { //7/2/14 by DW
+		if (serverPrefs.flArchiveTweets) {
+			try {
+				var idTweet = theTweet.id_str;
+				if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
+					var filepath = s3Path + fnameTweetsFolder + utils.getDatePath (new Date (), true) + idTweet + ".json";
+					store.newObject (filepath, utils.jsonStringify (theTweet));
+					}
+				}
+			catch (tryError) {
+				console.log ("saveTweet error: " + tryError.message);    
+				}
+			}
+		}
+	function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
+		var now = new Date ();
+		if (startTime == undefined) {
+			startTime = now;
+			}
+		serverStats.ctTweets++;
+		serverStats.ctTweetsThisRun++;
+		serverStats.ctTweetsToday++;
+		
+		var obj = new Object ();
+		obj.text = tweetObject.text;
+		obj.id = tweetObject.id_str; //9/3/14 by DW
+		obj.user = tweetObject.user.screen_name;
+		
+		//obj.inReplyToId
+			{
+				var x = tweetObject.in_reply_to_status_id;
+				if (x == null) {
+					x = 0;
+					}
+				obj.inReplyToId = x;
+				}
+		
+		obj.when = now.toLocaleString ();
+		
+		obj.secs = utils.secondsSince (startTime); 
+		serverStats.recentTweets.unshift (obj);  //add at beginning of array
+		while (serverStats.recentTweets.length > maxrecentTweets) { //keep array within max size
+			serverStats.recentTweets.pop ();
+			}
+		statsChanged ();
+		}
+	function getS3UsersPath (flPrivate) { //8/3/14 by DW
+		if (utils.getBoolean (flPrivate)) {
+			return (s3PrivatePath + "users/");
+			}
+		else {
+			return (s3Path + "users/");
+			}
+		}
+	function getS3Acl (flPrivate) { //8/3/14 by DW
+		if (utils.getBoolean (flPrivate)) {
+			return ("private");
+			}
+		else {
+			return ("public-read");
+			}
+		}
+	function getUserFileList (s3path, callback) { //12/21/14 by DW
+		var now = new Date (), theList = new Array ();
+		store.listObjects (s3path, function (obj) {
+			if (obj.flLastObject != undefined) {
+				if (callback != undefined) {
+					callback (undefined, theList);
+					}
+				}
+			else {
+				theList [theList.length] = obj;
 				}
 			});
-	}
-	
-function saveTweet (theTweet) { //7/2/14 by DW
-	if (serverPrefs.flArchiveTweets) {
-		try {
-			var idTweet = theTweet.id_str;
-			if (idTweet != undefined) { //it would be undefined if there was an error, like "Status is over 140 characters."
-				var filepath = s3Path + fnameTweetsFolder + utils.getDatePath (new Date (), true) + idTweet + ".json";
-				store.newObject (filepath, utils.jsonStringify (theTweet));
+		}
+	function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
+		var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
+		store.getObject (s3path, function (error, data) {
+			var jstruct, flnew = true, jstructsub;
+			if (error) {
+				jstruct = new Array ();
 				}
-			}
-		catch (tryError) {
-			console.log ("saveTweet error: " + tryError.message);    
-			}
-		}
-	}
-function addTweetToLog (tweetObject, startTime) { //4/27/14 by DW
-	var now = new Date ();
-	if (startTime == undefined) {
-		startTime = now;
-		}
-	serverStats.ctTweets++;
-	serverStats.ctTweetsThisRun++;
-	serverStats.ctTweetsToday++;
-	
-	var obj = new Object ();
-	obj.text = tweetObject.text;
-	obj.id = tweetObject.id_str; //9/3/14 by DW
-	obj.user = tweetObject.user.screen_name;
-	
-	//obj.inReplyToId
-		{
-			var x = tweetObject.in_reply_to_status_id;
-			if (x == null) {
-				x = 0;
+			else {
+				jstruct = JSON.parse (data.Body.toString ());
 				}
-			obj.inReplyToId = x;
-			}
-	
-	obj.when = now.toLocaleString ();
-	
-	obj.secs = utils.secondsSince (startTime); 
-	serverStats.recentTweets.unshift (obj);  //add at beginning of array
-	while (serverStats.recentTweets.length > maxrecentTweets) { //keep array within max size
-		serverStats.recentTweets.pop ();
-		}
-	statsChanged ();
-	}
-function getS3UsersPath (flPrivate) { //8/3/14 by DW
-	if (utils.getBoolean (flPrivate)) {
-		return (s3PrivatePath + "users/");
-		}
-	else {
-		return (s3Path + "users/");
-		}
-	}
-function getS3Acl (flPrivate) { //8/3/14 by DW
-	if (utils.getBoolean (flPrivate)) {
-		return ("private");
-		}
-	else {
-		return ("public-read");
-		}
-	}
-function getUserFileList (s3path, callback) { //12/21/14 by DW
-	var now = new Date (), theList = new Array ();
-	store.listObjects (s3path, function (obj) {
-		if (obj.flLastObject != undefined) {
-			if (callback != undefined) {
-				callback (undefined, theList);
+			
+			for (var i = 0; i < jstruct.length; i++) {
+				if (jstruct [i].commenter == snCommenter) {
+					flnew = false;
+					jstructsub = jstruct [i];
+					break;
+					}
 				}
-			}
-		else {
-			theList [theList.length] = obj;
-			}
-		});
-	}
-function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
-	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
-	store.getObject (s3path, function (error, data) {
-		var jstruct, flnew = true, jstructsub;
-		if (error) {
-			jstruct = new Array ();
-			}
-		else {
-			jstruct = JSON.parse (data.Body.toString ());
-			}
-		
-		for (var i = 0; i < jstruct.length; i++) {
-			if (jstruct [i].commenter == snCommenter) {
-				flnew = false;
-				jstructsub = jstruct [i];
-				break;
+			if (flnew) {
+				var ixnew = jstruct.length;
+				jstruct [ixnew] = {
+					commenter: snCommenter,
+					ctUpdates: 0,
+					whenCreated: now,
+					whenUpdated: now
+					};
+				jstructsub = jstruct [ixnew];
 				}
-			}
-		if (flnew) {
-			var ixnew = jstruct.length;
-			jstruct [ixnew] = {
-				commenter: snCommenter,
-				ctUpdates: 0,
-				whenCreated: now,
-				whenUpdated: now
-				};
-			jstructsub = jstruct [ixnew];
-			}
-		
-		
-		jstructsub.whenUpdated = now;
-		jstructsub.ctUpdates++;
-		jstructsub.urlOpmlFile = urlOpmlFile;
-		
-		
-		store.newObject (s3path, utils.jsonStringify (jstruct), "application/json", getS3Acl (flprivate), function (error, data) {
+			
+			
+			jstructsub.whenUpdated = now;
+			jstructsub.ctUpdates++;
+			jstructsub.urlOpmlFile = urlOpmlFile;
+			
+			
+			store.newObject (s3path, utils.jsonStringify (jstruct), "application/json", getS3Acl (flprivate), function (error, data) {
+				if (error) {
+					if (callback != undefined) {
+						callback (error, undefined);
+						}
+					}
+				else {
+					var returnStruct = {
+						filepath: s3path,
+						whenCreated: jstructsub.whenCreated,
+						whenUpdated: jstructsub.whenUpdated,
+						ctUpdates: jstructsub.ctUpdates
+						};
+					if (callback != undefined) {
+						callback (undefined, returnStruct);
+						}
+					}
+				});
+			});
+		}
+	function getComments (snAuthor, idPost, callback) {
+		var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json";
+		store.getObject (s3path, function (error, data) {
 			if (error) {
 				if (callback != undefined) {
 					callback (error, undefined);
 					}
 				}
 			else {
-				var returnStruct = {
-					filepath: s3path,
-					whenCreated: jstructsub.whenCreated,
-					whenUpdated: jstructsub.whenUpdated,
-					ctUpdates: jstructsub.ctUpdates
-					};
+				var jstruct = JSON.parse (data.Body.toString ());
 				if (callback != undefined) {
-					callback (undefined, returnStruct);
+					callback (undefined, jstruct);
 					}
 				}
 			});
-		});
-	}
-function getComments (snAuthor, idPost, callback) {
-	var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json";
-	store.getObject (s3path, function (error, data) {
-		if (error) {
-			if (callback != undefined) {
-				callback (error, undefined);
-				}
-			}
-		else {
-			var jstruct = JSON.parse (data.Body.toString ());
-			if (callback != undefined) {
-				callback (undefined, jstruct);
-				}
-			}
-		});
-	}
-function getUserCommentsOpml (s3path, callback) {
-	var opmltext = "", indentlevel = 0;
-	function add (s) {
-		opmltext += utils.filledString ("\t", indentlevel) + s + "\r\n";
 		}
-	add ("<?xml version=\"1.0\"?>");
-	add ("<opml version=\"2.0\">"); indentlevel++;
-	//add head
-		add ("<head>"); indentlevel++;
-		add ("<title>Comments</title>");
-		add ("</head>"); indentlevel--;
-	add ("<body>"); indentlevel++;
-	store.listObjects (s3path, function (obj) { 
-		if (obj.flLastObject != undefined) {
-			add ("</body>"); indentlevel--;
-			add ("</opml>"); indentlevel--;
-			if (callback != undefined) {
-				callback (opmltext);
-				}
+	function getUserCommentsOpml (s3path, callback) {
+		var opmltext = "", indentlevel = 0;
+		function add (s) {
+			opmltext += utils.filledString ("\t", indentlevel) + s + "\r\n";
 			}
-		else {
-			if (obj.Size > 0) { //it's a file
-				var filepath = obj.s3path;
-				var url = "http://" + filepath;
-				var fname = utils.stringNthField (filepath, "/", utils.stringCountFields (filepath, "/")); //something like 1424570840000.opml
-				var numpart = utils.stringNthField (fname, ".", 1);
-				var when = new Date (Number (numpart));
-				add ("<outline text=\"" + when + "\" type=\"include\" url=\"" + url + "\" />");
+		add ("<?xml version=\"1.0\"?>");
+		add ("<opml version=\"2.0\">"); indentlevel++;
+		//add head
+			add ("<head>"); indentlevel++;
+			add ("<title>Comments</title>");
+			add ("</head>"); indentlevel--;
+		add ("<body>"); indentlevel++;
+		store.listObjects (s3path, function (obj) { 
+			if (obj.flLastObject != undefined) {
+				add ("</body>"); indentlevel--;
+				add ("</opml>"); indentlevel--;
+				if (callback != undefined) {
+					callback (opmltext);
+					}
 				}
-			}
-		});
-	}
+			else {
+				if (obj.Size > 0) { //it's a file
+					var filepath = obj.s3path;
+					var url = "http://" + filepath;
+					var fname = utils.stringNthField (filepath, "/", utils.stringCountFields (filepath, "/")); //something like 1424570840000.opml
+					var numpart = utils.stringNthField (fname, ".", 1);
+					var when = new Date (Number (numpart));
+					add ("<outline text=\"" + when + "\" type=\"include\" url=\"" + url + "\" />");
+					}
+				}
+			});
+		}
+
 function everyMinute () {
 	var now = new Date ();
 	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion + ", " + countOpenSockets () + " open sockets");
 	readUserWhitelist (); //11/18/14 by DW
 	}
-
-
 function everySecond () {
 	if (!flScheduledEveryMinute) { //9/2/15 by DW
 		if (new Date ().getSeconds () == 0) {
@@ -1940,6 +1965,31 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													errorResponse ({message: chatNotEnabledError});    
 													}
 												break;
+											case "/setchatlogmetadata": //2/19/16 by DW
+												if (flChatEnabled) {
+													var accessToken = parsedUrl.query.oauth_token;
+													var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+													var jsontext = parsedUrl.query.metadata;
+													getScreenName (accessToken, accessTokenSecret, function (screenName) {
+														if (screenName === undefined) {
+															errorResponse ({message: "Can't set the metadata message because the accessToken is not valid."});    
+															}
+														else {
+															setChatLogMetadata (screenName, jsontext, function (err, data) {
+																if (err) {
+																	errorResponse ({message: err.message});    
+																	}
+																else {
+																	dataResponse ({metadata: data});
+																	}
+																});
+															}
+														});
+													}
+												else {
+													errorResponse ({message: chatNotEnabledError});    
+													}
+												break;
 											default: 
 												httpResponse.writeHead (200, {"Content-Type": "text/html"});
 												httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
@@ -1987,6 +2037,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											saveRequestToken (requestToken, requestTokenSecret);
 											
 											var twitterOauthUrl = "https://twitter.com/oauth/authenticate?oauth_token=" + requestToken;
+											if (flForceTwitterLogin) { //2/19/16 by DW
+												twitterOauthUrl += "&force_login=true"; //https://dev.twitter.com/oauth/reference/get/oauth/authenticate
+												}
+											
 											httpResponse.writeHead (302, {"location": twitterOauthUrl});
 											httpResponse.end ("302 REDIRECT");    
 											}
@@ -2511,7 +2565,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										}, flNotWhitelisted);
 									break;
-								
 								case "/openuserchatlog": //1/5/16 by DW
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
@@ -2526,7 +2579,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										dataResponse (theLog);
 										});
 									break;
-								
 								case "/newincomingwebhook": //8/28/15 by DW
 									var accessToken = parsedUrl.query.oauth_token;
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
@@ -2715,6 +2767,9 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.chatLogs !== undefined) { //10/26/15 by DW
 				chatLogArray = config.chatLogs;
 				}
+			if (config.flForceTwitterLogin !== undefined) { //2/19/16 by DW
+				flForceTwitterLogin = config.flForceTwitterLogin;
+				}
 			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}
@@ -2790,4 +2845,5 @@ function startup () {
 			});
 		});
 	}
+
 startup ();
