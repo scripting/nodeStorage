@@ -664,7 +664,6 @@ function twGetComments (snAuthor, idPost, callback) {
 			callback (jstruct.chatLog, jstruct.metadata); //new metadata parameter -- 10/23/15 by DW
 			});
 		}
-	
 	function twSetChatLogMetadata (metadata, callback) { //2/19/16 by DW
 		var paramtable = {
 			oauth_token: localStorage.twOauthToken,
@@ -693,7 +692,6 @@ function twGetComments (snAuthor, idPost, callback) {
 			dataType: "json"
 			});
 		}
-	
 	function twGetMoreChatLog (nameChatLog, idOldestPost, ctPosts, callback) { //12/31/15 by DW
 		var paramtable = {
 			chatLog: nameChatLog,
@@ -761,6 +759,24 @@ function twGetComments (snAuthor, idPost, callback) {
 				}
 			});
 		}
+	
+	function twPublishChatLogHomePage (nameChatLog, htmltext, callback) { //3/3/16 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			chatLog: nameChatLog
+			}
+		var url = twGetDefaultServer () + "publishchatloghomepage?" + twBuildParamList (paramtable);
+		$.post (url, htmltext, function (data, status) {
+			if (status == "success") {
+				callback (JSON.parse (data));
+				}
+			else {
+				console.log ("twPublishChatLogHomePage: error == " + JSON.stringify (status, undefined, 4));
+				}
+			});
+		}
+	
 	function twGetChatLogList (callback) { //10/29/15 by DW
 		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
 			var jstruct = JSON.parse (data);

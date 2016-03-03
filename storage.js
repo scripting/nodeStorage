@@ -1,6 +1,6 @@
 /* The MIT License (MIT)
 	
-	Copyright (c) 2014-2015 Dave Winer
+	Copyright (c) 2014-2016 Dave Winer
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.89e", myProductName = "nodeStorage"; 
+var myVersion = "0.89ab", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -438,6 +438,8 @@ function httpReadUrl (url, callback) {
 			"rssCloudRegisterProcedure": "",
 			"rssCloudProtocol": "http-post"
 			},
+		renderingPrefs: { //2/21/16 by DW
+			},
 		prefs: {
 			serialNum: 1,
 			whenLogPrefsCreated: new Date ()
@@ -457,8 +459,21 @@ function httpReadUrl (url, callback) {
 			}
 		return (serverStats.chatLogStats.logStats [name]);
 		}
+	function getAnyoneCanReply (theLog) {
+		if (theLog.version == 2) {
+			if (theLog.renderingPrefs !== undefined) { 
+				if (theLog.renderingPrefs.flAnyoneCanReply !== undefined) { //owner has explicitly set it true or false
+					return (utils.getBoolean (theLog.renderingPrefs.flAnyoneCanReply));
+					}
+				}
+			return (true); //if not specified it's true in v2
+			}
+		else {
+			return (utils.getBoolean (theLog.flAnyoneCanReply));
+			}
+		}
 	function getChatLogSubset (log) { //1/19/16 by DW
-		var flAnyoneCanReply = utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);
+		var flAnyoneCanReply = getAnyoneCanReply (log); //utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);
 		return ({
 			prefs: log.prefs,
 			usersWhoCanPost: log.usersWhoCanPost, 
@@ -482,7 +497,6 @@ function httpReadUrl (url, callback) {
 				if ((!error) && (data != null)) {
 					try {
 						chatlogstruct = JSON.parse (data.Body);
-						console.log ("openUserChatlog: chatlog for " + screenName + " has been opened."); 
 						}
 					catch (err) {
 						console.log ("openUserChatlog: error opening chatlog for " + screenName + "."); 
@@ -498,8 +512,9 @@ function httpReadUrl (url, callback) {
 				if (urlPublicFolder !== undefined) { //2/19/16 by DW
 					chatlogstruct.urlPublicFolder = urlPublicFolder + "users/" + screenName + "/";
 					}
-				
-				chatlogstruct.usersWhoCanPost = [screenName];
+				if (chatlogstruct.usersWhoCanPost === undefined) { //3/3/16 by DW
+					chatlogstruct.usersWhoCanPost = [screenName];
+					}
 				
 				chatLogArray [chatLogArray.length] = chatlogstruct;
 				
@@ -510,10 +525,55 @@ function httpReadUrl (url, callback) {
 					myStats.whenLastRead = whenStartLoad;
 					flStatsDirty = true;
 					
-					console.log ("loadChatLogs: screenName == " + screenName + ", myStats == " + utils.jsonStringify (myStats));
+					console.log ("openUserChatlog: screenName == " + screenName + ", stats == " + utils.jsonStringify (myStats));
 				
 				callback (getChatLogSubset (chatlogstruct));
 				});
+			}
+		}
+	function openAllUserChatlogs (callback) { //3/2/16 by DW
+		function getUsersWhoHaveChatLogs (flprivate, callback) { //3/2/16 by DW 
+			var theList = new Array ();
+			store.listObjects (getS3UsersPath (flprivate), function (obj) { //loop over all the users' folders
+				if (obj.flLastObject != undefined) {
+					if (callback != undefined) {
+						callback (theList);
+						}
+					}
+				else {
+					var path = obj.Key;
+					if (utils.endsWith (path, "/chatLog.json")) {
+						theList [theList.length] = utils.stringNthField (path, "/", 3);
+						}
+					}
+				});
+			}
+		if (flChatEnabled) {
+			getUsersWhoHaveChatLogs (true, function (theList) {
+				function openlog (ix) {
+					if (ix >= theList.length) {
+						if (callback !== undefined) {
+							callback ();
+							}
+						}
+					else {
+						if (theList [ix] === undefined) {
+							openlog (ix + 1);
+							}
+						else {
+							openUserChatlog (theList [ix], function () {
+								openlog (ix + 1);
+								});
+							}
+						}
+					}
+				openlog (0);
+				});
+			}
+		else {
+			if (callback !== undefined) {
+				callback ();
+				}
 			}
 		}
 	function getChatLogList () { //10/29/15 by DW
@@ -529,13 +589,10 @@ function httpReadUrl (url, callback) {
 	function findChatLog (nameChatLog) {
 		for (var i = 0; i < chatLogArray.length; i++) {
 			var log = chatLogArray [i];
-			if (log.name == nameChatLog) {
+			if ((log.name == nameChatLog) || (log.owner == nameChatLog)) {
 				return (log);
 				}
 			}
-		
-		console.log ("findChatLog: the chatlog " + nameChatLog + " was not found."); //1/22/16 by DW
-		
 		return (undefined);
 		}
 	function chatLogChanged (nameChatLog) {
@@ -544,7 +601,7 @@ function httpReadUrl (url, callback) {
 		}
 	function chatAnyoneCanReply (nameChatLog) { //11/21/15 by DW
 		var theLog = findChatLog (nameChatLog);
-		return (utils.getBoolean (theLog.flAnyoneCanReply) || (theLog.version == 2));
+		return (getAnyoneCanReply (theLog)); //3/1/16 by DW
 		}
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
 		item.whenLastUpdate = new Date ();
@@ -643,9 +700,11 @@ function httpReadUrl (url, callback) {
 					}
 				}
 			}
-		if (flReply && (utils.getBoolean (theLog.flAnyoneCanReply) || (theLog.version == 2))) { //11/20/15 by DW
+		
+		if (flReply && getAnyoneCanReply (theLog)) { //3/1/16 by DW
 			return (true);
 			}
+		
 		return (false);
 		}
 	function okToModerate (screenName) { //11/30/15 by DW
@@ -805,34 +864,6 @@ function httpReadUrl (url, callback) {
 				}
 			});
 		}
-	function getChatlogForClient (nameChatLog) { //9/20/15 by DW
-		
-		var theLog = findChatLog (nameChatLog);
-		if (theLog === undefined) {
-			return (undefined);
-			}
-		
-		var jstruct = new Object (), urlChatLog = undefined;
-		jstruct.metadata = {
-			productName: myProductName,
-			version: myVersion, 
-			name: nameChatLog,
-			
-			usersWhoCanPost: theLog.usersWhoCanPost, //2/19/16 by DW
-			rssHeadElements: theLog.rssHeadElements, //2/19/16 by DW
-			urlFeed: theLog.urlFeed,  //2/19/16 by DW
-			
-			now: new Date ()
-			};
-		jstruct.chatLog = new Array ();
-		for (var i = theLog.chatLog.length - 1; i >= 0; i--) {
-			jstruct.chatLog.unshift (theLog.chatLog [i]); //insert at beginning of the array
-			if (jstruct.chatLog.length >= maxLogLengthForClient) {
-				break;
-				}
-			}
-		return (jstruct);
-		}
 	function getMoreChatLogPosts (nameChatLog, idOldestPost, ctPosts) { //12/31/15 by DW
 		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
 		if (theLog === undefined) {
@@ -930,8 +961,10 @@ function httpReadUrl (url, callback) {
 			var urlFeed = undefined;
 			if (theLog.urlPublicFolder !== undefined) {
 				urlFeed = theLog.urlPublicFolder + s3RssPath;
-				theLog.urlFeed = urlFeed; 
-				theLog.flDirty = true;
+				if (urlFeed != theLog.urlFeed) {
+					theLog.urlFeed = urlFeed; 
+					theLog.flDirty = true;
+					}
 				}
 			console.log ("buildChatLogRss: urlFeed == " + urlFeed); //1/22/16 by DW
 			if (callback !== undefined) {
@@ -971,7 +1004,22 @@ function httpReadUrl (url, callback) {
 		else {
 			var chatlogpath = theLog.s3Path + fnameChatLog, prefspath = theLog.s3Path + fnameChatLogPrefs;
 			store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), "application/json", undefined, function () {
-				store.newObject (prefspath, utils.jsonStringify (theLog.prefs), "application/json", undefined, function () {
+				
+				var prefsStruct = {
+					prefs: theLog.prefs,
+					usersWhoCanPost: theLog.usersWhoCanPost, 
+					renderingPrefs: theLog.renderingPrefs,
+					rssHeadElements: {
+						title: theLog.rssHeadElements.title,
+						link: theLog.rssHeadElements.link,
+						description: theLog.rssHeadElements.description
+						},
+					stats: {
+						ctPrefsSaves: ++theLog.stats.ctPrefsSaves,
+						whenLastSave: new Date ().toLocaleString ()
+						}
+					};
+				store.newObject (prefspath, utils.jsonStringify (prefsStruct), "application/json", undefined, function () {
 					doStats ();
 					buildRss ();
 					});
@@ -1016,7 +1064,31 @@ function httpReadUrl (url, callback) {
 						var prefspath = log.s3Path + fnameChatLogPrefs;
 						store.getObject (prefspath, function (error, data) {
 							if ((!error) && (data != null)) {
-								log.prefs = JSON.parse (data.Body);
+								
+								var jstruct = JSON.parse (data.Body);
+								if (jstruct.prefs !== undefined) {
+									log.prefs = jstruct.prefs;
+									log.usersWhoCanPost = jstruct.usersWhoCanPost;
+									log.renderingPrefs = jstruct.renderingPrefs;
+									if (jstruct.rssHeadElements !== undefined) {
+										for (var x in jstruct.rssHeadElements) {
+											log.rssHeadElements [x] = jstruct.rssHeadElements [x];
+											}
+										}
+									
+									if (jstruct.stats === undefined) {
+										log.stats = {
+											ctPrefsSaves: 0
+											}
+										}
+									else {
+										log.stats = jstruct.stats;
+										}
+									
+									}
+								else {
+									log.prefs = jstruct;
+									}
 								}
 							else {
 								console.log ("loadChatLogs: creating new prefs file, prefspath == " + prefspath);
@@ -1070,6 +1142,44 @@ function httpReadUrl (url, callback) {
 				}
 			}, metadata);
 		}
+	function getChatlogForClient (nameChatLog) { //9/20/15 by DW
+		
+		var theLog = findChatLog (nameChatLog);
+		if (theLog === undefined) {
+			return (undefined);
+			}
+		
+		var jstruct = new Object (), urlChatLog = undefined;
+		if (theLog.renderingPrefs === undefined) { //2/21/16 by DW
+			theLog.renderingPrefs = new Object ();
+			}
+		jstruct.metadata = {
+			name: nameChatLog,
+			
+			usersWhoCanPost: theLog.usersWhoCanPost, 
+			rssHeadElements: {
+				title: theLog.rssHeadElements.title,
+				link: theLog.rssHeadElements.link,
+				description: theLog.rssHeadElements.description
+				},
+			renderingPrefs: theLog.renderingPrefs, //2/21/16 by DW
+			urlFeed: theLog.urlFeed, 
+			
+			server: {
+				productName: myProductName,
+				version: myVersion,
+				now: new Date ()
+				}
+			};
+		jstruct.chatLog = new Array ();
+		for (var i = theLog.chatLog.length - 1; i >= 0; i--) {
+			jstruct.chatLog.unshift (theLog.chatLog [i]); //insert at beginning of the array
+			if (jstruct.chatLog.length >= maxLogLengthForClient) {
+				break;
+				}
+			}
+		return (jstruct);
+		}
 	function setChatLogMetadata (nameChatLog, metadata, callback) { //2/19/16 by DW
 		var jstruct;
 		try {
@@ -1086,11 +1196,51 @@ function httpReadUrl (url, callback) {
 				theLog.flDirty = true;
 				}
 			}
-		lookFor ("rssHeadElements");
 		lookFor ("usersWhoCanPost");
-		
+		lookFor ("renderingPrefs"); //2/21/16 by DW
+		if (jstruct.rssHeadElements !== undefined) { //the user changed something in the RSS feed
+			function lookForHeadElement (name) {
+				if (jstruct.rssHeadElements [name] !== undefined) {
+					theLog.rssHeadElements [name] = jstruct.rssHeadElements [name];
+					theLog.flDirty = true;
+					}
+				}
+			lookForHeadElement ("title");
+			lookForHeadElement ("link");
+			lookForHeadElement ("description");
+			}
 		callback (undefined, jstruct);
 		}
+	
+	
+	function publishChatLogHomePage (nameChatLog, screenName, htmltext, callback) { //3/3/16 by DW
+		if (okToPostToChatLog (nameChatLog, screenName, false)) {
+			var theLog = findChatLog (nameChatLog);
+			var path = theLog.s3Path + "index.html";
+			store.newObject (path, htmltext, "text/html", undefined, function (err, data) {
+				if (err) {
+					if (callback != undefined) {
+						callback (err);
+						}
+					}
+				else {
+					if (callback != undefined) {
+						var jstruct = {
+							urlHomePage: theLog.urlPublicFolder
+							}
+						callback (undefined, jstruct);
+						}
+					}
+				});
+			}
+		else {
+			callback ({message: "Can't save the home page because you are not authorized to post."});
+			}
+		}
+	
+	
+	
+	
 //webhooks -- 8/28/15 by DW
 	var webhooks = {
 		incoming: {}, 
@@ -1990,6 +2140,31 @@ function handleHttpRequest (httpRequest, httpResponse) {
 													errorResponse ({message: chatNotEnabledError});    
 													}
 												break;
+											case "/publishchatloghomepage": //3/3/16 by DW
+												if (flChatEnabled) {
+													var accessToken = parsedUrl.query.oauth_token;
+													var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+													var nameChatLog = parsedUrl.query.chatLog; 
+													getScreenName (accessToken, accessTokenSecret, function (screenName) {
+														if (screenName === undefined) {
+															errorResponse ({message: "Can't publish the home page because the accessToken is not valid."});    
+															}
+														else {
+															publishChatLogHomePage (nameChatLog, screenName, body, function (err, data) {
+																if (err) {
+																	errorResponse ({message: err.message});    
+																	}
+																else {
+																	dataResponse (data);
+																	}
+																});
+															}
+														});
+													}
+												else {
+													errorResponse ({message: chatNotEnabledError});    
+													}
+												break;
 											default: 
 												httpResponse.writeHead (200, {"Content-Type": "text/html"});
 												httpResponse.end ("post received, pathname == " + parsedUrl.pathname);
@@ -2829,14 +3004,15 @@ function startup () {
 					loadWebhooks (function () { //8/28/15M by DW
 						loadChatLogs (function () { //8/25/15 by DW
 							readUserWhitelist (function () {
-								
-								names.init (s3PrivatePath); //7/12/15 by DW
-								http.createServer (handleHttpRequest).listen (myPort);
-								if (websocketPort !== undefined) { //11/11/15 by DW
-									console.log ("startup: websockets port is " + websocketPort);
-									webSocketStartup (websocketPort); //11/29/15 by DW
-									}
-								setInterval (everySecond, 1000); 
+								openAllUserChatlogs (function () { //3/2/16 by DW
+									names.init (s3PrivatePath); //7/12/15 by DW
+									http.createServer (handleHttpRequest).listen (myPort);
+									if (websocketPort !== undefined) { //11/11/15 by DW
+										console.log ("startup: websockets port is " + websocketPort);
+										webSocketStartup (websocketPort); //11/29/15 by DW
+										}
+									setInterval (everySecond, 1000); 
+									});
 								});
 							});
 						});

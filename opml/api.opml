@@ -962,7 +962,6 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
 			<outline text="function twSetChatLogMetadata (metadata, callback) { //2/19/16 by DW">
 				<outline created="Sat, 09 Aug 2014 15:42:15 GMT" pgfnum="43199" text="var paramtable = {">
 					<outline created="Sat, 09 Aug 2014 15:42:28 GMT" pgfnum="43203" text="oauth_token: localStorage.twOauthToken,"></outline>
@@ -999,7 +998,6 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
 			<outline text="function twGetMoreChatLog (nameChatLog, idOldestPost, ctPosts, callback) { //12/31/15 by DW">
 				<outline isComment="true" text="Changes">
 					<outline text="12/31/15; 11:52:03 AM by DW">
@@ -1099,6 +1097,34 @@
 					</outline>
 				<outline created="Sat, 03 May 2014 20:43:44 GMT" pgfnum="40944" text="}"></outline>
 				</outline>
+			<outline text=""></outline>
+			<outline created="Thu, 01 May 2014 15:43:01 GMT" pgfnum="40772" text="function twPublishChatLogHomePage (nameChatLog, htmltext, callback) { //3/3/16 by DW">
+				<outline created="Thu, 26 Jun 2014 11:53:02 GMT" isComment="true" pgfnum="42481" text="Changes">
+					<outline created="Mon, 04 Aug 2014 00:02:11 GMT" pgfnum="43118" text="1/6/16; 1:50:46 PM by DW">
+						<outline text="Special-purpose file uploader for chatlogs. If it's a V1 chatlog, we use the S3 path it's configured for to save the file. If it's a later-version chatlog, we use the same publish function as twUploadFile. This is only for public files. "></outline>
+						</outline>
+					</outline>
+				<outline created="Sat, 09 Aug 2014 15:42:15 GMT" pgfnum="43199" text="var paramtable = {">
+					<outline created="Sat, 09 Aug 2014 15:42:28 GMT" pgfnum="43203" text="oauth_token: localStorage.twOauthToken,"></outline>
+					<outline created="Sat, 09 Aug 2014 15:42:43 GMT" pgfnum="43205" text="oauth_token_secret: localStorage.twOauthTokenSecret,"></outline>
+					<outline text="chatLog: nameChatLog"></outline>
+					<outline created="Sat, 09 Aug 2014 15:42:23 GMT" pgfnum="43202" text="}"></outline>
+					</outline>
+				<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;publishchatloghomepage?&quot; + twBuildParamList (paramtable);"></outline>
+				<outline created="Sat, 09 Aug 2014 15:59:33 GMT" pgfnum="43210" text="$.post (url, htmltext, function (data, status) {">
+					<outline created="Sat, 09 Aug 2014 16:04:22 GMT" pgfnum="43217" text="if (status == &quot;success&quot;) {">
+						<outline created="Sat, 09 Aug 2014 16:04:47 GMT" pgfnum="43222" text="callback (JSON.parse (data));"></outline>
+						<outline created="Sat, 09 Aug 2014 16:04:38 GMT" pgfnum="43219" text="}"></outline>
+						</outline>
+					<outline created="Sat, 09 Aug 2014 16:04:39 GMT" pgfnum="43220" text="else {">
+						<outline created="Sat, 01 Jun 2013 14:45:29 GMT" pgfnum="24939" text="console.log (&quot;twPublishChatLogHomePage: error == &quot; + JSON.stringify (status, undefined, 4));"></outline>
+						<outline created="Sat, 09 Aug 2014 16:04:41 GMT" pgfnum="43221" text="}"></outline>
+						</outline>
+					<outline created="Sat, 09 Aug 2014 16:00:26 GMT" pgfnum="43214" text="});"></outline>
+					</outline>
+				<outline created="Sat, 03 May 2014 20:43:44 GMT" pgfnum="40944" text="}"></outline>
+				</outline>
+			<outline text=""></outline>
 			<outline text="function twGetChatLogList (callback) { //10/29/15 by DW">
 				<outline text="readHttpFile (twGetDefaultServer () + &quot;chatloglist&quot;, function (data) {">
 					<outline text="var jstruct = JSON.parse (data);"></outline>
