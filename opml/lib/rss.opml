@@ -219,6 +219,8 @@
 						</outline>
 					<outline text="rssitem.link = chatitem.payload.urlRendering;"></outline>
 					<outline text="rssitem.when = chatitem.when;"></outline>
+					<outline text="rssitem.name = chatitem.name; //2/24/16 by DW"></outline>
+					<outline text="rssitem.whenupdate = chatitem.whenLastUpdate; //2/23/16 by DW"></outline>
 					<outline text="rssitem.id = chatitem.id;"></outline>
 					<outline text="rssitem.guid = {">
 						<outline text="flPermalink: true,"></outline>

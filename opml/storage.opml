@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.89ab&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.90p&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -658,7 +658,7 @@
 				</outline>
 			</outline>
 		<outline text="//chat -- 8/25/15 by DW">
-			<outline text="var flChatEnabled = false;"></outline>
+			<outline text="var flChatEnabled = false; //default"></outline>
 			<outline text="var chatRssHeadElements = { //10/6/15 by DW">
 				<outline text="title: &quot;nodeStorage chat feed&quot;,"></outline>
 				<outline text="link: &quot;http://nodestorage.io/&quot;,"></outline>
@@ -675,40 +675,7 @@
 			<outline text="var maxChatLog = Infinity; //if you want to limit the amount of memory we use, make this smaller, like 250"></outline>
 			<outline text="var maxLogLengthForClient = 50; //we won't return more than this number of log items to the client"></outline>
 			<outline text="var flChatLogDirty = false, nameDirtyChatLog;"></outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
 			<outline text="var chatLogArray = new Array (); //10/26/15 by DW"></outline>
-			<outline text="var initialChatLogStruct = { //1/5/16 by DW">
-				<outline text="chatLog: [],"></outline>
-				<outline text="rssHeadElements: {">
-					<outline text="&quot;title&quot;: &quot;Someone's chatlog&quot;,"></outline>
-					<outline text="&quot;link&quot;: &quot;http://some chatlog address/&quot;,"></outline>
-					<outline text="&quot;description&quot;: &quot;A description of the chatlog.&quot;,"></outline>
-					<outline text="&quot;language&quot;: &quot;en-us&quot;,"></outline>
-					<outline text="&quot;generator&quot;: &quot;1999.io&quot;,"></outline>
-					<outline text="&quot;docs&quot;: &quot;http://cyber.law.harvard.edu/rss/rss.html&quot;,"></outline>
-					<outline text="&quot;maxFeedItems&quot;: 100,"></outline>
-					<outline text="&quot;appDomain&quot;: &quot;domain.com&quot;,"></outline>
-					<outline text="&quot;flRssCloudEnabled&quot;: true,"></outline>
-					<outline text="&quot;rssCloudDomain&quot;: &quot;rpc.rsscloud.io&quot;,"></outline>
-					<outline text="&quot;rssCloudPort&quot;: 5337,"></outline>
-					<outline text="&quot;rssCloudPath&quot;: &quot;/pleaseNotify&quot;,"></outline>
-					<outline text="&quot;rssCloudRegisterProcedure&quot;: &quot;&quot;,"></outline>
-					<outline text="&quot;rssCloudProtocol&quot;: &quot;http-post&quot;"></outline>
-					<outline text="},"></outline>
-					</outline>
-				<outline text="renderingPrefs: { //2/21/16 by DW">
-					<outline text="},"></outline>
-					</outline>
-				<outline text="prefs: {">
-					<outline text="serialNum: 1,"></outline>
-					<outline text="whenLogPrefsCreated: new Date ()"></outline>
-					<outline text="},"></outline>
-					</outline>
-				<outline text="version: 2, //the first version has no version element here"></outline>
-				<outline text="flDirty: true"></outline>
-				<outline text="}"></outline>
-				</outline>
 			<outline text=""></outline>
 			<outline isComment="true" text="what's in a chatLogArray element?">
 				<outline text="chatLog: array (one element for each top-level item in the log)"></outline>
@@ -720,6 +687,103 @@
 				<outline text="flDirty: boolean (if true, the chatlog needs to be saved)"></outline>
 				<outline text="usersWhoCanPost: array of usernames"></outline>
 				<outline text="renderingPrefs: address of template, menubar, info about the site, author's LinkedIn and GitHub accounts"></outline>
+				</outline>
+			<outline isComment="true" text="saved code">
+				<outline isComment="true" text="function loadChatMessage (id, flLoadSubs, callback) { //10/5/15 by DW -- for possible future use">
+					<outline isComment="true" text="Changes">
+						<outline text="10/5/15; 9:25:12 AM by DW">
+							<outline text="Read the message from the storage system, convert the subs list from an array of ids to the full content of the message, and recurse. "></outline>
+							</outline>
+						</outline>
+					<outline text="if (flLoadSubs === undefined) {">
+						<outline text="flLoadSubs = true;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="function loadItem (id, callback) {">
+						<outline text="var f = getItemFile (id);"></outline>
+						<outline text="fs.readFile (f, function (err, data) {">
+							<outline text="if (err) {">
+								<outline text="console.log (&quot;loadChatMessage: error reading file == &quot; + f + &quot;, err.message == &quot; + err.message);"></outline>
+								<outline text="callback (undefined);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="else {">
+								<outline text="var jstruct = JSON.parse (data.toString ());"></outline>
+								<outline isComment="true" text="console.log (&quot;loadItem: just read f == &quot; + f);"></outline>
+								<outline text="if (flLoadSubs) {">
+									<outline text="if (jstruct.subs !== undefined) {">
+										<outline text="function getNextSub (subs, ix) {">
+											<outline text="if (ix &lt; subs.length) {">
+												<outline text="loadItem (subs [ix], function (substruct) {">
+													<outline text="subs [ix] = substruct;"></outline>
+													<outline text="getNextSub (subs, ix + 1);"></outline>
+													<outline text="});"></outline>
+													</outline>
+												<outline text="}"></outline>
+												</outline>
+											<outline text="else {">
+												<outline text="callback (jstruct);"></outline>
+												<outline text="}"></outline>
+												</outline>
+											<outline text="}"></outline>
+											</outline>
+										<outline text="getNextSub (jstruct.subs, 0);"></outline>
+										<outline text="}"></outline>
+										</outline>
+									<outline text="else {">
+										<outline text="callback (jstruct);"></outline>
+										<outline text="}"></outline>
+										</outline>
+									<outline text="}"></outline>
+									</outline>
+								<outline text="else {">
+									<outline text="callback (jstruct);"></outline>
+									<outline text="}"></outline>
+									</outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="loadItem (id, function (jstruct) {">
+						<outline text="callback (jstruct);"></outline>
+						<outline text="});"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline isComment="true" text="function buildChatLogIndex (callback) { //10/5/15 by DW -- for possible future use">
+					<outline text="function loadArray (sourceArray) {">
+						<outline text="var destArray = new Array ();"></outline>
+						<outline text="for (var i = 0; i &lt; sourceArray.length; i++) {">
+							<outline text="var sourceitem = sourceArray [i];"></outline>
+							<outline text="destArray [i] = {">
+								<outline text="id: sourceitem.id"></outline>
+								<outline text="};"></outline>
+								</outline>
+							<outline text="var destitem = destArray [i];"></outline>
+							<outline text="if ((sourceitem.subs !== undefined) &amp;&amp; (sourceitem.subs.length &gt; 0)) {">
+								<outline text="destitem.subs = loadArray (sourceitem.subs);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="return (destArray);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="chatLogIndex = loadArray (chatLog);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline isComment="true" text="function saveWholeChatLog () {">
+					<outline text=""></outline>
+					<outline text="for (var i = 0; i &lt; chatLog.length; i++) {">
+						<outline text="saveChatMessage (chatLog [i]);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text=""></outline>
+					<outline text=""></outline>
+					<outline text="}"></outline>
+					</outline>
 				</outline>
 			<outline text=""></outline>
 			<outline text=""></outline>
@@ -765,14 +829,63 @@
 						</outline>
 					</outline>
 				<outline text="var flAnyoneCanReply = getAnyoneCanReply (log); //utils.getBoolean (log.flAnyoneCanReply) || (log.version == 2);"></outline>
+				<outline text="var urlChatLogJson = (log.urlJsonFile !== undefined) ? log.urlJsonFile : log.urlPublicFolder + &quot;chatLog.json&quot;; //3/9/16 by DW"></outline>
+				<outline text="function getIdLastPost () {">
+					<outline text="if (log.chatLog.length == 0) {">
+						<outline text="return (undefined);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="else {">
+						<outline text="return (log.chatLog [log.chatLog.length - 1].id);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="return ({">
 					<outline text="prefs: log.prefs,"></outline>
 					<outline text="usersWhoCanPost: log.usersWhoCanPost, "></outline>
 					<outline text="flAnyoneCanReply: flAnyoneCanReply, //11/20/15 by DW"></outline>
 					<outline text="urlPublicFolder: log.urlPublicFolder,"></outline>
-					<outline text="urlRssFeed: log.urlPublicFolder + s3RssPath //11/22/15 by DW"></outline>
+					<outline text="urlRssFeed: log.urlPublicFolder + s3RssPath, //11/22/15 by DW"></outline>
+					<outline text="urlChatLogJson: urlChatLogJson, //3/9/16 by DW"></outline>
+					<outline text="idLastPost: getIdLastPost () //3/14/16 by DW"></outline>
 					<outline text="});"></outline>
 					</outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text="function getInitialChatLogStruct () { //3/15/16 by DW">
+				<outline text="var initialChatLogStruct = { //1/5/16 by DW">
+					<outline text="chatLog: [],"></outline>
+					<outline text="rssHeadElements: {">
+						<outline text="&quot;title&quot;: &quot;Someone's chatlog&quot;,"></outline>
+						<outline text="&quot;link&quot;: &quot;http://some chatlog address/&quot;,"></outline>
+						<outline text="&quot;description&quot;: &quot;A description of the chatlog.&quot;,"></outline>
+						<outline text="&quot;language&quot;: &quot;en-us&quot;,"></outline>
+						<outline text="&quot;generator&quot;: &quot;1999.io&quot;,"></outline>
+						<outline text="&quot;docs&quot;: &quot;http://cyber.law.harvard.edu/rss/rss.html&quot;,"></outline>
+						<outline text="&quot;maxFeedItems&quot;: 100,"></outline>
+						<outline text="&quot;appDomain&quot;: &quot;domain.com&quot;,"></outline>
+						<outline text="&quot;flRssCloudEnabled&quot;: true,"></outline>
+						<outline text="&quot;rssCloudDomain&quot;: &quot;rpc.rsscloud.io&quot;,"></outline>
+						<outline text="&quot;rssCloudPort&quot;: 5337,"></outline>
+						<outline text="&quot;rssCloudPath&quot;: &quot;/pleaseNotify&quot;,"></outline>
+						<outline text="&quot;rssCloudRegisterProcedure&quot;: &quot;&quot;,"></outline>
+						<outline text="&quot;rssCloudProtocol&quot;: &quot;http-post&quot;"></outline>
+						<outline text="},"></outline>
+						</outline>
+					<outline text="renderingPrefs: { //2/21/16 by DW">
+						<outline text="},"></outline>
+						</outline>
+					<outline text="prefs: {">
+						<outline text="serialNum: 1,"></outline>
+						<outline text="whenLogPrefsCreated: new Date ()"></outline>
+						<outline text="},"></outline>
+						</outline>
+					<outline text="version: 2, //the first version has no version element here"></outline>
+					<outline text="flDirty: true"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="return (JSON.parse (JSON.stringify (initialChatLogStruct)));"></outline>
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function openUserChatlog (screenName, callback) { //1/5/16 by DW">
@@ -794,16 +907,16 @@
 					<outline text="}"></outline>
 					</outline>
 				<outline text="else {">
-					<outline text="var flprivate = true; //might change later"></outline>
+					<outline text="var flprivate = false; //3/9/16 by DW"></outline>
 					<outline created="Thu, 15 May 2014 15:40:17 GMT" pgfnum="41633" text="var chatlogpath = getS3UsersPath (flprivate) + screenName + &quot;/chatLog.json&quot;;"></outline>
 					<outline text="var whenStartLoad = new Date ();"></outline>
 					<outline created="Wed, 22 Jan 2014 23:07:46 GMT" pgfnum="36412" text="store.getObject (chatlogpath, function (error, data) {">
-						<outline text="var chatlogstruct = initialChatLogStruct;"></outline>
+						<outline text="var chatlogstruct = getInitialChatLogStruct ();"></outline>
 						<outline text=""></outline>
 						<outline text="if ((!error) &amp;&amp; (data != null)) {">
 							<outline text="try {">
 								<outline text="chatlogstruct = JSON.parse (data.Body);"></outline>
-								<outline isComment="true" text="console.log (&quot;openUserChatlog: chatlog for &quot; + screenName + &quot; has been opened.&quot;); "></outline>
+								<outline text="console.log (&quot;openUserChatlog: chatlog for &quot; + screenName + &quot; has been opened.&quot;); "></outline>
 								<outline text="}"></outline>
 								</outline>
 							<outline text="catch (err) {">
@@ -811,6 +924,11 @@
 								<outline text="callback (undefined); //1/19/16 by DW"></outline>
 								<outline text="}"></outline>
 								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="else {">
+							<outline text="console.log (&quot;openUserChatlog: the chatlog for &quot; + screenName + &quot; does not exist.&quot;); "></outline>
+							<outline text="callback (undefined); //1/19/16 by DW"></outline>
 							<outline text="}"></outline>
 							</outline>
 						<outline text=""></outline>
@@ -848,6 +966,20 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
+			<outline text="function newUserChatlog (screenName, callback) { //3/15/16 by DW">
+				<outline text="var jstruct = getInitialChatLogStruct (); "></outline>
+				<outline text="jstruct.name = screenName;"></outline>
+				<outline text="jstruct.jsonPath = getS3UsersPath (false) + screenName + &quot;/chatLog.json&quot;;"></outline>
+				<outline text="jstruct.s3Path = getS3UsersPath (false) + screenName + &quot;/&quot;; //where the chatlog's public files, such as the RSS feed, are stored"></outline>
+				<outline text="if (urlPublicFolder !== undefined) { ">
+					<outline text="jstruct.urlPublicFolder = urlPublicFolder + &quot;users/&quot; + screenName + &quot;/&quot;;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="jstruct.usersWhoCanPost = [screenName];"></outline>
+				<outline text="chatLogArray [chatLogArray.length] = jstruct;"></outline>
+				<outline text="callback (getChatLogSubset (jstruct));"></outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline text="function openAllUserChatlogs (callback) { //3/2/16 by DW">
 				<outline text="function getUsersWhoHaveChatLogs (flprivate, callback) { //3/2/16 by DW ">
 					<outline isComment="true" text="Changes">
@@ -869,27 +1001,7 @@
 						<outline created="Sat, 22 Mar 2014 16:41:28 GMT" pgfnum="39732" text="else {">
 							<outline text="var path = obj.Key;"></outline>
 							<outline text="if (utils.endsWith (path, &quot;/chatLog.json&quot;)) {">
-								<outline text="theList [theList.length] = utils.stringNthField (path, &quot;/&quot;, 3);"></outline>
-								<outline text="}"></outline>
-								</outline>
-							<outline isComment="true" text=""></outline>
-							<outline isComment="true" text=""></outline>
-							<outline isComment="true" text=""></outline>
-							<outline isComment="true" text=""></outline>
-							<outline isComment="true" text="var path = obj.Key, name = utils.stringNthField (path, &quot;/&quot;, 3), flfound = false;"></outline>
-							<outline isComment="true" text="if (name !== undefined) {">
-								<outline text="for (var i = 0; i &lt; theList.length; i++) {">
-									<outline text="if (theList [i] == name) {">
-										<outline text="flfound = true;"></outline>
-										<outline text="break;"></outline>
-										<outline text="}"></outline>
-										</outline>
-									<outline text="}"></outline>
-									</outline>
-								<outline text="if (!flfound) {">
-									<outline text="theList [theList.length] = name;"></outline>
-									<outline text="}"></outline>
-									</outline>
+								<outline text="theList [theList.length] = utils.stringNthField (path, &quot;/&quot;, 2); //3/9/16 by DW -- changed from 3 to 2"></outline>
 								<outline text="}"></outline>
 								</outline>
 							<outline created="Sat, 22 Mar 2014 16:41:30 GMT" pgfnum="39733" text="}"></outline>
@@ -899,7 +1011,7 @@
 					<outline text="}"></outline>
 					</outline>
 				<outline text="if (flChatEnabled) {">
-					<outline text="getUsersWhoHaveChatLogs (true, function (theList) {">
+					<outline text="getUsersWhoHaveChatLogs (false, function (theList) {">
 						<outline text="function openlog (ix) {">
 							<outline text="if (ix &gt;= theList.length) {">
 								<outline text="if (callback !== undefined) {">
@@ -1049,16 +1161,6 @@
 						</outline>
 					<outline text="});"></outline>
 					</outline>
-				<outline text="}"></outline>
-				</outline>
-			<outline isComment="true" text="function saveWholeChatLog () {">
-				<outline text=""></outline>
-				<outline text="for (var i = 0; i &lt; chatLog.length; i++) {">
-					<outline text="saveChatMessage (chatLog [i]);"></outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text=""></outline>
-				<outline text=""></outline>
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function findChatMessage (nameChatLog, id, callback) { //9/15/15 by DW">
@@ -1583,93 +1685,20 @@
 				<outline text="doArray (chatLog);"></outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline isComment="true" text="function loadChatMessage (id, flLoadSubs, callback) { //10/5/15 by DW -- for possible future use">
-				<outline isComment="true" text="Changes">
-					<outline text="10/5/15; 9:25:12 AM by DW">
-						<outline text="Read the message from the storage system, convert the subs list from an array of ids to the full content of the message, and recurse. "></outline>
-						</outline>
-					</outline>
-				<outline text="if (flLoadSubs === undefined) {">
-					<outline text="flLoadSubs = true;"></outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="function loadItem (id, callback) {">
-					<outline text="var f = getItemFile (id);"></outline>
-					<outline text="fs.readFile (f, function (err, data) {">
-						<outline text="if (err) {">
-							<outline text="console.log (&quot;loadChatMessage: error reading file == &quot; + f + &quot;, err.message == &quot; + err.message);"></outline>
-							<outline text="callback (undefined);"></outline>
-							<outline text="}"></outline>
-							</outline>
-						<outline text="else {">
-							<outline text="var jstruct = JSON.parse (data.toString ());"></outline>
-							<outline isComment="true" text="console.log (&quot;loadItem: just read f == &quot; + f);"></outline>
-							<outline text="if (flLoadSubs) {">
-								<outline text="if (jstruct.subs !== undefined) {">
-									<outline text="function getNextSub (subs, ix) {">
-										<outline text="if (ix &lt; subs.length) {">
-											<outline text="loadItem (subs [ix], function (substruct) {">
-												<outline text="subs [ix] = substruct;"></outline>
-												<outline text="getNextSub (subs, ix + 1);"></outline>
-												<outline text="});"></outline>
-												</outline>
-											<outline text="}"></outline>
-											</outline>
-										<outline text="else {">
-											<outline text="callback (jstruct);"></outline>
-											<outline text="}"></outline>
-											</outline>
-										<outline text="}"></outline>
-										</outline>
-									<outline text="getNextSub (jstruct.subs, 0);"></outline>
-									<outline text="}"></outline>
-									</outline>
-								<outline text="else {">
-									<outline text="callback (jstruct);"></outline>
-									<outline text="}"></outline>
-									</outline>
-								<outline text="}"></outline>
-								</outline>
-							<outline text="else {">
-								<outline text="callback (jstruct);"></outline>
-								<outline text="}"></outline>
-								</outline>
-							<outline text="}"></outline>
-							</outline>
-						<outline text="});"></outline>
-						</outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="loadItem (id, function (jstruct) {">
-					<outline text="callback (jstruct);"></outline>
-					<outline text="});"></outline>
-					</outline>
-				<outline text="}"></outline>
-				</outline>
-			<outline isComment="true" text="function buildChatLogIndex (callback) { //10/5/15 by DW -- for possible future use">
-				<outline text="function loadArray (sourceArray) {">
-					<outline text="var destArray = new Array ();"></outline>
-					<outline text="for (var i = 0; i &lt; sourceArray.length; i++) {">
-						<outline text="var sourceitem = sourceArray [i];"></outline>
-						<outline text="destArray [i] = {">
-							<outline text="id: sourceitem.id"></outline>
-							<outline text="};"></outline>
-							</outline>
-						<outline text="var destitem = destArray [i];"></outline>
-						<outline text="if ((sourceitem.subs !== undefined) &amp;&amp; (sourceitem.subs.length &gt; 0)) {">
-							<outline text="destitem.subs = loadArray (sourceitem.subs);"></outline>
-							<outline text="}"></outline>
-							</outline>
-						<outline text="}"></outline>
-						</outline>
-					<outline text="return (destArray);"></outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="chatLogIndex = loadArray (chatLog);"></outline>
-				<outline text="}"></outline>
-				</outline>
 			<outline text="function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW">
+				<outline isComment="true" text="Changes">
+					<outline text="3/4/16; 12:17:48 PM by DW">
+						<outline text="If theLog.rssHeadElements.flInstantArticlesSupport is true, then we build an IA-compatible feed."></outline>
+						</outline>
+					</outline>
 				<outline text="var theLog = findChatLog (nameChatLog);"></outline>
+				<outline text="if (utils.getBoolean (theLog.rssHeadElements.flInstantArticlesSupport)) { //3/4/16 by DW">
+					<outline text="theLog.rssHeadElements.flUseContentEncoded = true;"></outline>
+					<outline text="theLog.rssHeadElements.flTitledItemsOnly = true;"></outline>
+					<outline text="theLog.rssHeadElements.flFacebookEncodeContent = true;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline isComment="true" text="console.log (&quot;buildChatLogRss: theLog.rssHeadElements == &quot; + utils.jsonStringify (theLog.rssHeadElements));"></outline>
 				<outline text="var xmltext = rss.chatLogToRss (theLog.rssHeadElements, theLog.chatLog);"></outline>
 				<outline text="store.newObject (theLog.s3Path + s3RssPath, xmltext, &quot;text/xml&quot;, undefined, function () {">
 					<outline text="var urlFeed = undefined;"></outline>
@@ -1745,6 +1774,15 @@
 					<outline text="store.newObject (chatlogpath, utils.jsonStringify (theLog.chatLog), &quot;application/json&quot;, undefined, function () {">
 						<outline isComment="true" text="console.log (&quot;saveChatLog: chatlogpath == &quot; + chatlogpath);"></outline>
 						<outline text=""></outline>
+						<outline text="if (theLog.stats === undefined) { //3/9/16 by DW">
+							<outline text="theLog.stats = {">
+								<outline text="ctPrefsSaves: 0"></outline>
+								<outline text="};"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text=""></outline>
+						<outline text=""></outline>
 						<outline text="var prefsStruct = {">
 							<outline text="prefs: theLog.prefs,"></outline>
 							<outline text="usersWhoCanPost: theLog.usersWhoCanPost, "></outline>
@@ -1781,25 +1819,7 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text="function chatLogEverySecond () {">
-				<outline text="if (flChatLogDirty) {">
-					<outline text="saveChatLog (nameDirtyChatLog);"></outline>
-					<outline text="flChatLogDirty = false; "></outline>
-					<outline text="nameDirtyChatLog = undefined;"></outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="for (var i = 0; i &lt; chatLogArray.length; i++) {">
-					<outline text="var log = chatLogArray [i];"></outline>
-					<outline text="if (log.flDirty) {">
-						<outline text="saveChatLog (log.name);"></outline>
-						<outline text="log.flDirty = false;"></outline>
-						<outline text="}"></outline>
-						</outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="}"></outline>
-				</outline>
-			<outline text="function loadChatLogs (callback) {">
+			<outline text="function loadChatLogs (callback) { //load the version 1 chatlogs">
 				<outline isComment="true" text="Changes">
 					<outline text="2/29/16; 6:00:30 PM by DW">
 						<outline text="These are all version 1 chatlogs. Already in the config.json file. We load in the parts that contain content and user-defined settings. Really the only important one of these is scripting. "></outline>
@@ -1831,6 +1851,7 @@
 									<outline text="}"></outline>
 									</outline>
 								<outline text="var prefspath = log.s3Path + fnameChatLogPrefs;"></outline>
+								<outline text="log.urlJsonFile = log.urlPublicFolder + fnameChatLog; //3/9/16 by DW"></outline>
 								<outline text="store.getObject (prefspath, function (error, data) {">
 									<outline text="if ((!error) &amp;&amp; (data != null)) {">
 										<outline isComment="true" text="log.prefs = JSON.parse (data.Body);"></outline>
@@ -1839,7 +1860,17 @@
 										<outline text="if (jstruct.prefs !== undefined) {">
 											<outline text="log.prefs = jstruct.prefs;"></outline>
 											<outline text="log.usersWhoCanPost = jstruct.usersWhoCanPost;"></outline>
-											<outline text="log.renderingPrefs = jstruct.renderingPrefs;"></outline>
+											<outline text="if (log.renderingPrefs === undefined) {">
+												<outline text="log.renderingPrefs = new Object ();"></outline>
+												<outline text="}"></outline>
+												</outline>
+											<outline text="if (jstruct.renderingPrefs !== undefined) {">
+												<outline text="for (var x in jstruct.renderingPrefs) {">
+													<outline text="log.renderingPrefs [x] = jstruct.renderingPrefs [x];"></outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="}"></outline>
+												</outline>
 											<outline text="if (jstruct.rssHeadElements !== undefined) {">
 												<outline text="for (var x in jstruct.rssHeadElements) {">
 													<outline text="log.rssHeadElements [x] = jstruct.rssHeadElements [x];"></outline>
@@ -2041,6 +2072,7 @@
 						<outline text="if (jstruct.rssHeadElements [name] !== undefined) {">
 							<outline text="theLog.rssHeadElements [name] = jstruct.rssHeadElements [name];"></outline>
 							<outline text="theLog.flDirty = true;"></outline>
+							<outline text="console.log (&quot;setChatLogMetadata: theLog.rssHeadElements.&quot; + name + &quot; == &quot; + jstruct.rssHeadElements [name]);"></outline>
 							<outline text="}"></outline>
 							</outline>
 						<outline text="}"></outline>
@@ -2048,14 +2080,14 @@
 					<outline text="lookForHeadElement (&quot;title&quot;);"></outline>
 					<outline text="lookForHeadElement (&quot;link&quot;);"></outline>
 					<outline text="lookForHeadElement (&quot;description&quot;);"></outline>
+					<outline text="lookForHeadElement (&quot;flInstantArticlesSupport&quot;); //3/4/16 by DW"></outline>
+					<outline text="lookForHeadElement (&quot;appDomain&quot;); //3/4/16 by DW"></outline>
 					<outline text="}"></outline>
 					</outline>
 				<outline text="callback (undefined, jstruct);"></outline>
 				<outline isComment="true" text="saveChatLog (nameChatLog); //3/3/16 by DW"></outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
 			<outline text="function publishChatLogHomePage (nameChatLog, screenName, htmltext, callback) { //3/3/16 by DW">
 				<outline text="if (okToPostToChatLog (nameChatLog, screenName, false)) {">
 					<outline text="var theLog = findChatLog (nameChatLog);"></outline>
@@ -2089,8 +2121,24 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
+			<outline text="function chatLogEverySecond () {">
+				<outline text="if (flChatLogDirty) {">
+					<outline text="saveChatLog (nameDirtyChatLog);"></outline>
+					<outline text="flChatLogDirty = false; "></outline>
+					<outline text="nameDirtyChatLog = undefined;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="for (var i = 0; i &lt; chatLogArray.length; i++) {">
+					<outline text="var log = chatLogArray [i];"></outline>
+					<outline text="if (log.flDirty) {">
+						<outline text="saveChatLog (log.name);"></outline>
+						<outline text="log.flDirty = false;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline text=""></outline>
 			<outline text=""></outline>
 			</outline>
@@ -4335,7 +4383,17 @@
 											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessTokenSecret = parsedUrl.query.oauth_token_secret;"></outline>
 											<outline created="Wed, 09 Jul 2014 23:57:16 GMT" pgfnum="42784" text="getScreenName (accessToken, accessTokenSecret, function (screenName) {">
 												<outline text="openUserChatlog (screenName, function (theLog) {">
-													<outline created="Thu, 26 Jun 2014 12:29:46 GMT" pgfnum="42486" text="dataResponse (theLog);"></outline>
+													<outline text="if (theLog === undefined) {">
+														<outline text="newUserChatlog (screenName, function (theNewLog) { //3/15/16 by DW">
+															<outline created="Thu, 26 Jun 2014 12:29:46 GMT" pgfnum="42486" text="dataResponse (theNewLog);"></outline>
+															<outline text="});"></outline>
+															</outline>
+														<outline text="}"></outline>
+														</outline>
+													<outline text="else {">
+														<outline created="Thu, 26 Jun 2014 12:29:46 GMT" pgfnum="42486" text="dataResponse (theLog);"></outline>
+														<outline text="}"></outline>
+														</outline>
 													<outline text="});"></outline>
 													</outline>
 												<outline created="Wed, 09 Jul 2014 23:57:25 GMT" pgfnum="42785" text="});"></outline>

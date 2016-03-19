@@ -446,11 +446,25 @@
 			<outline created="Thu, 13 Jun 2013 23:03:59 GMT" pgfnum="26116" text="}"></outline>
 			</outline>
 		<outline created="Thu, 13 Jun 2013 23:01:54 GMT" pgfnum="26111" text="function twUpdateTwitterMenuItem (iditem) {">
-			<outline created="Thu, 13 Jun 2013 23:02:33 GMT" pgfnum="26114" text="document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? &quot;Sign off Twitter...&quot; : &quot;Sign on Twitter...&quot;;"></outline>
+			<outline text="try {">
+				<outline created="Thu, 13 Jun 2013 23:02:33 GMT" pgfnum="26114" text="document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? &quot;Sign off Twitter...&quot; : &quot;Sign on Twitter...&quot;;"></outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text="catch (err) {">
+				<outline isComment="true" text="console.log (&quot;twUpdateTwitterMenuItem: &quot; + err.message); //3/18/16 by DW"></outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline created="Thu, 13 Jun 2013 23:02:05 GMT" pgfnum="26112" text="}"></outline>
 			</outline>
 		<outline created="Thu, 13 Jun 2013 23:01:54 GMT" pgfnum="26111" text="function twUpdateTwitterUsername (iditem) {">
-			<outline created="Thu, 13 Jun 2013 23:02:33 GMT" pgfnum="26114" text="document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? localStorage.twScreenName : &quot;Sign on here&quot;;"></outline>
+			<outline text="try {">
+				<outline created="Thu, 13 Jun 2013 23:02:33 GMT" pgfnum="26114" text="document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? localStorage.twScreenName : &quot;Sign on here&quot;;"></outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text="catch (err) {">
+				<outline isComment="true" text="console.log (&quot;twUpdateTwitterUsername: &quot; + err.message); //3/18/16 by DW"></outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline created="Thu, 13 Jun 2013 23:02:05 GMT" pgfnum="26112" text="}"></outline>
 			</outline>
 		<outline created="Tue, 24 Jun 2014 16:34:23 GMT" pgfnum="42440" text="function twWebIntent (id, twOp, paramName) {">

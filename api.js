@@ -305,10 +305,18 @@ function twToggleConnectCommand (confirmDialogCallback) {
 		}
 	}
 function twUpdateTwitterMenuItem (iditem) {
-	document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? "Sign off Twitter..." : "Sign on Twitter...";
+	try {
+		document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? "Sign off Twitter..." : "Sign on Twitter...";
+		}
+	catch (err) {
+		}
 	}
 function twUpdateTwitterUsername (iditem) {
-	document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? localStorage.twScreenName : "Sign on here";
+	try {
+		document.getElementById (iditem).innerHTML = (twIsTwitterConnected ()) ? localStorage.twScreenName : "Sign on here";
+		}
+	catch (err) {
+		}
 	}
 function twWebIntent (id, twOp, paramName) {
 	if (paramName === undefined) {
