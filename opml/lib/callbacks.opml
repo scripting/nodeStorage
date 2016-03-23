@@ -26,6 +26,9 @@
 					<outline text="The central place to run a script. The scriptName param is just used in the error message, so we can tell the user where the script came from."></outline>
 					</outline>
 				</outline>
+			<outline isComment="true" text=""></outline>
+			<outline isComment="true" text="console.log (&quot;runUserScript: s == &quot; + s);"></outline>
+			<outline isComment="true" text=""></outline>
 			<outline text="try {">
 				<outline text="if (dataforscripts !== undefined) {">
 					<outline text="with (dataforscripts) {">
@@ -122,14 +125,24 @@
 				</outline>
 			<outline text="}"></outline>
 			</outline>
-		<outline text="function callPublishCallbacks (relpath, body, type) {">
+		<outline text="function callPublishCallbacks (relpath, body, type, screenName) {">
+			<outline isComment="true" text="Changes">
+				<outline text="3/23/16; 1:22:20 PM by DW">
+					<outline text="Change the URL param to the screenName of the user. A much better identifier! :-)"></outline>
+					</outline>
+				<outline text="3/22/16; 7:03:34 PM by DW">
+					<outline text="New optional param, url. It's the URL of the page that's being published. With this info you can figure out if you need to mirror the text somewhere else. I plan to use this to mirror the content from my chatlog on Scripting News."></outline>
+					</outline>
+				</outline>
+			<outline text=""></outline>
 			<outline isComment="true" text="callPublishCallbacks: s3path == 2015/10/12/10.html"></outline>
 			<outline isComment="true" text="console.log (&quot;callPublishCallbacks: relpath == &quot; + relpath);"></outline>
 			<outline text=""></outline>
 			<outline text="var dataforscripts = {">
 				<outline text="relpath: relpath,"></outline>
 				<outline text="body: body,"></outline>
-				<outline text="type: type"></outline>
+				<outline text="type: type, "></outline>
+				<outline text="screenName: screenName //3/23/16 by DW"></outline>
 				<outline text="};"></outline>
 				</outline>
 			<outline text=""></outline>

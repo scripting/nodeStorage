@@ -94,10 +94,33 @@
 				</outline>
 			<outline text="}"></outline>
 			</outline>
-		<outline text="function stListObjects (path, callback) {">
+		<outline text="function stListObjects (path, callback) { //store.listObjects ">
+			<outline text="function fileLister (folderpath, callback) { //3/23/16 by DW">
+				<outline text="fsRecursivelyVisitFiles (folderpath, function (f) {">
+					<outline text="if (f === undefined) { //last file">
+						<outline text="callback ({">
+							<outline text="flLastObject: true"></outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="else {">
+						<outline text="callback ({">
+							<outline text="Key: f,"></outline>
+							<outline text="s3path: f,"></outline>
+							<outline text="Size: 1"></outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="});"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline text="if (stGlobals.flLocalFileSystem) {">
 				<outline text="fsSureFilePath (path, function () { //7/19/15 by DW -- create the folder if it doesn't exist">
-					<outline text="fsListObjects (path, callback);"></outline>
+					<outline text="fileLister (path, callback);"></outline>
+					<outline isComment="true" text="fsListObjects (path, callback);"></outline>
 					<outline text="});"></outline>
 					</outline>
 				<outline text="}"></outline>
@@ -136,13 +159,25 @@
 			<outline text="}"></outline>
 			</outline>
 		<outline text="function stGetUrl (physicalpath) {">
+			<outline isComment="true" text="Changes">
+				<outline text="3/22/16; 7:02:14 PM by DW">
+					<outline text="A little defensive driving. If the base URL ends with a /, delete the slash before concatenating with the virtual path."></outline>
+					</outline>
+				</outline>
 			<outline text="if (stGlobals.basePublicUrl !== undefined) {">
 				<outline text="var virtualpath = utils.stringDelete (physicalpath, 1, stGlobals.publicPath.length);"></outline>
+				<outline text=""></outline>
+				<outline text="var baseurl = stGlobals.basePublicUrl; //3/22/16 by DW"></outline>
+				<outline text="if (utils.endsWith (baseurl, &quot;/&quot;)) {">
+					<outline text="baseurl = utils.stringDelete (baseurl, baseurl.length, 1);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text=""></outline>
 				<outline text="if (!utils.beginsWith (virtualpath, &quot;/&quot;)) {">
 					<outline text="virtualpath = &quot;/&quot; + virtualpath;"></outline>
 					<outline text="}"></outline>
 					</outline>
-				<outline text="return (stGlobals.basePublicUrl + virtualpath);"></outline>
+				<outline text="return (baseurl + virtualpath);"></outline>
 				<outline text=""></outline>
 				<outline isComment="true" text="http://storage.bloatware.org:1229/users/davewiner/essays/002.html"></outline>
 				<outline isComment="true" text="return (&quot;http://storage.bloatware.org:1229&quot; + virtualpath);"></outline>

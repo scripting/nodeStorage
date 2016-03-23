@@ -48,6 +48,7 @@
 		<outline text="exports.getRandomPassword = getRandomPassword; //8/28/15  by DW"></outline>
 		<outline text="exports.trimWhitespace = trimWhitespace; //9/1/15 by DW"></outline>
 		<outline text="exports.viewDate = viewDate; //11/29/15 by DW"></outline>
+		<outline text="exports.stringPopLastField = stringPopLastField; //3/19/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline text="[[http://fargo.io/code/node/shared/utils.js]]"></outline>
 		</body>

@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.90p", myProductName = "nodeStorage"; 
+var myVersion = "0.91j", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -116,6 +116,8 @@ var flScheduledEveryMinute = false; //9/2/15 by DW
 var urlPublicFolder; //10/6/15 by DW
 var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /
 var websocketPort; //11/11/15 by DW
+var appConsts = { //3/21/16 by DW
+	};
 
 
 function httpReadUrl (url, callback) {
@@ -562,8 +564,8 @@ function httpReadUrl (url, callback) {
 		}
 	function openAllUserChatlogs (callback) { //3/2/16 by DW
 		function getUsersWhoHaveChatLogs (flprivate, callback) { //3/2/16 by DW 
-			var theList = new Array ();
-			store.listObjects (getS3UsersPath (flprivate), function (obj) { //loop over all the users' folders
+			var theList = new Array (), usersPath = getS3UsersPath (flprivate);
+			store.listObjects (usersPath, function (obj) { //loop over all the users' folders
 				if (obj.flLastObject != undefined) {
 					if (callback != undefined) {
 						callback (theList);
@@ -572,7 +574,10 @@ function httpReadUrl (url, callback) {
 				else {
 					var path = obj.Key;
 					if (utils.endsWith (path, "/chatLog.json")) {
-						theList [theList.length] = utils.stringNthField (path, "/", 2); //3/9/16 by DW -- changed from 3 to 2
+						var relpath = utils.stringDelete (path, 1, usersPath.length);
+						var username = utils.stringNthField (relpath, "/", 1);
+						console.log ("openAllUserChatlogs: username == " + username);
+						theList [theList.length] = username;
 						}
 					}
 				});
@@ -999,8 +1004,8 @@ function httpReadUrl (url, callback) {
 					theLog.urlFeed = urlFeed; 
 					theLog.flDirty = true;
 					}
+				console.log ("buildChatLogRss: urlFeed == " + urlFeed); 
 				}
-			console.log ("buildChatLogRss: urlFeed == " + urlFeed); //1/22/16 by DW
 			if (callback !== undefined) {
 				callback (urlFeed);
 				}
@@ -1172,7 +1177,7 @@ function httpReadUrl (url, callback) {
 				statsChanged ();
 				if (!flprivate) { //12/15/14 by DW
 					checkLongpollsForUrl (metadata.url, body);
-					callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
+					callbacks.callPublishCallbacks (relpath, body, type, nameChatLog); //10/14/15 by DW
 					}
 				}
 			}, metadata);
@@ -1927,6 +1932,20 @@ function handleHttpRequest (httpRequest, httpResponse) {
 			addOurDataToReturnObject (data);
 			httpResponse.end (utils.jsonStringify (data));    
 			}
+		
+		function requestHomeFile (lowerpath, callback) { //3/19/16 by DW
+			if (urlHomePageContent === undefined) {
+				callback ({message: "Can't get the file because the server isn't configured for it."});
+				}
+			else {
+				var url = utils.stringPopLastField (urlHomePageContent, "/") + lowerpath;
+				console.log ("requestHomeFile: url == " + url);
+				request (url, function (err, response, body) {
+					callback (err, body);    
+					});
+				}
+			}
+		
 		function encode (s) {
 			return (encodeURIComponent (s));
 			}
@@ -2043,7 +2062,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 																statsChanged ();
 																if (!flprivate) { //12/15/14 by DW
 																	checkLongpollsForUrl (metadata.url, body);
-																	callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
+																	callbacks.callPublishCallbacks (relpath, body, type, screenName); //10/14/15 by DW
 																	}
 																}
 															}, metadata);
@@ -2087,7 +2106,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 																	statsChanged ();
 																	if (!flprivate) { //12/15/14 by DW
 																		checkLongpollsForUrl (metadata.url, body);
-																		callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW
+																		callbacks.callPublishCallbacks (relpath, body, type, screenName); //10/14/15 by DW
 																		}
 																	}
 																}, metadata);
@@ -2862,6 +2881,44 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								case "/opensockets": //11/29/15 by DW -- for debugging
 									dataResponse (getOpenSocketsArray ());
 									break;
+								
+								case "/chat.css": //3/19/16 by DW
+									requestHomeFile (lowerpath, function (err, data) {
+										if (err) {
+											doHttpReturn (500, "text/plain", err.message);
+											}
+										else {
+											doHttpReturn (200, "text/css", data);
+											}
+										});
+									break;
+								case "/chat.js": //3/19/16 by DW
+									requestHomeFile (lowerpath, function (err, data) {
+										if (err) {
+											doHttpReturn (500, "text/plain", err.message);
+											}
+										else {
+											var searchFor = "twStorageData.urlTwitterServer = appConsts.urlTwitterServer;";
+											var replaceWith = "twStorageData.urlTwitterServer = \"" + appConsts.urlTwitterServer + "\";";
+											data = utils.replaceAll (data, searchFor, replaceWith);
+											doHttpReturn (200, "application/javascript", data);
+											}
+										});
+									break;
+								case "/config.json": //3/20/16 by DW
+									doHttpReturn (200, "application/json", utils.jsonStringify (appConsts));
+									break;
+								case "/template.html": //3/20/16 by DW
+									request ("http://1999.io/code/publish/template.html", function (error, response, body) {
+										if (error) {
+											doHttpReturn (500, "text/plain", error.message);
+											}
+										else {
+											doHttpReturn (200, "text/html", body);
+											}
+										});
+									break;
+								
 								default:
 									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
 										request (urlHomePageContent, function (error, response, body) {
@@ -2999,6 +3056,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.flForceTwitterLogin !== undefined) { //2/19/16 by DW
 				flForceTwitterLogin = config.flForceTwitterLogin;
+				}
+			if (config.appConsts !== undefined) { //c3/21/16 by DW
+				appConsts = config.appConsts;
 				}
 			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);

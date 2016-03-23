@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.90p&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.91j&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -135,6 +135,9 @@
 		<outline text="var urlPublicFolder; //10/6/15 by DW"></outline>
 		<outline text="var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /"></outline>
 		<outline text="var websocketPort; //11/11/15 by DW"></outline>
+		<outline text="var appConsts = { //3/21/16 by DW">
+			<outline text="};"></outline>
+			</outline>
 		<outline text=""></outline>
 		<outline created="Sun, 08 Jun 2014 14:20:26 GMT" pgfnum="42010" text=""></outline>
 		<outline created="Mon, 20 Jan 2014 17:26:34 GMT" pgfnum="36035" text="function httpReadUrl (url, callback) {">
@@ -987,8 +990,8 @@
 							<outline text="Get a list of screennames for users who have data on the server."></outline>
 							</outline>
 						</outline>
-					<outline text="var theList = new Array ();"></outline>
-					<outline created="Wed, 19 Mar 2014 19:59:25 GMT" pgfnum="39572" text="store.listObjects (getS3UsersPath (flprivate), function (obj) { //loop over all the users' folders">
+					<outline text="var theList = new Array (), usersPath = getS3UsersPath (flprivate);"></outline>
+					<outline created="Wed, 19 Mar 2014 19:59:25 GMT" pgfnum="39572" text="store.listObjects (usersPath, function (obj) { //loop over all the users' folders">
 						<outline created="Sat, 22 Mar 2014 16:41:13 GMT" pgfnum="39728" text="if (obj.flLastObject != undefined) {">
 							<outline text="if (callback != undefined) {">
 								<outline isComment="true" text="console.log (&quot;getUsersWhoHaveChatLogs: theList == &quot; + theList);"></outline>
@@ -1001,7 +1004,11 @@
 						<outline created="Sat, 22 Mar 2014 16:41:28 GMT" pgfnum="39732" text="else {">
 							<outline text="var path = obj.Key;"></outline>
 							<outline text="if (utils.endsWith (path, &quot;/chatLog.json&quot;)) {">
-								<outline text="theList [theList.length] = utils.stringNthField (path, &quot;/&quot;, 2); //3/9/16 by DW -- changed from 3 to 2"></outline>
+								<outline text="var relpath = utils.stringDelete (path, 1, usersPath.length);"></outline>
+								<outline text="var username = utils.stringNthField (relpath, &quot;/&quot;, 1);"></outline>
+								<outline text="console.log (&quot;openAllUserChatlogs: username == &quot; + username);"></outline>
+								<outline text="theList [theList.length] = username;"></outline>
+								<outline isComment="true" text="theList [theList.length] = utils.stringNthField (path, &quot;/&quot;, 2); //3/9/16 by DW -- changed from 3 to 2"></outline>
 								<outline text="}"></outline>
 								</outline>
 							<outline created="Sat, 22 Mar 2014 16:41:30 GMT" pgfnum="39733" text="}"></outline>
@@ -1709,11 +1716,9 @@
 							<outline text="theLog.flDirty = true;"></outline>
 							<outline text="}"></outline>
 							</outline>
+						<outline text="console.log (&quot;buildChatLogRss: urlFeed == &quot; + urlFeed); "></outline>
 						<outline text="}"></outline>
 						</outline>
-					<outline isComment="true" text="console.log (&quot;buildChatLogRss: theLog.s3Path == &quot; + theLog.s3Path); //2/19/16 by DW"></outline>
-					<outline isComment="true" text="console.log (&quot;buildChatLogRss: theLog == &quot; + utils.jsonStringify (theLog)); //2/19/16 by DW"></outline>
-					<outline text="console.log (&quot;buildChatLogRss: urlFeed == &quot; + urlFeed); //1/22/16 by DW"></outline>
 					<outline text="if (callback !== undefined) {">
 						<outline text="callback (urlFeed);"></outline>
 						<outline text="}"></outline>
@@ -1971,7 +1976,7 @@
 						<outline text="statsChanged ();"></outline>
 						<outline text="if (!flprivate) { //12/15/14 by DW">
 							<outline text="checkLongpollsForUrl (metadata.url, body);"></outline>
-							<outline text="callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW"></outline>
+							<outline text="callbacks.callPublishCallbacks (relpath, body, type, nameChatLog); //10/14/15 by DW"></outline>
 							<outline text="}"></outline>
 							</outline>
 						<outline created="Fri, 02 May 2014 22:21:02 GMT" pgfnum="40907" text="}"></outline>
@@ -3135,6 +3140,24 @@
 					<outline text="httpResponse.end (utils.jsonStringify (data));    "></outline>
 					<outline created="Sat, 21 Jun 2014 14:43:44 GMT" pgfnum="42368" text="}"></outline>
 					</outline>
+				<outline text=""></outline>
+				<outline text="function requestHomeFile (lowerpath, callback) { //3/19/16 by DW">
+					<outline text="if (urlHomePageContent === undefined) {">
+						<outline text="callback ({message: &quot;Can't get the file because the server isn't configured for it.&quot;});"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="else {">
+						<outline text="var url = utils.stringPopLastField (urlHomePageContent, &quot;/&quot;) + lowerpath;"></outline>
+						<outline text="console.log (&quot;requestHomeFile: url == &quot; + url);"></outline>
+						<outline text="request (url, function (err, response, body) {">
+							<outline text="callback (err, body);    "></outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text=""></outline>
 				<outline created="Mon, 21 Apr 2014 20:15:22 GMT" pgfnum="40388" text="function encode (s) {">
 					<outline created="Mon, 21 Apr 2014 20:15:26 GMT" pgfnum="40389" text="return (encodeURIComponent (s));"></outline>
 					<outline created="Mon, 21 Apr 2014 20:15:31 GMT" pgfnum="40390" text="}"></outline>
@@ -3288,7 +3311,7 @@
 																		<outline text="statsChanged ();"></outline>
 																		<outline text="if (!flprivate) { //12/15/14 by DW">
 																			<outline text="checkLongpollsForUrl (metadata.url, body);"></outline>
-																			<outline text="callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW"></outline>
+																			<outline text="callbacks.callPublishCallbacks (relpath, body, type, screenName); //10/14/15 by DW"></outline>
 																			<outline text="}"></outline>
 																			</outline>
 																		<outline created="Fri, 02 May 2014 22:21:02 GMT" pgfnum="40907" text="}"></outline>
@@ -3344,7 +3367,7 @@
 																			<outline text="statsChanged ();"></outline>
 																			<outline text="if (!flprivate) { //12/15/14 by DW">
 																				<outline text="checkLongpollsForUrl (metadata.url, body);"></outline>
-																				<outline text="callbacks.callPublishCallbacks (relpath, body, type); //10/14/15 by DW"></outline>
+																				<outline text="callbacks.callPublishCallbacks (relpath, body, type, screenName); //10/14/15 by DW"></outline>
 																				<outline text="}"></outline>
 																				</outline>
 																			<outline created="Fri, 02 May 2014 22:21:02 GMT" pgfnum="40907" text="}"></outline>
@@ -4475,6 +4498,57 @@
 											<outline created="Sat, 21 Jun 2014 14:43:33 GMT" pgfnum="42366" text="dataResponse (getOpenSocketsArray ());"></outline>
 											<outline text="break;"></outline>
 											</outline>
+										<outline text=""></outline>
+										<outline text="case &quot;/chat.css&quot;: //3/19/16 by DW">
+											<outline text="requestHomeFile (lowerpath, function (err, data) {">
+												<outline created="Mon, 21 Apr 2014 23:12:55 GMT" pgfnum="40408" text="if (err) {">
+													<outline text="doHttpReturn (500, &quot;text/plain&quot;, err.message);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40409" text="}"></outline>
+													</outline>
+												<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40410" text="else {">
+													<outline text="doHttpReturn (200, &quot;text/css&quot;, data);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:13:00 GMT" pgfnum="40411" text="}"></outline>
+													</outline>
+												<outline text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
+											</outline>
+										<outline text="case &quot;/chat.js&quot;: //3/19/16 by DW">
+											<outline text="requestHomeFile (lowerpath, function (err, data) {">
+												<outline created="Mon, 21 Apr 2014 23:12:55 GMT" pgfnum="40408" text="if (err) {">
+													<outline text="doHttpReturn (500, &quot;text/plain&quot;, err.message);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40409" text="}"></outline>
+													</outline>
+												<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40410" text="else {">
+													<outline text="var searchFor = &quot;twStorageData.urlTwitterServer = appConsts.urlTwitterServer;&quot;;"></outline>
+													<outline text="var replaceWith = &quot;twStorageData.urlTwitterServer = \&quot;&quot; + appConsts.urlTwitterServer + &quot;\&quot;;&quot;;"></outline>
+													<outline text="data = utils.replaceAll (data, searchFor, replaceWith);"></outline>
+													<outline text="doHttpReturn (200, &quot;application/javascript&quot;, data);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:13:00 GMT" pgfnum="40411" text="}"></outline>
+													</outline>
+												<outline text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
+											</outline>
+										<outline text="case &quot;/config.json&quot;: //3/20/16 by DW">
+											<outline text="doHttpReturn (200, &quot;application/json&quot;, utils.jsonStringify (appConsts));"></outline>
+											<outline text="break;"></outline>
+											</outline>
+										<outline text="case &quot;/template.html&quot;: //3/20/16 by DW">
+											<outline text="request (&quot;http://1999.io/code/publish/template.html&quot;, function (error, response, body) {">
+												<outline text="if (error) {">
+													<outline text="doHttpReturn (500, &quot;text/plain&quot;, error.message);"></outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="else {">
+													<outline text="doHttpReturn (200, &quot;text/html&quot;, body);"></outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
+											</outline>
+										<outline text=""></outline>
 										<outline isComment="true" text="case &quot;/test1&quot;: //10/27/15 by DW">
 											<outline text="postChatMessage (&quot;davewiner&quot;, &quot;blork&quot;, &quot;Oh the buzzing of the bees&quot;, undefined, undefined, undefined, undefined, true, function (err, idMessage) {">
 												<outline text="if (err) {">
@@ -4682,6 +4756,10 @@
 						</outline>
 					<outline text="if (config.flForceTwitterLogin !== undefined) { //2/19/16 by DW">
 						<outline text="flForceTwitterLogin = config.flForceTwitterLogin;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (config.appConsts !== undefined) { //c3/21/16 by DW">
+						<outline text="appConsts = config.appConsts;"></outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text=""></outline>
