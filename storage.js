@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.91j", myProductName = "nodeStorage"; 
+var myVersion = "0.91m", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -307,8 +307,13 @@ function httpReadUrl (url, callback) {
 			});
 		}
 	function webSocketStartup (thePort) {
-		theWsServer = websocket.createServer (handleWebSocketConnection);
-		theWsServer.listen (thePort);
+		try {
+			theWsServer = websocket.createServer (handleWebSocketConnection);
+			theWsServer.listen (thePort);
+			}
+		catch (err) {
+			console.log ("webSocketStartup: err.message == " + err.message);
+			}
 		}
 	function countOpenSockets () {
 		if (theWsServer === undefined) { //12/18/15 by DW
@@ -574,9 +579,8 @@ function httpReadUrl (url, callback) {
 				else {
 					var path = obj.Key;
 					if (utils.endsWith (path, "/chatLog.json")) {
-						var relpath = utils.stringDelete (path, 1, usersPath.length);
-						var username = utils.stringNthField (relpath, "/", 1);
-						console.log ("openAllUserChatlogs: username == " + username);
+						var username = utils.stringNthField (path, "/", utils.stringCountFields (path, "/") - 1);
+						console.log ("openAllUserChatlogs: path == " + path + ", username == " + username);
 						theList [theList.length] = username;
 						}
 					}
@@ -584,6 +588,9 @@ function httpReadUrl (url, callback) {
 			}
 		if (flChatEnabled) {
 			getUsersWhoHaveChatLogs (false, function (theList) {
+				
+				console.log ("openAllUserChatlogs: theList == " + utils.jsonStringify (theList));
+				
 				function openlog (ix) {
 					if (ix >= theList.length) {
 						if (callback !== undefined) {
@@ -591,7 +598,7 @@ function httpReadUrl (url, callback) {
 							}
 						}
 					else {
-						if (theList [ix] === undefined) {
+						if ((theList [ix] === undefined) || (theList [ix].length === 0)) {
 							openlog (ix + 1);
 							}
 						else {
@@ -1006,6 +1013,7 @@ function httpReadUrl (url, callback) {
 					}
 				console.log ("buildChatLogRss: urlFeed == " + urlFeed); 
 				}
+			callbacks.callPublishCallbacks (s3RssPath, xmltext, "text/xml", nameChatLog); //3/23/16 by DW
 			if (callback !== undefined) {
 				callback (urlFeed);
 				}
@@ -3121,7 +3129,13 @@ function startup () {
 							readUserWhitelist (function () {
 								openAllUserChatlogs (function () { //3/2/16 by DW
 									names.init (s3PrivatePath); //7/12/15 by DW
-									http.createServer (handleHttpRequest).listen (myPort);
+									//start up http server
+										try {
+											http.createServer (handleHttpRequest).listen (myPort);
+											}
+										catch (err) {
+											console.log ("startup: error creating HTTP server, err.message == " + err.message + ", myPort == " + myPort);
+											}
 									if (websocketPort !== undefined) { //11/11/15 by DW
 										console.log ("startup: websockets port is " + websocketPort);
 										webSocketStartup (websocketPort); //11/29/15 by DW

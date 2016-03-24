@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.91j&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.91m&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -477,8 +477,15 @@
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function webSocketStartup (thePort) {">
-				<outline text="theWsServer = websocket.createServer (handleWebSocketConnection);"></outline>
-				<outline text="theWsServer.listen (thePort);"></outline>
+				<outline text="try {">
+					<outline text="theWsServer = websocket.createServer (handleWebSocketConnection);"></outline>
+					<outline text="theWsServer.listen (thePort);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="catch (err) {">
+					<outline text="console.log (&quot;webSocketStartup: err.message == &quot; + err.message);"></outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function countOpenSockets () {">
@@ -1004,9 +1011,9 @@
 						<outline created="Sat, 22 Mar 2014 16:41:28 GMT" pgfnum="39732" text="else {">
 							<outline text="var path = obj.Key;"></outline>
 							<outline text="if (utils.endsWith (path, &quot;/chatLog.json&quot;)) {">
-								<outline text="var relpath = utils.stringDelete (path, 1, usersPath.length);"></outline>
-								<outline text="var username = utils.stringNthField (relpath, &quot;/&quot;, 1);"></outline>
-								<outline text="console.log (&quot;openAllUserChatlogs: username == &quot; + username);"></outline>
+								<outline isComment="true" text="path is something like users/xxx/chatLog.json -- where xxx is the username"></outline>
+								<outline text="var username = utils.stringNthField (path, &quot;/&quot;, utils.stringCountFields (path, &quot;/&quot;) - 1);"></outline>
+								<outline text="console.log (&quot;openAllUserChatlogs: path == &quot; + path + &quot;, username == &quot; + username);"></outline>
 								<outline text="theList [theList.length] = username;"></outline>
 								<outline isComment="true" text="theList [theList.length] = utils.stringNthField (path, &quot;/&quot;, 2); //3/9/16 by DW -- changed from 3 to 2"></outline>
 								<outline text="}"></outline>
@@ -1019,6 +1026,9 @@
 					</outline>
 				<outline text="if (flChatEnabled) {">
 					<outline text="getUsersWhoHaveChatLogs (false, function (theList) {">
+						<outline text=""></outline>
+						<outline text="console.log (&quot;openAllUserChatlogs: theList == &quot; + utils.jsonStringify (theList));"></outline>
+						<outline text=""></outline>
 						<outline text="function openlog (ix) {">
 							<outline text="if (ix &gt;= theList.length) {">
 								<outline text="if (callback !== undefined) {">
@@ -1028,7 +1038,7 @@
 								<outline text="}"></outline>
 								</outline>
 							<outline text="else {">
-								<outline text="if (theList [ix] === undefined) {">
+								<outline text="if ((theList [ix] === undefined) || (theList [ix].length === 0)) {">
 									<outline text="openlog (ix + 1);"></outline>
 									<outline text="}"></outline>
 									</outline>
@@ -1694,6 +1704,9 @@
 				</outline>
 			<outline text="function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="3/23/16; 5:38:33 PM by DW">
+						<outline text="Call the publish callbacks for the RSS feed."></outline>
+						</outline>
 					<outline text="3/4/16; 12:17:48 PM by DW">
 						<outline text="If theLog.rssHeadElements.flInstantArticlesSupport is true, then we build an IA-compatible feed."></outline>
 						</outline>
@@ -1719,6 +1732,7 @@
 						<outline text="console.log (&quot;buildChatLogRss: urlFeed == &quot; + urlFeed); "></outline>
 						<outline text="}"></outline>
 						</outline>
+					<outline text="callbacks.callPublishCallbacks (s3RssPath, xmltext, &quot;text/xml&quot;, nameChatLog); //3/23/16 by DW"></outline>
 					<outline text="if (callback !== undefined) {">
 						<outline text="callback (urlFeed);"></outline>
 						<outline text="}"></outline>
@@ -4840,7 +4854,16 @@
 									<outline text="readUserWhitelist (function () {">
 										<outline text="openAllUserChatlogs (function () { //3/2/16 by DW">
 											<outline text="names.init (s3PrivatePath); //7/12/15 by DW"></outline>
-											<outline text="http.createServer (handleHttpRequest).listen (myPort);"></outline>
+											<outline text="//start up http server">
+												<outline text="try {">
+													<outline text="http.createServer (handleHttpRequest).listen (myPort);"></outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="catch (err) {">
+													<outline text="console.log (&quot;startup: error creating HTTP server, err.message == &quot; + err.message + &quot;, myPort == &quot; + myPort);"></outline>
+													<outline text="}"></outline>
+													</outline>
+												</outline>
 											<outline text="if (websocketPort !== undefined) { //11/11/15 by DW">
 												<outline text="console.log (&quot;startup: websockets port is &quot; + websocketPort);"></outline>
 												<outline isComment="true" text="websocket.createServer (handleWebSocketConnection).listen (websocketPort);"></outline>
