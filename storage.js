@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.91z", myProductName = "nodeStorage"; 
+var myVersion = "0.91ab", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -3085,6 +3085,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.homePage !== undefined) { //3/21/16 by DW
 				homePageConfig = config.homePage;
+				}
+			if (config.updates !== undefined) { //3/25/16 by DW
+				update.init (config.updates);
 				}
 			
 			//give values to optional params -- 3/24/16 by DW
