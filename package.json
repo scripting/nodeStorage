@@ -12,7 +12,8 @@
 		"node-twitter-api": "*",
 		"mime": "*",
 		"nodejs-websocket": "*",
-		"request": "*"
+		"request": "*",
+		"simple-git": "*"
 		}, 
 	"license": "MIT",
 	"engines": { 

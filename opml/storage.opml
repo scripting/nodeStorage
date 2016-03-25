@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.91m&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.91z&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -52,6 +52,7 @@
 		<outline text="var names = require (&quot;./lib/names.js&quot;);"></outline>
 		<outline text="var rss = require (&quot;./lib/rss.js&quot;);"></outline>
 		<outline text="var callbacks = require (&quot;./lib/callbacks.js&quot;);"></outline>
+		<outline text="var update = require (&quot;./lib/update.js&quot;);"></outline>
 		<outline text="var dns = require (&quot;dns&quot;);"></outline>
 		<outline text="var os = require (&quot;os&quot;);"></outline>
 		<outline created="Tue, 15 Apr 2014 20:32:04 GMT" pgfnum="40038" text=""></outline>
@@ -60,7 +61,7 @@
 			<outline text="var flEnabled = process.env.enabled; "></outline>
 			<outline created="Wed, 22 Jan 2014 02:50:48 GMT" pgfnum="36217" text="var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs"></outline>
 			<outline created="Wed, 22 Jan 2014 02:50:48 GMT" pgfnum="36217" text="var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example"></outline>
-			<outline created="Mon, 30 Jun 2014 15:40:00 GMT" pgfnum="42619" text="var myDomain = process.env.myDomain; "></outline>
+			<outline created="Mon, 30 Jun 2014 15:40:00 GMT" isComment="true" pgfnum="42619" text="var myDomain = process.env.myDomain; "></outline>
 			<outline text="var twitterConsumerKey = process.env.twitterConsumerKey;  //5/8/15 by DW"></outline>
 			<outline text="var twitterConsumerSecret = process.env.twitterConsumerSecret; //5/8/15 by DW"></outline>
 			<outline created="Mon, 30 Jun 2014 15:40:00 GMT" pgfnum="42619" text="var myDomain = process.env.myDomain;  //5/8/15 by DW"></outline>
@@ -133,9 +134,9 @@
 		<outline text="var usersWhoCanModerate; //11/30/15 by DW -- if it's undefined, no one can"></outline>
 		<outline text="var flScheduledEveryMinute = false; //9/2/15 by DW"></outline>
 		<outline text="var urlPublicFolder; //10/6/15 by DW"></outline>
-		<outline text="var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /"></outline>
+		<outline text="var urlHomePageContent = &quot;http://1999.io/dev/index.html&quot;; //10/11/15 by DW -- what we serve when a request comes in for /"></outline>
 		<outline text="var websocketPort; //11/11/15 by DW"></outline>
-		<outline text="var appConsts = { //3/21/16 by DW">
+		<outline text="var homePageConfig = { //3/21/16 by DW">
 			<outline text="};"></outline>
 			</outline>
 		<outline text=""></outline>
@@ -3056,6 +3057,7 @@
 			<outline text="var now = new Date ();"></outline>
 			<outline text="console.log (&quot;\neveryMinute: &quot; + now.toLocaleTimeString () + &quot;, v&quot; + myVersion + &quot;, &quot; + countOpenSockets () + &quot; open sockets&quot;);"></outline>
 			<outline text="readUserWhitelist (); //11/18/14 by DW"></outline>
+			<outline text="update.doUpdate (); //3/24/16 by DW"></outline>
 			<outline text="}"></outline>
 			</outline>
 		<outline text="function everySecond () {">
@@ -3142,6 +3144,28 @@
 						<outline created="Mon, 21 Apr 2014 23:12:34 GMT" pgfnum="40407" text="});"></outline>
 						</outline>
 					<outline created="Tue, 22 Apr 2014 02:13:58 GMT" pgfnum="40432" text="}"></outline>
+					</outline>
+				<outline text="function getConfigJson () { //3/24/16 by DW">
+					<outline text="var jstruct = new Object ();"></outline>
+					<outline text="for (var x in homePageConfig) {">
+						<outline text="jstruct [x] = homePageConfig [x];"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (jstruct.urlTwitterServer === undefined) {">
+						<outline text="jstruct.urlTwitterServer = &quot;http://&quot; + myDomain + &quot;/&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if ((jstruct.urlChatLogSocket === undefined) &amp;&amp; (websocketPort !== undefined)) {">
+						<outline text="var domain = utils.stringNthField (myDomain, &quot;:&quot;, 1); //remove port, if present"></outline>
+						<outline text="jstruct.urlChatLogSocket = &quot;ws://&quot; + domain + &quot;:&quot; + websocketPort + &quot;/&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (jstruct.urlPageTemplate === undefined) {">
+						<outline text="jstruct.urlPageTemplate = &quot;/template.html&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="return (utils.jsonStringify (jstruct));"></outline>
+					<outline text="}"></outline>
 					</outline>
 				<outline created="Sat, 03 May 2014 21:00:18 GMT" pgfnum="40964" text="function errorResponse (error) {">
 					<outline text="httpResponse.writeHead (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;, &quot;Access-Control-Allow-Origin&quot;: &quot;*&quot;});"></outline>
@@ -4534,8 +4558,8 @@
 													<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40409" text="}"></outline>
 													</outline>
 												<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40410" text="else {">
-													<outline text="var searchFor = &quot;twStorageData.urlTwitterServer = appConsts.urlTwitterServer;&quot;;"></outline>
-													<outline text="var replaceWith = &quot;twStorageData.urlTwitterServer = \&quot;&quot; + appConsts.urlTwitterServer + &quot;\&quot;;&quot;;"></outline>
+													<outline text="var searchFor = &quot;twStorageData.urlTwitterServer = homePageConfig.urlTwitterServer;&quot;;"></outline>
+													<outline text="var replaceWith = &quot;twStorageData.urlTwitterServer = \&quot;&quot; + homePageConfig.urlTwitterServer + &quot;\&quot;;&quot;;"></outline>
 													<outline text="data = utils.replaceAll (data, searchFor, replaceWith);"></outline>
 													<outline text="doHttpReturn (200, &quot;application/javascript&quot;, data);"></outline>
 													<outline created="Mon, 21 Apr 2014 23:13:00 GMT" pgfnum="40411" text="}"></outline>
@@ -4545,7 +4569,7 @@
 											<outline text="break;"></outline>
 											</outline>
 										<outline text="case &quot;/config.json&quot;: //3/20/16 by DW">
-											<outline text="doHttpReturn (200, &quot;application/json&quot;, utils.jsonStringify (appConsts));"></outline>
+											<outline text="doHttpReturn (200, &quot;application/json&quot;, getConfigJson ());"></outline>
 											<outline text="break;"></outline>
 											</outline>
 										<outline text="case &quot;/template.html&quot;: //3/20/16 by DW">
@@ -4701,7 +4725,7 @@
 							<outline text="}"></outline>
 							</outline>
 						<outline text="else {">
-							<outline text="flLocalFilesystem = utils.getBoolean (config.where.flUseLocalFilesystem);"></outline>
+							<outline text="flLocalFilesystem = utils.getBoolean (config.where.flUseLocalFilesystem); "></outline>
 							<outline text="s3Path = config.where.publicPath;"></outline>
 							<outline text="s3PrivatePath = config.where.privatePath;"></outline>
 							<outline text="}"></outline>
@@ -4772,9 +4796,30 @@
 						<outline text="flForceTwitterLogin = config.flForceTwitterLogin;"></outline>
 						<outline text="}"></outline>
 						</outline>
-					<outline text="if (config.appConsts !== undefined) { //c3/21/16 by DW">
-						<outline text="appConsts = config.appConsts;"></outline>
+					<outline text="if (config.homePage !== undefined) { //3/21/16 by DW">
+						<outline text="homePageConfig = config.homePage;"></outline>
 						<outline text="}"></outline>
+						</outline>
+					<outline text=""></outline>
+					<outline text="//give values to optional params -- 3/24/16 by DW">
+						<outline text="if ((basePublicUrl === undefined) &amp;&amp; (myDomain !== undefined)) {">
+							<outline text="basePublicUrl = &quot;http://&quot; + myDomain + &quot;/&quot;;"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="if (urlPublicFolder === undefined) {">
+							<outline text="if (basePublicUrl !== undefined) {">
+								<outline text="urlPublicFolder = basePublicUrl;"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="else {">
+								<outline text="if (myDomain !== undefined) {">
+									<outline text="urlPublicFolder = &quot;http://&quot; + myDomain + &quot;/&quot;;"></outline>
+									<outline text="}"></outline>
+									</outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
 						</outline>
 					<outline text=""></outline>
 					<outline text="store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);"></outline>

@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.91m", myProductName = "nodeStorage"; 
+var myVersion = "0.91z", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -38,6 +38,7 @@ var utils = require ("./lib/utils.js");
 var names = require ("./lib/names.js");
 var rss = require ("./lib/rss.js");
 var callbacks = require ("./lib/callbacks.js");
+var update = require ("./lib/update.js");
 var dns = require ("dns");
 var os = require ("os");
 
@@ -46,7 +47,6 @@ var os = require ("os");
 	var flEnabled = process.env.enabled; 
 	var s3Path = process.env.s3Path; //where we store publicly accessible data, user files, logs
 	var s3PrivatePath = process.env.s3PrivatePath; //where we store private stuff, user's prefs for example
-	var myDomain = process.env.myDomain; 
 	var twitterConsumerKey = process.env.twitterConsumerKey;  //5/8/15 by DW
 	var twitterConsumerSecret = process.env.twitterConsumerSecret; //5/8/15 by DW
 	var myDomain = process.env.myDomain;  //5/8/15 by DW
@@ -114,9 +114,9 @@ var usersWhoCanCreateWebhooks; //8/30/15 by DW -- if it's undefined, no one can
 var usersWhoCanModerate; //11/30/15 by DW -- if it's undefined, no one can
 var flScheduledEveryMinute = false; //9/2/15 by DW
 var urlPublicFolder; //10/6/15 by DW
-var urlHomePageContent; //10/11/15 by DW -- what we serve when a request comes in for /
+var urlHomePageContent = "http://1999.io/dev/index.html"; //10/11/15 by DW -- what we serve when a request comes in for /
 var websocketPort; //11/11/15 by DW
-var appConsts = { //3/21/16 by DW
+var homePageConfig = { //3/21/16 by DW
 	};
 
 
@@ -1862,6 +1862,7 @@ function everyMinute () {
 	var now = new Date ();
 	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion + ", " + countOpenSockets () + " open sockets");
 	readUserWhitelist (); //11/18/14 by DW
+	update.doUpdate (); //3/24/16 by DW
 	}
 function everySecond () {
 	if (!flScheduledEveryMinute) { //9/2/15 by DW
@@ -1930,6 +1931,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 					httpResponse.end (utils.jsonStringify (data));    
 					}
 				});
+			}
+		function getConfigJson () { //3/24/16 by DW
+			var jstruct = new Object ();
+			for (var x in homePageConfig) {
+				jstruct [x] = homePageConfig [x];
+				}
+			if (jstruct.urlTwitterServer === undefined) {
+				jstruct.urlTwitterServer = "http://" + myDomain + "/";
+				}
+			if ((jstruct.urlChatLogSocket === undefined) && (websocketPort !== undefined)) {
+				var domain = utils.stringNthField (myDomain, ":", 1); //remove port, if present
+				jstruct.urlChatLogSocket = "ws://" + domain + ":" + websocketPort + "/";
+				}
+			if (jstruct.urlPageTemplate === undefined) {
+				jstruct.urlPageTemplate = "/template.html";
+				}
+			return (utils.jsonStringify (jstruct));
 			}
 		function errorResponse (error) {
 			httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
@@ -2906,15 +2924,15 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											doHttpReturn (500, "text/plain", err.message);
 											}
 										else {
-											var searchFor = "twStorageData.urlTwitterServer = appConsts.urlTwitterServer;";
-											var replaceWith = "twStorageData.urlTwitterServer = \"" + appConsts.urlTwitterServer + "\";";
+											var searchFor = "twStorageData.urlTwitterServer = homePageConfig.urlTwitterServer;";
+											var replaceWith = "twStorageData.urlTwitterServer = \"" + homePageConfig.urlTwitterServer + "\";";
 											data = utils.replaceAll (data, searchFor, replaceWith);
 											doHttpReturn (200, "application/javascript", data);
 											}
 										});
 									break;
 								case "/config.json": //3/20/16 by DW
-									doHttpReturn (200, "application/json", utils.jsonStringify (appConsts));
+									doHttpReturn (200, "application/json", getConfigJson ());
 									break;
 								case "/template.html": //3/20/16 by DW
 									request ("http://1999.io/code/publish/template.html", function (error, response, body) {
@@ -3012,7 +3030,7 @@ function loadConfig (callback) { //5/8/15 by DW
 					console.log ("Can't use config.where because config.where.publicPath and/or config.where.privatePath were not specified.");
 					}
 				else {
-					flLocalFilesystem = utils.getBoolean (config.where.flUseLocalFilesystem);
+					flLocalFilesystem = utils.getBoolean (config.where.flUseLocalFilesystem); 
 					s3Path = config.where.publicPath;
 					s3PrivatePath = config.where.privatePath;
 					}
@@ -3065,9 +3083,24 @@ function loadConfig (callback) { //5/8/15 by DW
 			if (config.flForceTwitterLogin !== undefined) { //2/19/16 by DW
 				flForceTwitterLogin = config.flForceTwitterLogin;
 				}
-			if (config.appConsts !== undefined) { //c3/21/16 by DW
-				appConsts = config.appConsts;
+			if (config.homePage !== undefined) { //3/21/16 by DW
+				homePageConfig = config.homePage;
 				}
+			
+			//give values to optional params -- 3/24/16 by DW
+				if ((basePublicUrl === undefined) && (myDomain !== undefined)) {
+					basePublicUrl = "http://" + myDomain + "/";
+					}
+				if (urlPublicFolder === undefined) {
+					if (basePublicUrl !== undefined) {
+						urlPublicFolder = basePublicUrl;
+						}
+					else {
+						if (myDomain !== undefined) {
+							urlPublicFolder = "http://" + myDomain + "/";
+							}
+						}
+					}
 			
 			store.init (flLocalFilesystem, s3Path, s3PrivatePath, basePublicUrl);
 			}

@@ -33,7 +33,7 @@
 				<outline text="},"></outline>
 				</outline>
 			<outline text=""></outline>
-			<outline text="&quot;appConsts&quot;: {">
+			<outline text="&quot;homePage&quot;: {">
 				<outline created="Sun, 06 Jan 2013 15:39:06 GMT" pgfnum="16734" text="&quot;productname&quot;: &quot;bloatWare&quot;,"></outline>
 				<outline text="&quot;productnameForDisplay&quot;: &quot;BloatWare&quot;,"></outline>
 				<outline text="&quot;urlTwitterServer&quot;: &quot;http://localhost:1229/&quot;,"></outline>
