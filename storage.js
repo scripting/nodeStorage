@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.91ae", myProductName = "nodeStorage"; 
+var myVersion = "0.91af", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");

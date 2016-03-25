@@ -17,6 +17,7 @@
 		<outline text="var fs = require (&quot;fs&quot;);"></outline>
 		<outline text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
 		<outline text="var s3 = require (&quot;../lib/s3.js&quot;); //so callbacks can do stuff with S3"></outline>
+		<outline text="var filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
 		<outline text=""></outline>
 		<outline text="var publishCallbacksFolder = &quot;callbacks/publish/&quot;; "></outline>
 		<outline text=""></outline>
@@ -50,7 +51,7 @@
 			<outline text="}"></outline>
 			</outline>
 		<outline text="function runScriptsInFolder (path, dataforscripts, callback) {">
-			<outline text="function fsSureFilePath (path, callback) { ">
+			<outline isComment="true" text="function fsSureFilePath (path, callback) { ">
 				<outline text="var splits = path.split (&quot;/&quot;);"></outline>
 				<outline text="path = &quot;&quot;; //1/8/15 by DW"></outline>
 				<outline text="if (splits.length &gt; 0) {">
@@ -94,7 +95,7 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text="fsSureFilePath (path, function () {">
+			<outline text="filesystem.sureFilePath (path, function () {">
 				<outline text="fs.readdir (path, function (err, list) {">
 					<outline text="for (var i = 0; i &lt; list.length; i++) {">
 						<outline text="var fname = list [i];"></outline>

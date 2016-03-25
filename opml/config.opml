@@ -16,8 +16,8 @@
 				<outline text=""></outline>
 				</outline>
 			<outline text="&quot;enabled&quot;: true,"></outline>
-			<outline text="&quot;myPort&quot;: 1231, "></outline>
-			<outline text="&quot;websocketPort&quot;: 1232,"></outline>
+			<outline text="&quot;myPort&quot;: 1229, "></outline>
+			<outline text="&quot;websocketPort&quot;: 1230,"></outline>
 			<outline text="&quot;myDomain&quot;: &quot;twitter2.liveblog.co&quot;,"></outline>
 			<outline text="&quot;s3Path&quot;: &quot;/bloatware.org/&quot;,"></outline>
 			<outline text="&quot;urlPublicFolder&quot;: &quot;http://bloatware.org/&quot;,"></outline>
