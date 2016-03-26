@@ -58,6 +58,12 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.92 - 3/26/16 by DW
+
+Sorry for the lack of update notes. What's been going on has been the development of nodeStorage as a server for 1999.io. 
+
+At this point the server should be as easy to install as it was previously, after some docs are written, and from here-out I plan to keeop the update notes current with the development work.
+
 ##### v0.79 - 9/9/15 by DW
 
 In the new chat functionality, when we return from a longpoll, we used to send back the entire chatlog. This is not very efficient, esp over a mobile connection. Now we only send back the new item that caused us to return. See postChatMessage for the change. 
