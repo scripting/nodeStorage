@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.92a", myProductName = "nodeStorage"; 
+var myVersion = "0.92b", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -409,7 +409,7 @@ function httpReadUrl (url, callback) {
 			});
 		}
 //chat -- 8/25/15 by DW
-	var flChatEnabled = false; //default
+	var flChatEnabled = true; //default -- 3/26/16 by DW
 	var chatRssHeadElements = { //10/6/15 by DW
 		title: "nodeStorage chat feed",
 		link: "http://nodestorage.io/",
