@@ -15,33 +15,27 @@
 			<outline isComment="true" text="this config.json is used in the Mac folder to test the software locally">
 				<outline text=""></outline>
 				</outline>
+			<outline text=""></outline>
 			<outline text="&quot;enabled&quot;: true,"></outline>
 			<outline text="&quot;myPort&quot;: 1229, "></outline>
 			<outline text="&quot;websocketPort&quot;: 1230,"></outline>
-			<outline text="&quot;myDomain&quot;: &quot;twitter2.liveblog.co&quot;,"></outline>
-			<outline text="&quot;s3Path&quot;: &quot;/bloatware.org/&quot;,"></outline>
-			<outline text="&quot;urlPublicFolder&quot;: &quot;http://bloatware.org/&quot;,"></outline>
-			<outline text="&quot;s3PrivatePath&quot;: &quot;/smallpictusers/bloatware/&quot;,"></outline>
-			<outline text="&quot;urlHomePageContent&quot;: &quot;http://1999.io/dev/index.html&quot;,"></outline>
+			<outline text="&quot;myDomain&quot;: &quot;localhost:1229&quot;,"></outline>
 			<outline text="&quot;flChatEnabled&quot;: true,"></outline>
-			<outline text="&quot;basePublicUrl&quot;: &quot;http://localhost:1229/&quot;,"></outline>
-			<outline text=""></outline>
 			<outline text="&quot;where&quot;: {">
 				<outline text="&quot;flUseLocalFilesystem&quot;: true,"></outline>
 				<outline text="&quot;publicPath&quot;: &quot;publicFiles/&quot;,"></outline>
 				<outline text="&quot;privatePath&quot;: &quot;privateFiles/&quot;"></outline>
 				<outline text="},"></outline>
 				</outline>
-			<outline text=""></outline>
 			<outline text="&quot;homePage&quot;: {">
 				<outline created="Sun, 06 Jan 2013 15:39:06 GMT" pgfnum="16734" text="&quot;productname&quot;: &quot;bloatWare&quot;,"></outline>
-				<outline text="&quot;productnameForDisplay&quot;: &quot;BloatWare&quot;,"></outline>
-				<outline text="&quot;urlTwitterServer&quot;: &quot;http://localhost:1229/&quot;,"></outline>
-				<outline text="&quot;urlChatLogSocket&quot;: &quot;ws://localhost:1230/&quot;,"></outline>
-				<outline text="&quot;urlPageTemplate&quot;: &quot;/template.html&quot;"></outline>
+				<outline text="&quot;productnameForDisplay&quot;: &quot;BloatWare&quot;"></outline>
 				<outline text="},"></outline>
 				</outline>
-			<outline text=""></outline>
+			<outline text="&quot;updates&quot;: {">
+				<outline text="&quot;enabled&quot;: false"></outline>
+				<outline text="},"></outline>
+				</outline>
 			<outline text="&quot;twitterConsumerKey&quot;: &quot;45nCNcuLMOu4390yMDSGVnYja&quot;,"></outline>
 			<outline text="&quot;twitterConsumerSecret&quot;: &quot;349x2r67sTNqNN0IeG6khFghK4y5VFAUCtg5L5jLoK8KlTtdtq&quot; "></outline>
 			<outline text="}"></outline>

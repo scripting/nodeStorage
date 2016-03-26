@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.91af", myProductName = "nodeStorage"; 
+var myVersion = "0.92a", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -118,6 +118,7 @@ var urlHomePageContent = "http://1999.io/dev/index.html"; //10/11/15 by DW -- wh
 var websocketPort; //11/11/15 by DW
 var homePageConfig = { //3/21/16 by DW
 	};
+var urlFavicon = "http://1999.io/favicon.ico"; //3/26/16 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -1899,6 +1900,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 			httpResponse.writeHead (code, {"Content-Type": type, "Access-Control-Allow-Origin": "*"});
 			httpResponse.end (s);    
 			}
+		function returnRedirect (url, code) {
+			if (code === undefined) {
+				code = 302;
+				}
+			httpResponse.writeHead (code, {"location": url, "Content-Type": "text/plain"});
+			httpResponse.end (code + " REDIRECT");    
+			}
+			
 		function addOurDataToReturnObject (returnObject) {
 			return; //disabled -- 2/21/15 by DW
 			
@@ -2943,6 +2952,9 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											doHttpReturn (200, "text/html", body);
 											}
 										});
+									break;
+								case "/favicon.ico": //3/26/16 by DW
+									returnRedirect (urlFavicon);
 									break;
 								
 								default:
