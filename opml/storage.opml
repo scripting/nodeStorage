@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.92e&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.92g&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -3096,6 +3096,12 @@
 			<outline text="}"></outline>
 			</outline>
 		<outline text="function handleHttpRequest (httpRequest, httpResponse) {">
+			<outline isComment="true" text="Changes">
+				<outline text="3/27/16; 4:54:44 PM by DW">
+					<outline text="When serving from the filesystem, use the actual path, not the path converted to lowercase. We're generally using case-sensitive filesystems, and converting to lowercase doesn't work if the path contains uppercase characters."></outline>
+					<outline text="We also check the path for illegal characters, so this feature can't be used to read files outside of the configured directories."></outline>
+					</outline>
+				</outline>
 			<outline created="Tue, 29 Apr 2014 21:25:20 GMT" pgfnum="40664" text="try {">
 				<outline created="Tue, 21 Jan 2014 00:21:43 GMT" pgfnum="36078" text="var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();"></outline>
 				<outline text="var startTime = now, flStatsSaved = false, host, lowerhost, port, referrer;"></outline>
@@ -3125,6 +3131,47 @@
 						<outline created="Sat, 26 Apr 2014 23:42:03 GMT" pgfnum="40503" text="};"></outline>
 						</outline>
 					<outline created="Sat, 26 Apr 2014 23:41:30 GMT" pgfnum="40501" text="}"></outline>
+					</outline>
+				<outline text="function checkPathForIllegalChars (path) {">
+					<outline isComment="true" text="Changes">
+						<outline text="5/10/15; 7:08:13 PM by DW">
+							<outline text="* is legal."></outline>
+							</outline>
+						</outline>
+					<outline text="function isIllegal (ch) {">
+						<outline text="if (utils.isAlpha (ch) || utils.isNumeric (ch)) {">
+							<outline text="return (false);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="switch (ch) {">
+							<outline text="case &quot;/&quot;: case &quot;_&quot;: case &quot;-&quot;: case &quot;.&quot;:  case &quot; &quot;: case &quot;*&quot;:">
+								<outline text="return (false);"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline isComment="true" text="for (var i = 0; i &lt;  pageparkPrefs.legalPathChars.length; i++) { //7/19/15 by DW -- check if they are legal on this server">
+							<outline text="if (ch == pageparkPrefs.legalPathChars [i]) {">
+								<outline text="return (false);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="return (true);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="for (var i = 0; i &lt; path.length; i++) {">
+						<outline text="if (isIllegal (path [i])) {">
+							<outline text="return (false);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (utils.stringContains (path, &quot;./&quot;)) {">
+						<outline text="return (false);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="return (true);"></outline>
+					<outline text="}"></outline>
 					</outline>
 				<outline created="Tue, 22 Apr 2014 02:13:50 GMT" pgfnum="40431" text="function getTwitterTimeline (whichTimeline) {">
 					<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessToken = parsedUrl.query.oauth_token;"></outline>
@@ -4634,10 +4681,18 @@
 												<outline text="}"></outline>
 												</outline>
 											<outline text="else {">
-												<outline text="store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store">
-													<outline text="httpResponse.writeHead (code, headers);"></outline>
-													<outline text="httpResponse.end (bodytext);"></outline>
-													<outline text="});"></outline>
+												<outline text="if (checkPathForIllegalChars (parsedUrl.pathname)) {">
+													<outline text="store.serveObject (parsedUrl.pathname, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store">
+														<outline text="httpResponse.writeHead (code, headers);"></outline>
+														<outline text="httpResponse.end (bodytext);"></outline>
+														<outline text="});"></outline>
+														</outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="else {">
+													<outline text="httpResponse.writeHead (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;});"></outline>
+													<outline text="httpResponse.end (&quot;The file name contains illegal characters.&quot;);    "></outline>
+													<outline text="}"></outline>
 													</outline>
 												<outline text="}"></outline>
 												</outline>

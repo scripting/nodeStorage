@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.92e", myProductName = "nodeStorage"; 
+var myVersion = "0.92g", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -1916,6 +1916,27 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				version: myVersion
 				};
 			}
+		function checkPathForIllegalChars (path) {
+			function isIllegal (ch) {
+				if (utils.isAlpha (ch) || utils.isNumeric (ch)) {
+					return (false);
+					}
+				switch (ch) {
+					case "/": case "_": case "-": case ".":  case " ": case "*":
+						return (false);
+					}
+				return (true);
+				}
+			for (var i = 0; i < path.length; i++) {
+				if (isIllegal (path [i])) {
+					return (false);
+					}
+				}
+			if (utils.stringContains (path, "./")) {
+				return (false);
+				}
+			return (true);
+			}
 		function getTwitterTimeline (whichTimeline) {
 			var accessToken = parsedUrl.query.oauth_token;
 			var accessTokenSecret = parsedUrl.query.oauth_token_secret;
@@ -2971,10 +2992,16 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											});
 										}
 									else {
-										store.serveObject (lowerpath, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
-											httpResponse.writeHead (code, headers);
-											httpResponse.end (bodytext);
-											});
+										if (checkPathForIllegalChars (parsedUrl.pathname)) {
+											store.serveObject (parsedUrl.pathname, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
+												httpResponse.writeHead (code, headers);
+												httpResponse.end (bodytext);
+												});
+											}
+										else {
+											httpResponse.writeHead (500, {"Content-Type": "text/plain"});
+											httpResponse.end ("The file name contains illegal characters.");    
+											}
 										}
 									break;
 								}
