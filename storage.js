@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.92g", myProductName = "nodeStorage"; 
+var myVersion = "0.92h", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -119,6 +119,7 @@ var websocketPort; //11/11/15 by DW
 var homePageConfig = { //3/21/16 by DW
 	};
 var urlFavicon = "http://1999.io/favicon.ico"; //3/26/16 by DW
+var indexFileName = "index.html"; //3/27/16 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -2992,8 +2993,12 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											});
 										}
 									else {
-										if (checkPathForIllegalChars (parsedUrl.pathname)) {
-											store.serveObject (parsedUrl.pathname, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
+										var path = parsedUrl.pathname;
+										if (checkPathForIllegalChars (path)) {
+											if (utils.endsWith (path, "/")) {
+												path += indexFileName;
+												}
+											store.serveObject (path, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
 												httpResponse.writeHead (code, headers);
 												httpResponse.end (bodytext);
 												});

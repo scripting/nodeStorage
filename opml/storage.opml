@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.92g&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.92h&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -140,6 +140,7 @@
 			<outline text="};"></outline>
 			</outline>
 		<outline text="var urlFavicon = &quot;http://1999.io/favicon.ico&quot;; //3/26/16 by DW"></outline>
+		<outline text="var indexFileName = &quot;index.html&quot;; //3/27/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline created="Sun, 08 Jun 2014 14:20:26 GMT" pgfnum="42010" text=""></outline>
 		<outline created="Mon, 20 Jan 2014 17:26:34 GMT" pgfnum="36035" text="function httpReadUrl (url, callback) {">
@@ -4681,8 +4682,13 @@
 												<outline text="}"></outline>
 												</outline>
 											<outline text="else {">
-												<outline text="if (checkPathForIllegalChars (parsedUrl.pathname)) {">
-													<outline text="store.serveObject (parsedUrl.pathname, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store">
+												<outline text="var path = parsedUrl.pathname;"></outline>
+												<outline text="if (checkPathForIllegalChars (path)) {">
+													<outline text="if (utils.endsWith (path, &quot;/&quot;)) {">
+														<outline text="path += indexFileName;"></outline>
+														<outline text="}"></outline>
+														</outline>
+													<outline text="store.serveObject (path, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store">
 														<outline text="httpResponse.writeHead (code, headers);"></outline>
 														<outline text="httpResponse.end (bodytext);"></outline>
 														<outline text="});"></outline>
