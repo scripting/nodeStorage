@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.92h", myProductName = "nodeStorage"; 
+var myVersion = "0.93c", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -148,7 +148,7 @@ function httpReadUrl (url, callback) {
 		requestTokens [requestTokens.length] = obj;
 		}
 //whitelist -- 11/18/14 by DW
-	var userWhitelist = [];
+	var userWhitelist = [], flWhitelist = false;
 	
 	function readUserWhitelist (callback) {
 		if ((urlWhitelist !== undefined) && (urlWhitelist.length > 0)) {
@@ -171,10 +171,7 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function isWhitelistedUser (username) {
-		if ((urlWhitelist == undefined) || (urlWhitelist.length == 0)) { //no whitelist, everyone is whitelisted
-			return (true);
-			}
-		else {
+		if (flWhitelist) {
 			username = utils.stringLower (username);
 			for (var i = 0; i < userWhitelist.length; i++) {
 				if (utils.stringLower (userWhitelist [i]) == username) {
@@ -182,6 +179,9 @@ function httpReadUrl (url, callback) {
 					}
 				}
 			return (false);
+			}
+		else { //no whitelist, everyone is whitelisted
+			return (true);
 			}
 		}
 	
@@ -2623,8 +2623,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									break;
 								case "/iswhitelisted": //11/18/14 by DW
 									var screenName = parsedUrl.query.screen_name;
-									httpResponse.writeHead (200, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
-									httpResponse.end (utils.jsonStringify (isWhitelistedUser (screenName)));    
+									doHttpReturn (200, "text/plain", utils.jsonStringify (isWhitelistedUser (screenName)));
 									break;
 								case "/configuration":
 									var params = {};
@@ -3053,6 +3052,11 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.urlUserWhitelist !== undefined) {
 				urlWhitelist = config.urlUserWhitelist;
+				flWhitelist = true; //3/30/16 by DW
+				}
+			if (config.userWhitelist !== undefined) { //3/30/16 by DW
+				userWhitelist = config.userWhitelist;
+				flWhitelist = true; 
 				}
 			if (config.longPollTimeoutSecs !== undefined) {
 				longPollTimeoutSecs = config.longPollTimeoutSecs;
