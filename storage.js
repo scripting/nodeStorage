@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93c", myProductName = "nodeStorage"; 
+var myVersion = "0.93e", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -473,7 +473,7 @@ function httpReadUrl (url, callback) {
 			idLastPost: getIdLastPost () //3/14/16 by DW
 			});
 		}
-	function getInitialChatLogStruct () { //3/15/16 by DW
+	function getInitialChatLogStruct (nameChatLog) { //3/15/16 by DW
 		var initialChatLogStruct = { //1/5/16 by DW
 			chatLog: [],
 			rssHeadElements: {
@@ -492,7 +492,13 @@ function httpReadUrl (url, callback) {
 				"rssCloudRegisterProcedure": "",
 				"rssCloudProtocol": "http-post"
 				},
-			renderingPrefs: { //2/21/16 by DW
+			renderingPrefs: { 
+				siteName: nameChatLog,
+				authorFacebookAccount: "",
+				authorGithubAccount: "",
+				authorLinkedInAccount: "",
+				copyright: "",
+				flAnyoneCanReply: true
 				},
 			prefs: {
 				serialNum: 1,
@@ -513,7 +519,7 @@ function httpReadUrl (url, callback) {
 			var chatlogpath = getS3UsersPath (flprivate) + screenName + "/chatLog.json";
 			var whenStartLoad = new Date ();
 			store.getObject (chatlogpath, function (error, data) {
-				var chatlogstruct = getInitialChatLogStruct ();
+				var chatlogstruct = getInitialChatLogStruct (screenName);
 				
 				if ((!error) && (data != null)) {
 					try {
@@ -558,7 +564,7 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function newUserChatlog (screenName, callback) { //3/15/16 by DW
-		var jstruct = getInitialChatLogStruct (); 
+		var jstruct = getInitialChatLogStruct (screenName); 
 		jstruct.name = screenName;
 		jstruct.jsonPath = getS3UsersPath (false) + screenName + "/chatLog.json";
 		jstruct.s3Path = getS3UsersPath (false) + screenName + "/"; //where the chatlog's public files, such as the RSS feed, are stored
@@ -1193,16 +1199,37 @@ function httpReadUrl (url, callback) {
 			}, metadata);
 		}
 	function getChatlogForClient (nameChatLog) { //9/20/15 by DW
-		
+		function initRenderingPrefs () { //3/30/16 by DW
+			if (theLog.renderingPrefs === undefined) { 
+				theLog.renderingPrefs = new Object ();
+				}
+			if (theLog.renderingPrefs.siteName === undefined) {
+				theLog.renderingPrefs.siteName = nameChatLog;
+				}
+			if (theLog.renderingPrefs.authorFacebookAccount === undefined) {
+				theLog.renderingPrefs.authorFacebookAccount = "";
+				}
+			if (theLog.renderingPrefs.authorGithubAccount === undefined) {
+				theLog.renderingPrefs.authorGithubAccount = "";
+				}
+			if (theLog.renderingPrefs.authorLinkedInAccount === undefined) {
+				theLog.renderingPrefs.authorLinkedInAccount = "";
+				}
+			if (theLog.renderingPrefs.copyright === undefined) {
+				theLog.renderingPrefs.copyright = "";
+				}
+			if (theLog.renderingPrefs.flAnyoneCanReply === undefined) {
+				theLog.renderingPrefs.flAnyoneCanReply = true;
+				}
+			}
 		var theLog = findChatLog (nameChatLog);
 		if (theLog === undefined) {
 			return (undefined);
 			}
 		
-		var jstruct = new Object (), urlChatLog = undefined;
-		if (theLog.renderingPrefs === undefined) { //2/21/16 by DW
-			theLog.renderingPrefs = new Object ();
-			}
+		initRenderingPrefs (); //3/30/16 by DW
+		
+		var jstruct = new Object ();
 		jstruct.metadata = {
 			name: nameChatLog,
 			

@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93c&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93e&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -868,7 +868,12 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text="function getInitialChatLogStruct () { //3/15/16 by DW">
+			<outline text="function getInitialChatLogStruct (nameChatLog) { //3/15/16 by DW">
+				<outline isComment="true" text="Changes">
+					<outline text="3/30/16; 6:18:45 PM by DW">
+						<outline text="Add new param, nameChatLog. Fill in initial values for renderingPrefs."></outline>
+						</outline>
+					</outline>
 				<outline text="var initialChatLogStruct = { //1/5/16 by DW">
 					<outline text="chatLog: [],"></outline>
 					<outline text="rssHeadElements: {">
@@ -888,7 +893,13 @@
 						<outline text="&quot;rssCloudProtocol&quot;: &quot;http-post&quot;"></outline>
 						<outline text="},"></outline>
 						</outline>
-					<outline text="renderingPrefs: { //2/21/16 by DW">
+					<outline text="renderingPrefs: { ">
+						<outline text="siteName: nameChatLog,"></outline>
+						<outline text="authorFacebookAccount: &quot;&quot;,"></outline>
+						<outline text="authorGithubAccount: &quot;&quot;,"></outline>
+						<outline text="authorLinkedInAccount: &quot;&quot;,"></outline>
+						<outline text="copyright: &quot;&quot;,"></outline>
+						<outline text="flAnyoneCanReply: true"></outline>
 						<outline text="},"></outline>
 						</outline>
 					<outline text="prefs: {">
@@ -926,7 +937,7 @@
 					<outline created="Thu, 15 May 2014 15:40:17 GMT" pgfnum="41633" text="var chatlogpath = getS3UsersPath (flprivate) + screenName + &quot;/chatLog.json&quot;;"></outline>
 					<outline text="var whenStartLoad = new Date ();"></outline>
 					<outline created="Wed, 22 Jan 2014 23:07:46 GMT" pgfnum="36412" text="store.getObject (chatlogpath, function (error, data) {">
-						<outline text="var chatlogstruct = getInitialChatLogStruct ();"></outline>
+						<outline text="var chatlogstruct = getInitialChatLogStruct (screenName);"></outline>
 						<outline text=""></outline>
 						<outline text="if ((!error) &amp;&amp; (data != null)) {">
 							<outline text="try {">
@@ -982,7 +993,7 @@
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function newUserChatlog (screenName, callback) { //3/15/16 by DW">
-				<outline text="var jstruct = getInitialChatLogStruct (); "></outline>
+				<outline text="var jstruct = getInitialChatLogStruct (screenName); "></outline>
 				<outline text="jstruct.name = screenName;"></outline>
 				<outline text="jstruct.jsonPath = getS3UsersPath (false) + screenName + &quot;/chatLog.json&quot;;"></outline>
 				<outline text="jstruct.s3Path = getS3UsersPath (false) + screenName + &quot;/&quot;; //where the chatlog's public files, such as the RSS feed, are stored"></outline>
@@ -2006,6 +2017,9 @@
 				</outline>
 			<outline text="function getChatlogForClient (nameChatLog) { //9/20/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="3/30/16; 5:51:23 PM by DW">
+						<outline text="Call new routine initRenderingPrefs, because some sites were created without rendering prefs properly initialized. This makes sure they all are correctly initialized"></outline>
+						</outline>
 					<outline text="2/19/16; 6:13:46 PM by DW">
 						<outline text="Return urlFeed. And no longer return the URL of the chatlog. It's stored in the user's private space. So there is no URL to it."></outline>
 						</outline>
@@ -2019,22 +2033,51 @@
 						<outline text="We now return a struct that contains the chatlog, so we can return other data, in the metadata struct."></outline>
 						</outline>
 					</outline>
-				<outline text=""></outline>
+				<outline text="function initRenderingPrefs () { //3/30/16 by DW">
+					<outline isComment="true" text="Changes ">
+						<outline text="3/30/16; 6:06:29 PM by DW">
+							<outline text="An all-in-one place to initialize a chatlog data structure."></outline>
+							</outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs === undefined) { ">
+						<outline text="theLog.renderingPrefs = new Object ();"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.siteName === undefined) {">
+						<outline text="theLog.renderingPrefs.siteName = nameChatLog;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.authorFacebookAccount === undefined) {">
+						<outline text="theLog.renderingPrefs.authorFacebookAccount = &quot;&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.authorGithubAccount === undefined) {">
+						<outline text="theLog.renderingPrefs.authorGithubAccount = &quot;&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.authorLinkedInAccount === undefined) {">
+						<outline text="theLog.renderingPrefs.authorLinkedInAccount = &quot;&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.copyright === undefined) {">
+						<outline text="theLog.renderingPrefs.copyright = &quot;&quot;;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (theLog.renderingPrefs.flAnyoneCanReply === undefined) {">
+						<outline text="theLog.renderingPrefs.flAnyoneCanReply = true;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="var theLog = findChatLog (nameChatLog);"></outline>
 				<outline text="if (theLog === undefined) {">
 					<outline text="return (undefined);"></outline>
 					<outline text="}"></outline>
 					</outline>
 				<outline text=""></outline>
-				<outline text="var jstruct = new Object (), urlChatLog = undefined;"></outline>
-				<outline isComment="true" text="if (theLog.urlPublicFolder !== undefined) { //set urlChatLog -- 10/22/15 by DW">
-					<outline text="urlChatLog = theLog.urlPublicFolder + fnameChatLog;"></outline>
-					<outline text="}"></outline>
-					</outline>
-				<outline text="if (theLog.renderingPrefs === undefined) { //2/21/16 by DW">
-					<outline text="theLog.renderingPrefs = new Object ();"></outline>
-					<outline text="}"></outline>
-					</outline>
+				<outline text="initRenderingPrefs (); //3/30/16 by DW"></outline>
+				<outline text=""></outline>
+				<outline text="var jstruct = new Object ();"></outline>
 				<outline text="jstruct.metadata = {">
 					<outline text="name: nameChatLog,"></outline>
 					<outline text=""></outline>
