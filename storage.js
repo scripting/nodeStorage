@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93e", myProductName = "nodeStorage"; 
+var myVersion = "0.93g", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -474,12 +474,13 @@ function httpReadUrl (url, callback) {
 			});
 		}
 	function getInitialChatLogStruct (nameChatLog) { //3/15/16 by DW
+		var urlHome = urlPublicFolder + "users/" + nameChatLog + "/";
 		var initialChatLogStruct = { //1/5/16 by DW
 			chatLog: [],
 			rssHeadElements: {
-				"title": "Someone's chatlog",
-				"link": "http://some chatlog address/",
-				"description": "A description of the chatlog.",
+				"title": nameChatLog + "'s chatlog", //4/1/16 by DW
+				"link": urlHome, //4/1/16 by DW
+				"description": "",
 				"language": "en-us",
 				"generator": "1999.io",
 				"docs": "http://cyber.law.harvard.edu/rss/rss.html",
@@ -498,7 +499,8 @@ function httpReadUrl (url, callback) {
 				authorGithubAccount: "",
 				authorLinkedInAccount: "",
 				copyright: "",
-				flAnyoneCanReply: true
+				flAnyoneCanReply: true,
+				urlBlogHome: urlHome //4/1/16 by DW
 				},
 			prefs: {
 				serialNum: 1,
