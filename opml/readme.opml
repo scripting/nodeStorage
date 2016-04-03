@@ -72,6 +72,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.93 - 4/3/16 by DW">
+				<outline text="Added a call to ping the &quot;community server&quot; when the RSS feed updates in addition to the rssCloud server. See lib/rss.js for details."></outline>
+				</outline>
 			<outline text="##### v0.92 - 3/26/16 by DW">
 				<outline text="Sorry for the lack of update notes. What's been going on has been the development of nodeStorage as a server for 1999.io. "></outline>
 				<outline text="At this point the server should be as easy to install as it was previously, after some docs are written, and from here-out I plan to keeop the update notes current with the development work."></outline>

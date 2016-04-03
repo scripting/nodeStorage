@@ -58,6 +58,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.93 - 4/3/16 by DW
+
+Added a call to ping the "community server" when the RSS feed updates in addition to the rssCloud server. See lib/rss.js for details.
+
 ##### v0.92 - 3/26/16 by DW
 
 Sorry for the lack of update notes. What's been going on has been the development of nodeStorage as a server for 1999.io. 
