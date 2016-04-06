@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93l", myProductName = "nodeStorage"; 
+var myVersion = "0.93o", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -491,7 +491,8 @@ function httpReadUrl (url, callback) {
 				"rssCloudPort": 5337,
 				"rssCloudPath": "/pleaseNotify",
 				"rssCloudRegisterProcedure": "",
-				"rssCloudProtocol": "http-post"
+				"rssCloudProtocol": "http-post",
+				"flInstantArticlesSupport": true //4/6/16 by DW
 				},
 			renderingPrefs: { 
 				siteName: nameChatLog,
@@ -1006,13 +1007,20 @@ function httpReadUrl (url, callback) {
 		doArray (chatLog);
 		}
 	function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW
-		var theLog = findChatLog (nameChatLog);
-		if (utils.getBoolean (theLog.rssHeadElements.flInstantArticlesSupport)) { //3/4/16 by DW
-			theLog.rssHeadElements.flUseContentEncoded = true;
-			theLog.rssHeadElements.flTitledItemsOnly = true;
-			theLog.rssHeadElements.flFacebookEncodeContent = true;
+		var theLog = findChatLog (nameChatLog), headElements = new Object ();
+		utils.copyScalars (theLog.rssHeadElements, headElements); //4/6/16 by DW
+		if (utils.getBoolean (headElements.flInstantArticlesSupport)) { //3/4/16 by DW
+			headElements.flUseContentEncoded = true;
+			headElements.flTitledItemsOnly = true;
+			headElements.flFacebookEncodeContent = true;
 			}
-		var xmltext = rss.chatLogToRss (theLog.rssHeadElements, theLog.chatLog);
+		else { //4/6/16 by DW
+			headElements.flUseContentEncoded = false;
+			headElements.flTitledItemsOnly = false;
+			headElements.flFacebookEncodeContent = false;
+			}
+		console.log ("buildChatLogRss: headElements == " + utils.jsonStringify (headElements));
+		var xmltext = rss.chatLogToRss (headElements, theLog.chatLog);
 		store.newObject (theLog.s3Path + s3RssPath, xmltext, "text/xml", undefined, function () {
 			var urlFeed = undefined;
 			if (theLog.urlPublicFolder !== undefined) {

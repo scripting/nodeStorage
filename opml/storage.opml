@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93l&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93o&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -870,6 +870,9 @@
 				</outline>
 			<outline text="function getInitialChatLogStruct (nameChatLog) { //3/15/16 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="4/6/16; 1:22:39 PM by DW">
+						<outline text="Initialize flInstantArticlesSupport."></outline>
+						</outline>
 					<outline text="4/1/16; 12:44:01 PM by DW">
 						<outline text="Properly initialize rssHeadElements.title, rssHeadElements.link and renderingPrefs.urlBlogHome."></outline>
 						</outline>
@@ -894,7 +897,8 @@
 						<outline text="&quot;rssCloudPort&quot;: 5337,"></outline>
 						<outline text="&quot;rssCloudPath&quot;: &quot;/pleaseNotify&quot;,"></outline>
 						<outline text="&quot;rssCloudRegisterProcedure&quot;: &quot;&quot;,"></outline>
-						<outline text="&quot;rssCloudProtocol&quot;: &quot;http-post&quot;"></outline>
+						<outline text="&quot;rssCloudProtocol&quot;: &quot;http-post&quot;,"></outline>
+						<outline text="&quot;flInstantArticlesSupport&quot;: true //4/6/16 by DW"></outline>
 						<outline text="},"></outline>
 						</outline>
 					<outline text="renderingPrefs: { ">
@@ -1728,6 +1732,12 @@
 				</outline>
 			<outline text="function buildChatLogRss (nameChatLog, callback) { //10/6/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="4/6/16; 12:58:51 PM by DW">
+						<outline text="Don't assume the Facebook elements have been set false, so if we're not building a FB-compatible feed, we set them false.">
+							<outline text="Here's what happened. We aren't working with a copy of the head elements, we're modifying the original, and it will eventually get saved. So if we start out with flInstantArticlesSupport set true, then the others will be set true the next time the chatlog is saved. If you later turn the setting false, it won't matter, all the other flags will stay true. "></outline>
+							<outline text="So we start to fix the problem by working with a copy of the headElements here, and only modifying those. And we ignore the saved values for flUseContentEncoded, flTitledItemsOnly and flFacebookEncodeContent."></outline>
+							</outline>
+						</outline>
 					<outline text="3/23/16; 5:38:33 PM by DW">
 						<outline text="Call the publish callbacks for the RSS feed."></outline>
 						</outline>
@@ -1735,15 +1745,22 @@
 						<outline text="If theLog.rssHeadElements.flInstantArticlesSupport is true, then we build an IA-compatible feed."></outline>
 						</outline>
 					</outline>
-				<outline text="var theLog = findChatLog (nameChatLog);"></outline>
-				<outline text="if (utils.getBoolean (theLog.rssHeadElements.flInstantArticlesSupport)) { //3/4/16 by DW">
-					<outline text="theLog.rssHeadElements.flUseContentEncoded = true;"></outline>
-					<outline text="theLog.rssHeadElements.flTitledItemsOnly = true;"></outline>
-					<outline text="theLog.rssHeadElements.flFacebookEncodeContent = true;"></outline>
+				<outline text="var theLog = findChatLog (nameChatLog), headElements = new Object ();"></outline>
+				<outline text="utils.copyScalars (theLog.rssHeadElements, headElements); //4/6/16 by DW"></outline>
+				<outline text="if (utils.getBoolean (headElements.flInstantArticlesSupport)) { //3/4/16 by DW">
+					<outline text="headElements.flUseContentEncoded = true;"></outline>
+					<outline text="headElements.flTitledItemsOnly = true;"></outline>
+					<outline text="headElements.flFacebookEncodeContent = true;"></outline>
 					<outline text="}"></outline>
 					</outline>
-				<outline isComment="true" text="console.log (&quot;buildChatLogRss: theLog.rssHeadElements == &quot; + utils.jsonStringify (theLog.rssHeadElements));"></outline>
-				<outline text="var xmltext = rss.chatLogToRss (theLog.rssHeadElements, theLog.chatLog);"></outline>
+				<outline text="else { //4/6/16 by DW">
+					<outline text="headElements.flUseContentEncoded = false;"></outline>
+					<outline text="headElements.flTitledItemsOnly = false;"></outline>
+					<outline text="headElements.flFacebookEncodeContent = false;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="console.log (&quot;buildChatLogRss: headElements == &quot; + utils.jsonStringify (headElements));"></outline>
+				<outline text="var xmltext = rss.chatLogToRss (headElements, theLog.chatLog);"></outline>
 				<outline text="store.newObject (theLog.s3Path + s3RssPath, xmltext, &quot;text/xml&quot;, undefined, function () {">
 					<outline text="var urlFeed = undefined;"></outline>
 					<outline text="if (theLog.urlPublicFolder !== undefined) {">
