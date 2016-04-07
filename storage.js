@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93o", myProductName = "nodeStorage"; 
+var myVersion = "0.93q", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -769,8 +769,11 @@ function httpReadUrl (url, callback) {
 			}
 		return (false);
 		}
-	function okToEdit (item, screenName) { //11/30/15 by DW
-		if (item.name.toLowerCase () == screenName.toLowerCase ()) {
+	function okToEdit (item, screenName, nameChatLog) { //11/30/15 by DW
+		if (utils.equalStrings (screenName, nameChatLog)) { //4/7/16 by DW
+			return (true);
+			}
+		if (utils.equalStrings (item.name, screenName)) {
 			return (true);
 			}
 		return (okToModerate (screenName));
@@ -857,7 +860,7 @@ function httpReadUrl (url, callback) {
 	function editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, callback) { //9/11/15 by DW
 		findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {
 			if (flFound) {
-				if (okToEdit (item, screenName)) { //(item.name.toLowerCase () == screenName.toLowerCase ()) {
+				if (okToEdit (item, screenName, nameChatLog)) { //(item.name.toLowerCase () == screenName.toLowerCase ()) {
 					item.text = chatText;
 					if (payload !== undefined) {
 						try {
@@ -876,7 +879,7 @@ function httpReadUrl (url, callback) {
 					callback (undefined, "We were able to update the post.", theTopItem);
 					}
 				else {
-					callback ("Can't update the post because \"" + screenName + "\" didn't create it.");
+					callback ({message: "Can't update the post because \"" + screenName + "\" didn't create it."}); //4/7/16 by DW
 					}
 				}
 			else {

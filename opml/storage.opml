@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93o&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.93q&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -1329,8 +1329,17 @@
 				<outline text="return (false);"></outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text="function okToEdit (item, screenName) { //11/30/15 by DW">
-				<outline text="if (item.name.toLowerCase () == screenName.toLowerCase ()) {">
+			<outline text="function okToEdit (item, screenName, nameChatLog) { //11/30/15 by DW">
+				<outline isComment="true" text="Changes">
+					<outline text="4/7/16; 10:53:41 AM by DW">
+						<outline text="The owner of the chatlog can edit anything in it."></outline>
+						</outline>
+					</outline>
+				<outline text="if (utils.equalStrings (screenName, nameChatLog)) { //4/7/16 by DW">
+					<outline text="return (true);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="if (utils.equalStrings (item.name, screenName)) {">
 					<outline text="return (true);"></outline>
 					<outline text="}"></outline>
 					</outline>
@@ -1471,6 +1480,9 @@
 				</outline>
 			<outline text="function editChatMessage (screenName, nameChatLog, chatText, payload, idMessage, callback) { //9/11/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="4/7/16; 10:44:19 AM by DW">
+						<outline text="If it's not OK to edit, the error message was being returned as a string, not the message element of an object. As a result the error wasn't being properly reported. "></outline>
+						</outline>
 					<outline text="11/26/15; 9:58:54 AM by DW">
 						<outline text="Return the top item that was updated, so the caller can immediately update their copy of the chatlog without having to wait for the WebSocket to return."></outline>
 						</outline>
@@ -1481,7 +1493,7 @@
 				<outline text="findChatMessage (nameChatLog, idMessage, function (flFound, item, subs, theTopItem) {">
 					<outline text="if (flFound) {">
 						<outline isComment="true" text="var now = new Date ();"></outline>
-						<outline text="if (okToEdit (item, screenName)) { //(item.name.toLowerCase () == screenName.toLowerCase ()) {">
+						<outline text="if (okToEdit (item, screenName, nameChatLog)) { //(item.name.toLowerCase () == screenName.toLowerCase ()) {">
 							<outline text="item.text = chatText;"></outline>
 							<outline text="if (payload !== undefined) {">
 								<outline text="try {">
@@ -1505,7 +1517,7 @@
 							<outline text="}"></outline>
 							</outline>
 						<outline text="else {">
-							<outline text="callback (&quot;Can't update the post because \&quot;&quot; + screenName + &quot;\&quot; didn't create it.&quot;);"></outline>
+							<outline text="callback ({message: &quot;Can't update the post because \&quot;&quot; + screenName + &quot;\&quot; didn't create it.&quot;}); //4/7/16 by DW"></outline>
 							<outline text="}"></outline>
 							</outline>
 						<outline text="}"></outline>
