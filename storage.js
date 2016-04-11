@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93q", myProductName = "nodeStorage"; 
+var myVersion = "0.93v", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -654,6 +654,9 @@ function httpReadUrl (url, callback) {
 	function chatAnyoneCanReply (nameChatLog) { //11/21/15 by DW
 		var theLog = findChatLog (nameChatLog);
 		return (getAnyoneCanReply (theLog)); //3/1/16 by DW
+		}
+	function chatAnyoneCanLike (nameChatLog) { //4/10/16 by DW
+		return (true); //Like is easy -- anyone can do it. maybe later we'll make this a setting -- 4/10/16 by DW
 		}
 	function bumpChatUpdateCount (item) { //10/18/15 by DW
 		item.whenLastUpdate = new Date ();
@@ -2885,7 +2888,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
 									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
 									var id = parsedUrl.query.id;
-									var flNotWhitelisted = chatAnyoneCanReply (nameChatLog); //11/21/15 by DW
+									var flNotWhitelisted = chatAnyoneCanLike (nameChatLog); //4/10/16 by DW
 									getScreenName (accessToken, accessTokenSecret, function (screenName) {
 										if (screenName !== undefined) { //11/21/15 by DW
 											if (flChatEnabled) {
