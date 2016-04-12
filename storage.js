@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93v", myProductName = "nodeStorage"; 
+var myVersion = "0.93w", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -1311,7 +1311,7 @@ function httpReadUrl (url, callback) {
 	function publishChatLogHomePage (nameChatLog, screenName, htmltext, callback) { //3/3/16 by DW
 		if (okToPostToChatLog (nameChatLog, screenName, false)) {
 			var theLog = findChatLog (nameChatLog);
-			var path = theLog.s3Path + "index.html";
+			var path = theLog.s3Path + indexFileName;
 			store.newObject (path, htmltext, "text/html", undefined, function (err, data) {
 				if (err) {
 					if (callback != undefined) {
@@ -1319,6 +1319,7 @@ function httpReadUrl (url, callback) {
 						}
 					}
 				else {
+					callbacks.callPublishCallbacks (indexFileName, htmltext, "text/html", nameChatLog); //4/12/16 by DW
 					if (callback != undefined) {
 						var jstruct = {
 							urlHomePage: theLog.urlPublicFolder
