@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93w", myProductName = "nodeStorage"; 
+var myVersion = "0.93x", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -671,9 +671,9 @@ function httpReadUrl (url, callback) {
 		return (utils.getDatePath (item.when) + utils.padWithZeros (item.id, 4) + ".json");
 		}
 	function saveChatMessage (nameChatLog, item, callback) { 
-		var theLog = findChatLog (nameChatLog);
-		var path = theLog.s3Path + getItemFile (item);
-		store.newObject (path, utils.jsonStringify (item), "application/json", undefined, function () {
+		var theLog = findChatLog (nameChatLog), jsontext = utils.jsonStringify (item), relpath = getItemFile (item);
+		var path = theLog.s3Path + relpath;
+		store.newObject (path, jsontext, "application/json", undefined, function () {
 			if (theLog.urlPublicFolder !== undefined) { //10/19/15 by DW
 				if (item.urlJson === undefined) {
 					item.urlJson = theLog.urlPublicFolder + getItemFile (item);
@@ -691,6 +691,8 @@ function httpReadUrl (url, callback) {
 					callback ();
 					}
 				}
+			
+			callbacks.callPublishCallbacks (relpath, jsontext, "application/json", nameChatLog); //4/17/16 by DW
 			});
 		}
 	function findChatMessage (nameChatLog, id, callback) { //9/15/15 by DW
