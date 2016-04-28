@@ -39,7 +39,8 @@
 		<outline text=""></outline>
 		<outline text="var twStorageConsts = {">
 			<outline text="fontAwesomeIcon: &quot;&lt;i class=\&quot;fa fa-twitter\&quot; style=\&quot;color: #4099FF;\&quot;&gt;&lt;/i&gt;&quot;,"></outline>
-			<outline text="iconColor: &quot;#4099FF&quot;"></outline>
+			<outline text="iconColor: &quot;#4099FF&quot;,"></outline>
+			<outline text="flEditChatUsePostBody: false //4/28/16 by DW"></outline>
 			<outline text="}"></outline>
 			</outline>
 		<outline text="var twStorageData = {">
@@ -867,6 +868,11 @@
 				</outline>
 			<outline text="function twPostChatMessage (s, payload, idMsgReplyingTo, nameChatLog, callback) { //8/30/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="4/28/16; 5:57:08 PM by DW">
+						<outline text="If twStorageConsts.flEditChatUsePostBody is true, instead of passing the values via the URL, we send them in the body of the POST.">
+							<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;editchatmessage?&quot; + twBuildParamList (paramtable);"></outline>
+							</outline>
+						</outline>
 					<outline text="9/11/15; 6:29:49 PM by DW">
 						<outline text="New optional param, payload. It's an arbitrary object, can be any type, that goes with the message where ever it goes. "></outline>
 						</outline>
@@ -887,10 +893,23 @@
 					<outline text="paramtable.idMsgReplyingTo = idMsgReplyingTo;"></outline>
 					<outline text="}"></outline>
 					</outline>
-				<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;chat?&quot; + twBuildParamList (paramtable);"></outline>
+				<outline text=""></outline>
+				<outline text="var encodedparams = twBuildParamList (paramtable), postbody;"></outline>
+				<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;chat&quot;;"></outline>
+				<outline text=""></outline>
+				<outline text="if (twStorageConsts.flEditChatUsePostBody) { //4/28/16 by DW">
+					<outline text="postbody = encodedparams;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="url += &quot;?&quot; + encodedparams;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text=""></outline>
 				<outline text="$.ajax ({">
 					<outline text="type: &quot;POST&quot;,"></outline>
 					<outline text="url: url,"></outline>
+					<outline text="data: postbody, //4/28/16 by DW"></outline>
 					<outline text="success: function (data) {">
 						<outline text="if (callback != undefined) {">
 							<outline text="callback (undefined, data);"></outline>
@@ -917,6 +936,13 @@
 				<outline text="}"></outline>
 				</outline>
 			<outline text="function twEditChatMessage (s, payload, id, nameChatLog, callback) {">
+				<outline isComment="true" text="Changes">
+					<outline text="4/28/16; 11:57:51 AM by DW">
+						<outline text="If twStorageConsts.flEditChatUsePostBody is true, instead of passing the values via the URL, we send them in the body of the POST.">
+							<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;editchatmessage?&quot; + twBuildParamList (paramtable);"></outline>
+							</outline>
+						</outline>
+					</outline>
 				<outline created="Sat, 09 Aug 2014 15:42:15 GMT" pgfnum="43199" text="var paramtable = {">
 					<outline created="Sat, 09 Aug 2014 15:42:28 GMT" pgfnum="43203" text="oauth_token: localStorage.twOauthToken,"></outline>
 					<outline created="Sat, 09 Aug 2014 15:42:43 GMT" pgfnum="43205" text="oauth_token_secret: localStorage.twOauthTokenSecret,"></outline>
@@ -930,10 +956,21 @@
 					<outline text="paramtable.payload = jsonStringify (payload);"></outline>
 					<outline text="}"></outline>
 					</outline>
-				<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;editchatmessage?&quot; + twBuildParamList (paramtable);"></outline>
+				<outline text=""></outline>
+				<outline text="var encodedparams = twBuildParamList (paramtable), postbody;"></outline>
+				<outline text="var url = twGetDefaultServer () + &quot;editchatmessage&quot;; "></outline>
+				<outline text="if (twStorageConsts.flEditChatUsePostBody) { //4/28/16 by DW">
+					<outline text="postbody = encodedparams;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="url += &quot;?&quot; + encodedparams;"></outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="console.log (&quot;twEditChatMessage: url == &quot; + url); //11/23/15 by DW"></outline>
 				<outline text="$.ajax ({">
 					<outline text="type: &quot;POST&quot;,"></outline>
+					<outline text="data: postbody, //4/28/16 by DW"></outline>
 					<outline text="url: url,"></outline>
 					<outline text="success: function (data) {">
 						<outline text="if (callback != undefined) {">
@@ -1111,7 +1148,6 @@
 					</outline>
 				<outline created="Sat, 03 May 2014 20:43:44 GMT" pgfnum="40944" text="}"></outline>
 				</outline>
-			<outline text=""></outline>
 			<outline created="Thu, 01 May 2014 15:43:01 GMT" pgfnum="40772" text="function twPublishChatLogHomePage (nameChatLog, htmltext, callback) { //3/3/16 by DW">
 				<outline created="Thu, 26 Jun 2014 11:53:02 GMT" isComment="true" pgfnum="42481" text="Changes">
 					<outline created="Mon, 04 Aug 2014 00:02:11 GMT" pgfnum="43118" text="1/6/16; 1:50:46 PM by DW">
@@ -1138,7 +1174,6 @@
 					</outline>
 				<outline created="Sat, 03 May 2014 20:43:44 GMT" pgfnum="40944" text="}"></outline>
 				</outline>
-			<outline text=""></outline>
 			<outline text="function twGetChatLogList (callback) { //10/29/15 by DW">
 				<outline text="readHttpFile (twGetDefaultServer () + &quot;chatloglist&quot;, function (data) {">
 					<outline text="var jstruct = JSON.parse (data);"></outline>

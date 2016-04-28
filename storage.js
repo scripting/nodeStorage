@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.93x", myProductName = "nodeStorage"; 
+var myVersion = "0.94f", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -41,6 +41,7 @@ var callbacks = require ("./lib/callbacks.js");
 var update = require ("./lib/update.js");
 var dns = require ("dns");
 var os = require ("os");
+var qs = require ("querystring"); //4/28/16 by DW
 
 //environment variables
 	var myPort = process.env.PORT;
@@ -917,6 +918,9 @@ function httpReadUrl (url, callback) {
 				callback (fl); //return true if we liked, false if we unliked
 				releaseChatLongpolls (nameChatLog, theTopItem); 
 				saveChatMessage (nameChatLog, theTopItem); //10/8/15 by DW
+				if (fl) { //only call callbacks on like, not unlike -- 4/24/16 by DW
+					callbacks.callLikeCallbacks (screenName, nameChatLog, item); 
+					}
 				}
 			else {
 				console.log ("likeChatMessage: item to like to not found.");
@@ -2025,6 +2029,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 			if (jstruct.urlPageTemplate === undefined) {
 				jstruct.urlPageTemplate = "/template.html";
 				}
+			jstruct.flEditChatUsePostBody = true; //signal to the client they can use this feature, we support it -- 4/28/16 by DW
 			return (utils.jsonStringify (jstruct));
 			}
 		function errorResponse (error) {
@@ -2220,13 +2225,19 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												break;
 											case "/chat": //8/25/15 by DW
 												if (flChatEnabled) {
-													var accessToken = parsedUrl.query.oauth_token;
-													var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-													var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-													var chatText = parsedUrl.query.text;
-													var payload = parsedUrl.query.payload;
-													var idMsgReplyingTo = parsedUrl.query.idMsgReplyingTo;
-													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
+													var theQuery = parsedUrl.query; //4/28/16 by DW
+													if (body.length > 0) { 
+														theQuery = qs.parse (body);
+														console.log ("/chat: the params came to us in the body, not on the URL.");
+														}
+													
+													var accessToken = theQuery.oauth_token;
+													var accessTokenSecret = theQuery.oauth_token_secret;
+													var flNotWhitelisted = utils.getBoolean (theQuery.flNotWhitelisted);
+													var chatText = theQuery.text;
+													var payload = theQuery.payload;
+													var idMsgReplyingTo = theQuery.idMsgReplyingTo;
+													var nameChatLog = theQuery.chatLog; //10/26/15 by DW
 													
 													flNotWhitelisted = false; //11/21/15 by DW
 													if (idMsgReplyingTo !== undefined) { //it's a reply -- 11/21/15 by DW
@@ -2256,13 +2267,18 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												break;
 											case "/editchatmessage": //9/11/15 by DW
 												if (flChatEnabled) {
-													var accessToken = parsedUrl.query.oauth_token;
-													var accessTokenSecret = parsedUrl.query.oauth_token_secret;
-													var flNotWhitelisted = utils.getBoolean (parsedUrl.query.flNotWhitelisted);
-													var chatText = parsedUrl.query.text;
-													var idMessage = parsedUrl.query.id;
-													var payload = parsedUrl.query.payload;
-													var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
+													var theQuery = parsedUrl.query; //4/28/16 by DW
+													if (body.length > 0) { 
+														theQuery = qs.parse (body);
+														console.log ("/editchatmessage: the params came to us in the body, not on the URL.");
+														}
+													var accessToken = theQuery.oauth_token;
+													var accessTokenSecret = theQuery.oauth_token_secret;
+													var flNotWhitelisted = utils.getBoolean (theQuery.flNotWhitelisted);
+													var chatText = theQuery.text;
+													var idMessage = theQuery.id;
+													var payload = theQuery.payload;
+													var nameChatLog = theQuery.chatLog; //10/26/15 by DW
 													
 													flNotWhitelisted = chatAnyoneCanReply (nameChatLog); //11/21/15 by DW -- we won't let you edit if you didn't create the message
 													

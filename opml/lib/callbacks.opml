@@ -13,6 +13,7 @@
 	<body text="lib/callbacks.js">
 		<outline text=""></outline>
 		<outline text="exports.callPublishCallbacks = callPublishCallbacks; "></outline>
+		<outline text="exports.callLikeCallbacks = callLikeCallbacks; //4/24/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline text="var fs = require (&quot;fs&quot;);"></outline>
 		<outline text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
@@ -20,6 +21,7 @@
 		<outline text="var filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
 		<outline text=""></outline>
 		<outline text="var publishCallbacksFolder = &quot;callbacks/publish/&quot;; "></outline>
+		<outline text="var likeCallbacksFolder = &quot;callbacks/like/&quot;; "></outline>
 		<outline text=""></outline>
 		<outline text="function runUserScript (s, dataforscripts, scriptName) {">
 			<outline isComment="true" text="Changes">
@@ -97,20 +99,23 @@
 				</outline>
 			<outline text="filesystem.sureFilePath (path, function () {">
 				<outline text="fs.readdir (path, function (err, list) {">
-					<outline text="for (var i = 0; i &lt; list.length; i++) {">
-						<outline text="var fname = list [i];"></outline>
-						<outline text="if (utils.endsWith (fname.toLowerCase (), &quot;.js&quot;)) {">
-							<outline text="var f = path + fname;"></outline>
-							<outline text="fs.readFile (f, function (err, data) {">
-								<outline text="if (err) {">
-									<outline text="console.log (&quot;runScriptsInFolder: error == &quot; + err.message);"></outline>
-									<outline text="}"></outline>
+					<outline text="if (list !== undefined) { //4/24/16 by DW">
+						<outline text="for (var i = 0; i &lt; list.length; i++) {">
+							<outline text="var fname = list [i];"></outline>
+							<outline text="if (utils.endsWith (fname.toLowerCase (), &quot;.js&quot;)) {">
+								<outline text="var f = path + fname;"></outline>
+								<outline text="fs.readFile (f, function (err, data) {">
+									<outline text="if (err) {">
+										<outline text="console.log (&quot;runScriptsInFolder: error == &quot; + err.message);"></outline>
+										<outline text="}"></outline>
+										</outline>
+									<outline text="else {">
+										<outline text="runUserScript (data.toString (), dataforscripts, f);"></outline>
+										<outline text="}"></outline>
+										</outline>
+									<outline text="});"></outline>
 									</outline>
-								<outline text="else {">
-									<outline text="runUserScript (data.toString (), dataforscripts, f);"></outline>
-									<outline text="}"></outline>
-									</outline>
-								<outline text="});"></outline>
+								<outline text="}"></outline>
 								</outline>
 							<outline text="}"></outline>
 							</outline>
@@ -148,6 +153,18 @@
 				</outline>
 			<outline text=""></outline>
 			<outline text="runScriptsInFolder (publishCallbacksFolder, dataforscripts, function () {">
+				<outline text="});"></outline>
+				</outline>
+			<outline text="}"></outline>
+			</outline>
+		<outline text="function callLikeCallbacks (screenName, nameChatLog, item) { //4/24/16 by DW">
+			<outline text="var dataforscripts = {">
+				<outline text="screenName: screenName,"></outline>
+				<outline text="nameChatLog: nameChatLog,"></outline>
+				<outline text="item: item"></outline>
+				<outline text="};"></outline>
+				</outline>
+			<outline text="runScriptsInFolder (likeCallbacksFolder, dataforscripts, function () {">
 				<outline text="});"></outline>
 				</outline>
 			<outline text="}"></outline>

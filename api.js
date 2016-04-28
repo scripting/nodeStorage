@@ -25,7 +25,8 @@
 
 var twStorageConsts = {
 	fontAwesomeIcon: "<i class=\"fa fa-twitter\" style=\"color: #4099FF;\"></i>",
-	iconColor: "#4099FF"
+	iconColor: "#4099FF",
+	flEditChatUsePostBody: false //4/28/16 by DW
 	}
 var twStorageData = {
 	whenLastRatelimitError: undefined,
@@ -606,10 +607,21 @@ function twGetComments (snAuthor, idPost, callback) {
 		if (idMsgReplyingTo !== undefined) {
 			paramtable.idMsgReplyingTo = idMsgReplyingTo;
 			}
-		var url = twGetDefaultServer () + "chat?" + twBuildParamList (paramtable);
+		
+		var encodedparams = twBuildParamList (paramtable), postbody;
+		var url = twGetDefaultServer () + "chat";
+		
+		if (twStorageConsts.flEditChatUsePostBody) { //4/28/16 by DW
+			postbody = encodedparams;
+			}
+		else {
+			url += "?" + encodedparams;
+			}
+		
 		$.ajax ({
 			type: "POST",
 			url: url,
+			data: postbody, //4/28/16 by DW
 			success: function (data) {
 				if (callback != undefined) {
 					callback (undefined, data);
@@ -640,10 +652,19 @@ function twGetComments (snAuthor, idPost, callback) {
 		if (payload !== undefined) {
 			paramtable.payload = jsonStringify (payload);
 			}
-		var url = twGetDefaultServer () + "editchatmessage?" + twBuildParamList (paramtable);
+		
+		var encodedparams = twBuildParamList (paramtable), postbody;
+		var url = twGetDefaultServer () + "editchatmessage"; 
+		if (twStorageConsts.flEditChatUsePostBody) { //4/28/16 by DW
+			postbody = encodedparams;
+			}
+		else {
+			url += "?" + encodedparams;
+			}
 		console.log ("twEditChatMessage: url == " + url); //11/23/15 by DW
 		$.ajax ({
 			type: "POST",
+			data: postbody, //4/28/16 by DW
 			url: url,
 			success: function (data) {
 				if (callback != undefined) {
@@ -767,7 +788,6 @@ function twGetComments (snAuthor, idPost, callback) {
 				}
 			});
 		}
-	
 	function twPublishChatLogHomePage (nameChatLog, htmltext, callback) { //3/3/16 by DW
 		var paramtable = {
 			oauth_token: localStorage.twOauthToken,
@@ -784,7 +804,6 @@ function twGetComments (snAuthor, idPost, callback) {
 				}
 			});
 		}
-	
 	function twGetChatLogList (callback) { //10/29/15 by DW
 		readHttpFile (twGetDefaultServer () + "chatloglist", function (data) {
 			var jstruct = JSON.parse (data);
