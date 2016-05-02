@@ -37,6 +37,19 @@
 				<outline text="&quot;enabled&quot;: false"></outline>
 				<outline text="},"></outline>
 				</outline>
+			<outline text="&quot;editors&quot;: {">
+				<outline text="&quot;text&quot;: {">
+					<outline text="&quot;name&quot;: &quot;Text&quot;,"></outline>
+					<outline text="&quot;url&quot;: &quot;http://1999.io/testing/textedit.html&quot;"></outline>
+					<outline text="},"></outline>
+					</outline>
+				<outline text="&quot;outline&quot;: {">
+					<outline text="&quot;name&quot;: &quot;Outliner&quot;,"></outline>
+					<outline text="&quot;url&quot;: &quot;http://1999.io/testing/outliner.html&quot;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="},"></outline>
+				</outline>
 			<outline text="&quot;twitterConsumerKey&quot;: &quot;45nCNcuLMOu4390yMDSGVnYja&quot;,"></outline>
 			<outline text="&quot;twitterConsumerSecret&quot;: &quot;349x2r67sTNqNN0IeG6khFghK4y5VFAUCtg5L5jLoK8KlTtdtq&quot; "></outline>
 			<outline text="}"></outline>

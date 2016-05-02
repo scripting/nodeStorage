@@ -135,8 +135,13 @@
 				</outline>
 			<outline text="physicalpath = stGlobals.publicPath + virtualpath;"></outline>
 			<outline text="stGetObject (physicalpath, function (error, data) {">
+				<outline text="var internalErrorCode = undefined;"></outline>
 				<outline text="if (error) {">
-					<outline text="callback (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;}, utils.jsonStringify (error));"></outline>
+					<outline text="if (error.code == &quot;EISDIR&quot;) { //path points to a directory, not  a file">
+						<outline text="internalErrorCode = 1;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="callback (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;}, utils.jsonStringify (error), internalErrorCode);"></outline>
 					<outline text="}"></outline>
 					</outline>
 				<outline text="else {">

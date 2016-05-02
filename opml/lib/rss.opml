@@ -11,7 +11,6 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="lib/rss.js">
-		<outline text=""></outline>
 		<outline text="exports.chatLogToRss = chatLogToRss; "></outline>
 		<outline text="exports.cloudPing = cloudPing;"></outline>
 		<outline text=""></outline>

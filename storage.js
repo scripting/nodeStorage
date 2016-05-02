@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94f", myProductName = "nodeStorage"; 
+var myVersion = "0.94i", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -121,6 +121,8 @@ var homePageConfig = { //3/21/16 by DW
 	};
 var urlFavicon = "http://1999.io/favicon.ico"; //3/26/16 by DW
 var indexFileName = "index.html"; //3/27/16 by DW
+var theEditors = { //4/29/16 by DW
+	};
 
 
 function httpReadUrl (url, callback) {
@@ -2030,6 +2032,18 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				jstruct.urlPageTemplate = "/template.html";
 				}
 			jstruct.flEditChatUsePostBody = true; //signal to the client they can use this feature, we support it -- 4/28/16 by DW
+			jstruct.server = { //4/29/16 by DW
+				productName: myProductName,
+				version: myVersion,
+				now: new Date ()
+				}
+			//jstruct.editors
+				jstruct.editors = new Object ();
+				for (var x in theEditors) {
+					jstruct.editors [x] = {
+						name: theEditors [x].name
+						};
+					}
 			return (utils.jsonStringify (jstruct));
 			}
 		function errorResponse (error) {
@@ -2052,6 +2066,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				request (url, function (err, response, body) {
 					callback (err, body);    
 					});
+				}
+			}
+		function requestEditor (editorname, callback) { //4/29/16 by DW
+			var editor = theEditors [editorname];
+			if (editor === undefined) {
+				callback ({message: "There is no editor named \"" + editorname + ".\""});    
+				}
+			else {
+				if (editor.url === undefined) {
+					callback ({message: "The editor, \"" + editorname + ",\" doesn't have a url value."});    
+					}
+				else {
+					console.log ("requestEditor: editor.url == " + editor.url);
+					request (editor.url, function (err, response, body) {
+						callback (err, body);    
+						});
+					}
 				}
 			}
 		
@@ -3040,6 +3071,16 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								case "/favicon.ico": //3/26/16 by DW
 									returnRedirect (urlFavicon);
 									break;
+								case "/editor": //4/29/16 by DW
+									requestEditor (parsedUrl.query.name, function (err, data) {
+										if (err) {
+											doHttpReturn (500, "text/plain", err.message);
+											}
+										else {
+											doHttpReturn (200, "text/html", data);
+											}
+										});
+									break;
 								
 								default:
 									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
@@ -3060,7 +3101,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											if (utils.endsWith (path, "/")) {
 												path += indexFileName;
 												}
-											store.serveObject (path, function (code, headers, bodytext) { //7/28/15 by DW -- try to serve the object from the store
+											store.serveObject (path, function (code, headers, bodytext, internalErrorCode) { //7/28/15 by DW -- try to serve the object from the store
+												if (internalErrorCode !== undefined) { //5/2/16 by DW
+													switch (internalErrorCode) {
+														case 1: //path points to a directory, not a file
+															returnRedirect (path + "/");
+															return;
+														}
+													}
 												httpResponse.writeHead (code, headers);
 												httpResponse.end (bodytext);
 												});
@@ -3199,6 +3247,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.updates !== undefined) { //3/25/16 by DW
 				update.init (config.updates);
+				}
+			if (config.editors !== undefined) { //4/29/16 by DW
+				theEditors = config.editors;
 				}
 			
 			//give values to optional params -- 3/24/16 by DW
