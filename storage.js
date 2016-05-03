@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94i", myProductName = "nodeStorage"; 
+var myVersion = "0.94j", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -123,6 +123,7 @@ var urlFavicon = "http://1999.io/favicon.ico"; //3/26/16 by DW
 var indexFileName = "index.html"; //3/27/16 by DW
 var theEditors = { //4/29/16 by DW
 	};
+var facebookAppId = undefined; //5/2/16 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -2032,6 +2033,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				jstruct.urlPageTemplate = "/template.html";
 				}
 			jstruct.flEditChatUsePostBody = true; //signal to the client they can use this feature, we support it -- 4/28/16 by DW
+			jstruct.facebookAppId = facebookAppId; //5/2/16 by DW
 			jstruct.server = { //4/29/16 by DW
 				productName: myProductName,
 				version: myVersion,
@@ -3250,6 +3252,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.editors !== undefined) { //4/29/16 by DW
 				theEditors = config.editors;
+				}
+			if (config.facebookAppId !== undefined) { //5/2/16 by DW
+				facebookAppId = config.facebookAppId;
 				}
 			
 			//give values to optional params -- 3/24/16 by DW
