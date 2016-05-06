@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94k", myProductName = "nodeStorage"; 
+var myVersion = "0.94m", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -956,13 +956,16 @@ function httpReadUrl (url, callback) {
 			return (undefined);
 			}
 		for (var i = 0; i < theLog.chatLog.length; i++) {
-			var item = theLog.chatLog [i], title = "", urlRendering = "", urlJson = "";
+			var item = theLog.chatLog [i], title = "", urlRendering = "", urlJson = "", flDeleted = undefined;
 			if (item.payload !== undefined) {
 				if (item.payload.title !== undefined) {
 					title = item.payload.title;
 					}
 				if (item.payload.urlRendering !== undefined) {
 					urlRendering = item.payload.urlRendering;
+					}
+				if (item.payload.flDeleted !== undefined) { //5/6/16 by DW
+					flDeleted = utils.getBoolean (item.payload.flDeleted);
 					}
 				}
 			if (item.urlJson !== undefined) {
@@ -973,6 +976,7 @@ function httpReadUrl (url, callback) {
 				name: item.name,
 				when: item.when,
 				title: title,
+				flDeleted: flDeleted, //5/6/16 by DW
 				urlHtml: urlRendering,
 				urlJson: urlJson
 				};
