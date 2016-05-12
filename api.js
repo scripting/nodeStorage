@@ -1079,3 +1079,15 @@ function twSetPrefs (thePrefs, callback) { //11/23/15 by DW
 		twPrefsToStorage (thePrefs); 
 		});
 	}
+function twReadHttpWithProxy (urlToRead, callback) { //5/9/16 by DW
+	var paramtable = {
+		url: urlToRead
+		}
+	var apiUrl = twGetDefaultServer () + "httpreadurl?" + twBuildParamList (paramtable), whenstart = new Date ();
+	readHttpFile (apiUrl, function (data) {
+		console.log ("twReadHttpWithProxy: length == " + data.length);
+		if (callback !== undefined) {
+			callback (data); 
+			}
+		});
+	}

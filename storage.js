@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94m", myProductName = "nodeStorage"; 
+var myVersion = "0.94o", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -512,7 +512,7 @@ function httpReadUrl (url, callback) {
 				whenLogPrefsCreated: new Date ()
 				},
 			version: 2, //the first version has no version element here
-			flDirty: true
+			flDirty: false
 			}
 		return (JSON.parse (JSON.stringify (initialChatLogStruct)));
 		}
@@ -554,6 +554,8 @@ function httpReadUrl (url, callback) {
 				if (chatlogstruct.usersWhoCanPost === undefined) { //3/3/16 by DW
 					chatlogstruct.usersWhoCanPost = [screenName];
 					}
+				
+				chatlogstruct.flDirty = false; //5/12/16 by DW -- prevent the RSS file from being rebuilt every time the file is opened
 				
 				chatLogArray [chatLogArray.length] = chatlogstruct;
 				
@@ -3036,6 +3038,16 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									break;
 								case "/opensockets": //11/29/15 by DW -- for debugging
 									dataResponse (getOpenSocketsArray ());
+									break;
+								case "/httpreadurl": //5/9/16 by DW -- simple proxy to work around CORS limits
+									request (parsedUrl.query.url, function (error, response, body) {
+										if (error) {
+											doHttpReturn (500, "text/plain", error.message);
+											}
+										else {
+											doHttpReturn (response.statusCode, response.headers ["content-type"], body);
+											}
+										});
 									break;
 								
 								case "/chat.css": //3/19/16 by DW
