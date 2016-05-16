@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94p&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94q&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -144,6 +144,9 @@
 		<outline text="var indexFileName = &quot;index.html&quot;; //3/27/16 by DW"></outline>
 		<outline isComment="true" text="var websocketDomain = undefined; //4/17/16 by DW"></outline>
 		<outline text="var theEditors = { //4/29/16 by DW">
+			<outline text="};"></outline>
+			</outline>
+		<outline text="var thePlugIns = { //5/14/16 by DW">
 			<outline text="};"></outline>
 			</outline>
 		<outline text="var facebookAppId = undefined; //5/2/16 by DW"></outline>
@@ -3361,6 +3364,16 @@
 							<outline text="}"></outline>
 							</outline>
 						</outline>
+					<outline text="//jstruct.plugIns">
+						<outline text="jstruct.plugIns = new Object ();"></outline>
+						<outline text="for (var x in thePlugIns) {">
+							<outline text="jstruct.plugIns [x] = {">
+								<outline text="name: thePlugIns [x].name"></outline>
+								<outline text="};"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						</outline>
 					<outline text="return (utils.jsonStringify (jstruct));"></outline>
 					<outline text="}"></outline>
 					</outline>
@@ -3406,6 +3419,29 @@
 						<outline text="else {">
 							<outline text="console.log (&quot;requestEditor: editor.url == &quot; + editor.url);"></outline>
 							<outline text="request (editor.url, function (err, response, body) {">
+								<outline text="callback (err, body);    "></outline>
+								<outline text="});"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="function requestPlugIn (plugInName, plugInStruct, typeString, callback) { //4/29/16 by DW">
+					<outline text="var plugin = plugInStruct [plugInName];"></outline>
+					<outline text="if (plugin === undefined) {">
+						<outline text="callback ({message: &quot;There is no &quot; + typeString + &quot; named \&quot;&quot; + plugInName + &quot;.\&quot;&quot;});    "></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="else {">
+						<outline text="if (plugin.url === undefined) {">
+							<outline text="callback ({message: &quot;The &quot; + typeString + &quot;, \&quot;&quot; + plugInName + &quot;,\&quot; doesn't have a url value.&quot;});    "></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="else {">
+							<outline text="console.log (&quot;requestEditor: plugin.url == &quot; + plugin.url);"></outline>
+							<outline text="request (plugin.url, function (err, response, body) {">
 								<outline text="callback (err, body);    "></outline>
 								<outline text="});"></outline>
 								</outline>
@@ -4852,6 +4888,20 @@
 												</outline>
 											<outline created="Wed, 22 Jan 2014 15:18:30 GMT" pgfnum="36266" text="break;"></outline>
 											</outline>
+										<outline text="case &quot;/plugin&quot;: //5/14/16 by DW">
+											<outline text="requestPlugIn (parsedUrl.query.name, thePlugIns, &quot;plug-in&quot;, function (err, data) {">
+												<outline created="Mon, 21 Apr 2014 23:12:55 GMT" pgfnum="40408" text="if (err) {">
+													<outline text="doHttpReturn (500, &quot;text/plain&quot;, err.message);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40409" text="}"></outline>
+													</outline>
+												<outline created="Mon, 21 Apr 2014 23:12:58 GMT" pgfnum="40410" text="else {">
+													<outline text="doHttpReturn (200, &quot;text/html&quot;, data);"></outline>
+													<outline created="Mon, 21 Apr 2014 23:13:00 GMT" pgfnum="40411" text="}"></outline>
+													</outline>
+												<outline text="});"></outline>
+												</outline>
+											<outline created="Wed, 22 Jan 2014 15:18:30 GMT" pgfnum="36266" text="break;"></outline>
+											</outline>
 										<outline text=""></outline>
 										<outline isComment="true" text="case &quot;/test1&quot;: //10/27/15 by DW">
 											<outline text="postChatMessage (&quot;davewiner&quot;, &quot;blork&quot;, &quot;Oh the buzzing of the bees&quot;, undefined, undefined, undefined, undefined, true, function (err, idMessage) {">
@@ -5106,6 +5156,10 @@
 						</outline>
 					<outline text="if (config.editors !== undefined) { //4/29/16 by DW">
 						<outline text="theEditors = config.editors;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (config.plugIns !== undefined) { //5/14/16 by DW">
+						<outline text="thePlugIns = config.plugIns;"></outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text="if (config.facebookAppId !== undefined) { //5/2/16 by DW">

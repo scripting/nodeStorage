@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94p", myProductName = "nodeStorage"; 
+var myVersion = "0.94q", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -122,6 +122,8 @@ var homePageConfig = { //3/21/16 by DW
 var urlFavicon = "http://1999.io/favicon.ico"; //3/26/16 by DW
 var indexFileName = "index.html"; //3/27/16 by DW
 var theEditors = { //4/29/16 by DW
+	};
+var thePlugIns = { //5/14/16 by DW
 	};
 var facebookAppId = undefined; //5/2/16 by DW
 
@@ -2052,6 +2054,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 						name: theEditors [x].name
 						};
 					}
+			//jstruct.plugIns
+				jstruct.plugIns = new Object ();
+				for (var x in thePlugIns) {
+					jstruct.plugIns [x] = {
+						name: thePlugIns [x].name
+						};
+					}
 			return (utils.jsonStringify (jstruct));
 			}
 		function errorResponse (error) {
@@ -2088,6 +2097,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 				else {
 					console.log ("requestEditor: editor.url == " + editor.url);
 					request (editor.url, function (err, response, body) {
+						callback (err, body);    
+						});
+					}
+				}
+			}
+		function requestPlugIn (plugInName, plugInStruct, typeString, callback) { //4/29/16 by DW
+			var plugin = plugInStruct [plugInName];
+			if (plugin === undefined) {
+				callback ({message: "There is no " + typeString + " named \"" + plugInName + ".\""});    
+				}
+			else {
+				if (plugin.url === undefined) {
+					callback ({message: "The " + typeString + ", \"" + plugInName + ",\" doesn't have a url value."});    
+					}
+				else {
+					console.log ("requestEditor: plugin.url == " + plugin.url);
+					request (plugin.url, function (err, response, body) {
 						callback (err, body);    
 						});
 					}
@@ -3099,6 +3125,16 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
+								case "/plugin": //5/14/16 by DW
+									requestPlugIn (parsedUrl.query.name, thePlugIns, "plug-in", function (err, data) {
+										if (err) {
+											doHttpReturn (500, "text/plain", err.message);
+											}
+										else {
+											doHttpReturn (200, "text/html", data);
+											}
+										});
+									break;
 								
 								default:
 									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
@@ -3268,6 +3304,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.editors !== undefined) { //4/29/16 by DW
 				theEditors = config.editors;
+				}
+			if (config.plugIns !== undefined) { //5/14/16 by DW
+				thePlugIns = config.plugIns;
 				}
 			if (config.facebookAppId !== undefined) { //5/2/16 by DW
 				facebookAppId = config.facebookAppId;
