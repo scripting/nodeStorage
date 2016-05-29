@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94q", myProductName = "nodeStorage"; 
+var myVersion = "0.94r", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -124,6 +124,8 @@ var indexFileName = "index.html"; //3/27/16 by DW
 var theEditors = { //4/29/16 by DW
 	};
 var thePlugIns = { //5/14/16 by DW
+	};
+var theDomainMap = { //5/27/16 by DW
 	};
 var facebookAppId = undefined; //5/2/16 by DW
 
@@ -3137,7 +3139,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									break;
 								
 								default:
-									if ((lowerpath == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
+									var path = parsedUrl.pathname;
+									
+									if (theDomainMap [lowerhost] !== undefined) {
+										path = theDomainMap [lowerhost] + path;
+										}
+									else {
+										for (var x in theDomainMap) {
+											if (utils.beginsWith (path, theDomainMap [x])) { //aaa
+												var addport = (port == 80) ? "" : ":" + port;
+												var urlRedirect = "http://" + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);
+												returnRedirect (urlRedirect);
+												return;
+												}
+											}
+										}
+									
+									if ((path == "/") && (urlHomePageContent !== undefined)) { //10/11/15 by DW
 										request (urlHomePageContent, function (error, response, body) {
 											if (error) {
 												httpResponse.writeHead (500, {"Content-Type": "text/plain"});
@@ -3150,7 +3168,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											});
 										}
 									else {
-										var path = parsedUrl.pathname;
 										if (checkPathForIllegalChars (path)) {
 											if (utils.endsWith (path, "/")) {
 												path += indexFileName;
@@ -3307,6 +3324,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.plugIns !== undefined) { //5/14/16 by DW
 				thePlugIns = config.plugIns;
+				}
+			if (config.domains !== undefined) { //5/27/16 by DW
+				theDomainMap = config.domains;
 				}
 			if (config.facebookAppId !== undefined) { //5/2/16 by DW
 				facebookAppId = config.facebookAppId;

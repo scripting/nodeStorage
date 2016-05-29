@@ -31,7 +31,7 @@
 			<outline text="&quot;homePage&quot;: {">
 				<outline created="Sun, 06 Jan 2013 15:39:06 GMT" pgfnum="16734" text="&quot;productname&quot;: &quot;bloatWare&quot;,"></outline>
 				<outline text="&quot;productnameForDisplay&quot;: &quot;BloatWare&quot;,"></outline>
-				<outline text="&quot;urlPageTemplate&quot;: &quot;/data/mytemplate.html&quot;"></outline>
+				<outline text="&quot;urlPageTemplate&quot;: &quot;/template.html&quot;"></outline>
 				<outline text="},"></outline>
 				</outline>
 			<outline text="&quot;updates&quot;: {">
@@ -51,10 +51,19 @@
 					</outline>
 				<outline text="},"></outline>
 				</outline>
+			<outline text="&quot;domains&quot;: {">
+				<outline text="&quot;127.0.0.1&quot;: &quot;/users/davewiner&quot;"></outline>
+				<outline text="},"></outline>
+				</outline>
 			<outline text="&quot;plugIns&quot;: {">
 				<outline text="&quot;templateEdit&quot;: {">
 					<outline text="&quot;name&quot;: &quot;Template Editor&quot;,"></outline>
-					<outline text="&quot;url&quot;: &quot;http://1999.io/testing/templateedit.html&quot;"></outline>
+					<outline text="&quot;url&quot;: &quot;http://1999.io/editors/templateedit.html&quot;"></outline>
+					<outline text="},"></outline>
+					</outline>
+				<outline text="&quot;templateEdit2&quot;: {">
+					<outline text="&quot;name&quot;: &quot;Template Editor 2&quot;,"></outline>
+					<outline text="&quot;url&quot;: &quot;http://1999.io/editors/templateedit2.html&quot;"></outline>
 					<outline text="}"></outline>
 					</outline>
 				<outline text="},"></outline>

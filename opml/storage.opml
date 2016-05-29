@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94q&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94r&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -147,6 +147,9 @@
 			<outline text="};"></outline>
 			</outline>
 		<outline text="var thePlugIns = { //5/14/16 by DW">
+			<outline text="};"></outline>
+			</outline>
+		<outline text="var theDomainMap = { //5/27/16 by DW">
 			<outline text="};"></outline>
 			</outline>
 		<outline text="var facebookAppId = undefined; //5/2/16 by DW"></outline>
@@ -4918,7 +4921,27 @@
 											<outline text="break;"></outline>
 											</outline>
 										<outline created="Tue, 21 Jan 2014 00:38:22 GMT" pgfnum="36084" text="default:">
-											<outline text="if ((lowerpath == &quot;/&quot;) &amp;&amp; (urlHomePageContent !== undefined)) { //10/11/15 by DW">
+											<outline text="var path = parsedUrl.pathname;"></outline>
+											<outline text=""></outline>
+											<outline text="if (theDomainMap [lowerhost] !== undefined) {">
+												<outline text="path = theDomainMap [lowerhost] + path;"></outline>
+												<outline text="}"></outline>
+												</outline>
+											<outline text="else {">
+												<outline text="for (var x in theDomainMap) {">
+													<outline text="if (utils.beginsWith (path, theDomainMap [x])) { //aaa">
+														<outline text="var addport = (port == 80) ? &quot;&quot; : &quot;:&quot; + port;"></outline>
+														<outline text="var urlRedirect = &quot;http://&quot; + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);"></outline>
+														<outline text="returnRedirect (urlRedirect);"></outline>
+														<outline text="return;"></outline>
+														<outline text="}"></outline>
+														</outline>
+													<outline text="}"></outline>
+													</outline>
+												<outline text="}"></outline>
+												</outline>
+											<outline text=""></outline>
+											<outline text="if ((path == &quot;/&quot;) &amp;&amp; (urlHomePageContent !== undefined)) { //10/11/15 by DW">
 												<outline text="request (urlHomePageContent, function (error, response, body) {">
 													<outline text="if (error) {">
 														<outline text="httpResponse.writeHead (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;});"></outline>
@@ -4935,7 +4958,7 @@
 												<outline text="}"></outline>
 												</outline>
 											<outline text="else {">
-												<outline text="var path = parsedUrl.pathname;"></outline>
+												<outline isComment="true" text="var path = parsedUrl.pathname;"></outline>
 												<outline text="if (checkPathForIllegalChars (path)) {">
 													<outline text="if (utils.endsWith (path, &quot;/&quot;)) {">
 														<outline text="path += indexFileName;"></outline>
@@ -5160,6 +5183,10 @@
 						</outline>
 					<outline text="if (config.plugIns !== undefined) { //5/14/16 by DW">
 						<outline text="thePlugIns = config.plugIns;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (config.domains !== undefined) { //5/27/16 by DW">
+						<outline text="theDomainMap = config.domains;"></outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text="if (config.facebookAppId !== undefined) { //5/2/16 by DW">
