@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94r", myProductName = "nodeStorage"; 
+var myVersion = "0.94s", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -3180,6 +3180,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 															return;
 														}
 													}
+												headers ["Access-Control-Allow-Origin"] = "*"; //5/29/16 by DW
 												httpResponse.writeHead (code, headers);
 												httpResponse.end (bodytext);
 												});
