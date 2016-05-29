@@ -3244,7 +3244,7 @@
 						<outline text="code = 302;"></outline>
 						<outline text="}"></outline>
 						</outline>
-					<outline text="httpResponse.writeHead (code, {&quot;location&quot;: url, &quot;Content-Type&quot;: &quot;text/plain&quot;});"></outline>
+					<outline text="httpResponse.writeHead (code, {&quot;location&quot;: url, &quot;Content-Type&quot;: &quot;text/plain&quot;, &quot;Access-Control-Allow-Origin&quot;: &quot;*&quot;});"></outline>
 					<outline text="httpResponse.end (code + &quot; REDIRECT&quot;);    "></outline>
 					<outline text="}"></outline>
 					<outline text=""></outline>

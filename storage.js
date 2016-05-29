@@ -1969,7 +1969,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 			if (code === undefined) {
 				code = 302;
 				}
-			httpResponse.writeHead (code, {"location": url, "Content-Type": "text/plain"});
+			httpResponse.writeHead (code, {"location": url, "Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 			httpResponse.end (code + " REDIRECT");    
 			}
 			
