@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94s&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94t&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -2096,6 +2096,9 @@
 				</outline>
 			<outline text="function getChatlogForClient (nameChatLog) { //9/20/15 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="5/30/16; 11:39:50 AM by DW">
+						<outline text="Return all the items in the current month, even if it exceeds the max. "></outline>
+						</outline>
 					<outline text="3/30/16; 5:51:23 PM by DW">
 						<outline text="Call new routine initRenderingPrefs, because some sites were created without rendering prefs properly initialized. This makes sure they all are correctly initialized"></outline>
 						</outline>
@@ -2153,6 +2156,7 @@
 					<outline text="return (undefined);"></outline>
 					<outline text="}"></outline>
 					</outline>
+				<outline text="var theMonth = theLog.chatLog [theLog.chatLog.length - 1].when; //the date of the most recent item in the chatlog"></outline>
 				<outline text=""></outline>
 				<outline text="initRenderingPrefs (); //3/30/16 by DW"></outline>
 				<outline text=""></outline>
@@ -2181,9 +2185,13 @@
 					</outline>
 				<outline text="jstruct.chatLog = new Array ();"></outline>
 				<outline text="for (var i = theLog.chatLog.length - 1; i &gt;= 0; i--) {">
-					<outline created="Wed, 29 Jan 2014 22:10:31 GMT" pgfnum="36568" text="jstruct.chatLog.unshift (theLog.chatLog [i]); //insert at beginning of the array"></outline>
-					<outline text="if (jstruct.chatLog.length &gt;= maxLogLengthForClient) {">
-						<outline text="break;"></outline>
+					<outline text="var item = theLog.chatLog [i];"></outline>
+					<outline created="Wed, 29 Jan 2014 22:10:31 GMT" pgfnum="36568" text="jstruct.chatLog.unshift (item); //insert at beginning of the array"></outline>
+					<outline text="if (!utils.sameMonth (item.when, theMonth)) { //return all items in current month, even if it exceeds the max">
+						<outline text="if (jstruct.chatLog.length &gt;= maxLogLengthForClient) {">
+							<outline text="break;"></outline>
+							<outline text="}"></outline>
+							</outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text="}"></outline>

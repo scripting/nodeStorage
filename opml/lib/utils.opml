@@ -50,6 +50,7 @@
 		<outline text="exports.viewDate = viewDate; //11/29/15 by DW"></outline>
 		<outline text="exports.stringPopLastField = stringPopLastField; //3/19/16 by DW"></outline>
 		<outline text="exports.equalStrings = equalStrings; //4/7/16 by DW"></outline>
+		<outline text="exports.sameMonth = sameMonth; //5/30/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline text="[[http://fargo.io/code/node/shared/utils.js]]"></outline>
 		</body>
