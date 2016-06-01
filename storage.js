@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94u", myProductName = "nodeStorage"; 
+var myVersion = "0.94v", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -1292,7 +1292,6 @@ function httpReadUrl (url, callback) {
 		if (theLog === undefined) {
 			return (undefined);
 			}
-		var theMonth = theLog.chatLog [theLog.chatLog.length - 1].when; //the date of the most recent item in the chatlog
 		
 		initRenderingPrefs (); //3/30/16 by DW
 		
@@ -1317,15 +1316,20 @@ function httpReadUrl (url, callback) {
 				}
 			};
 		jstruct.chatLog = new Array ();
-		for (var i = theLog.chatLog.length - 1; i >= 0; i--) {
-			var item = theLog.chatLog [i];
-			jstruct.chatLog.unshift (item); //insert at beginning of the array
-			if (!utils.sameMonth (item.when, theMonth)) { //return all items in current month, even if it exceeds the max
-				if (jstruct.chatLog.length >= maxLogLengthForClient) {
-					break;
+		
+		if (theLog.chatLog.length > 0) { //6/1/16 by DW
+			var theMonth = theLog.chatLog [theLog.chatLog.length - 1].when; //the date of the most recent item in the chatlog
+			for (var i = theLog.chatLog.length - 1; i >= 0; i--) {
+				var item = theLog.chatLog [i];
+				jstruct.chatLog.unshift (item); //insert at beginning of the array
+				if (!utils.sameMonth (item.when, theMonth)) { //return all items in current month, even if it exceeds the max
+					if (jstruct.chatLog.length >= maxLogLengthForClient) {
+						break;
+						}
 					}
 				}
 			}
+		
 		return (jstruct);
 		}
 	function setChatLogMetadata (nameChatLog, metadata, callback) { //2/19/16 by DW
