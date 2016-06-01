@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94t", myProductName = "nodeStorage"; 
+var myVersion = "0.94u", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -362,9 +362,14 @@ function httpReadUrl (url, callback) {
 		store.getObject (s3Path + fname, function (error, data) {
 			if (!error) {
 				if (data != null) {
-					var oldStruct = JSON.parse (data.Body);
-					for (var x in oldStruct) { 
-						struct [x] = oldStruct [x];
+					try {
+						var oldStruct = JSON.parse (data.Body);
+						for (var x in oldStruct) { 
+							struct [x] = oldStruct [x];
+							}
+						}
+					catch (err) {
+						console.log ("loadStruct: error reading file \"" + fname + "\", err.message == " + err.message + "\n");
 						}
 					}
 				}
@@ -956,6 +961,32 @@ function httpReadUrl (url, callback) {
 			}
 		return (undefined); //didn't find the item
 		}
+	
+	
+	function getMonthChatLogPosts (nameChatLog, monthnum, yearnum) { //5/31/16 by DW
+		var theLog = findChatLog (nameChatLog), jstruct = new Array ();
+		if (theLog === undefined) {
+			return (undefined);
+			}
+		
+		var theMonth = new Date ();
+		theMonth.setSeconds (0);
+		theMonth.setMinutes (0);
+		theMonth.setHours (0);
+		theMonth.setDate (1);
+		theMonth.setMonth (monthnum);
+		theMonth.setFullYear (yearnum);
+		
+		for (var i = 0; i < theLog.chatLog.length; i++) {
+			if (utils.sameMonth (new Date (theLog.chatLog [i].when), theMonth)) {
+				jstruct [jstruct.length] = theLog.chatLog [i];
+				}
+			}
+		
+		return (jstruct);
+		}
+	
+	
 	function getChatLogIndex (nameChatLog) { //1/2/16 by DW
 		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
 		if (theLog === undefined) {
@@ -2961,7 +2992,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 									dataResponse (getChatLogList ());
 									break;
 								case "/getchatmessage": //9/20/15 by DW
-									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW -- yyy
+									var nameChatLog = parsedUrl.query.chatLog; //10/26/15 by DW
 									findChatMessage (nameChatLog, parsedUrl.query.id, function (flFound, item, subs, theTopItem) {
 										if (flFound) {
 											dataResponse ({
@@ -3140,6 +3171,21 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											doHttpReturn (200, "text/html", data);
 											}
 										});
+									break;
+								
+								case "/getmonthchatmessages": //5/31/16 by DW
+									var monthnum = parsedUrl.query.monthnum;
+									var yearnum = parsedUrl.query.yearnum;
+									var nameChatLog = parsedUrl.query.chatLog; 
+									
+									var jstruct = getMonthChatLogPosts (nameChatLog, monthnum, yearnum);
+									if (jstruct === undefined) {
+										errorResponse ({message: "Can't get chatlog items for month # " + monthnum + " in " + yearnum + " because the chatlog doesn't exist or the posts don't."});
+										}
+									else {
+										dataResponse (jstruct);
+										}
+									
 									break;
 								
 								default:

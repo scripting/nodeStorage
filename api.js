@@ -824,6 +824,40 @@ function twGetComments (snAuthor, idPost, callback) {
 				}
 			});
 		}
+	
+	
+	function twGetMonthChatMessages (theMonth, nameChatLog, callback) { //5/31/16 by DW
+		var paramtable = {
+			oauth_token: localStorage.twOauthToken,
+			oauth_token_secret: localStorage.twOauthTokenSecret,
+			monthnum: theMonth.getMonth (),
+			yearnum: theMonth.getFullYear (),
+			chatLog: nameChatLog
+			}
+		var url = twGetDefaultServer () + "getmonthchatmessages?" + twBuildParamList (paramtable);
+		$.ajax ({
+			type: "GET",
+			url: url,
+			success: function (data) {
+				if (callback != undefined) {
+					callback (undefined, data);
+					}
+				},
+			error: function (status, something, otherthing) { 
+				console.log ("twGetMonthChatMessages: error == " + JSON.stringify (status, undefined, 4));
+				if (callback != undefined) {
+					var err = {
+						code: status.status,
+						message: JSON.parse (status.responseText).message
+						};
+					callback (err, undefined);
+					}
+				},
+			dataType: "json"
+			});
+		}
+	
+	
 	function twChatLike (id, nameChatLog, callback) { //9/27/15 by DW
 		var paramtable = {
 			oauth_token: localStorage.twOauthToken,

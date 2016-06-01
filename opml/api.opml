@@ -1206,6 +1206,48 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
+			<outline text=""></outline>
+			<outline text=""></outline>
+			<outline text="function twGetMonthChatMessages (theMonth, nameChatLog, callback) { //5/31/16 by DW">
+				<outline created="Sat, 09 Aug 2014 15:42:15 GMT" pgfnum="43199" text="var paramtable = {">
+					<outline created="Sat, 09 Aug 2014 15:42:28 GMT" pgfnum="43203" text="oauth_token: localStorage.twOauthToken,"></outline>
+					<outline created="Sat, 09 Aug 2014 15:42:43 GMT" pgfnum="43205" text="oauth_token_secret: localStorage.twOauthTokenSecret,"></outline>
+					<outline text="monthnum: theMonth.getMonth (),"></outline>
+					<outline text="yearnum: theMonth.getFullYear (),"></outline>
+					<outline text="chatLog: nameChatLog"></outline>
+					<outline created="Sat, 09 Aug 2014 15:42:23 GMT" pgfnum="43202" text="}"></outline>
+					</outline>
+				<outline created="Sat, 09 Aug 2014 16:02:57 GMT" pgfnum="43215" text="var url = twGetDefaultServer () + &quot;getmonthchatmessages?&quot; + twBuildParamList (paramtable);"></outline>
+				<outline text="$.ajax ({">
+					<outline text="type: &quot;GET&quot;,"></outline>
+					<outline text="url: url,"></outline>
+					<outline text="success: function (data) {">
+						<outline text="if (callback != undefined) {">
+							<outline text="callback (undefined, data);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="},"></outline>
+						</outline>
+					<outline text="error: function (status, something, otherthing) { ">
+						<outline created="Wed, 12 Jun 2013 13:14:10 GMT" pgfnum="25848" text="console.log (&quot;twGetMonthChatMessages: error == &quot; + JSON.stringify (status, undefined, 4));"></outline>
+						<outline text="if (callback != undefined) {">
+							<outline text="var err = {">
+								<outline text="code: status.status,"></outline>
+								<outline text="message: JSON.parse (status.responseText).message"></outline>
+								<outline text="};"></outline>
+								</outline>
+							<outline text="callback (err, undefined);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="},"></outline>
+						</outline>
+					<outline text="dataType: &quot;json&quot;"></outline>
+					<outline text="});"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text=""></outline>
+			<outline text=""></outline>
 			<outline text="function twChatLike (id, nameChatLog, callback) { //9/27/15 by DW">
 				<outline created="Sat, 09 Aug 2014 15:42:15 GMT" pgfnum="43199" text="var paramtable = {">
 					<outline created="Sat, 09 Aug 2014 15:42:28 GMT" pgfnum="43203" text="oauth_token: localStorage.twOauthToken,"></outline>
