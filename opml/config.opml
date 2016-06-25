@@ -22,6 +22,7 @@
 			<outline text="&quot;myDomain&quot;: &quot;localhost:1229&quot;,"></outline>
 			<outline text="&quot;flChatEnabled&quot;: true,"></outline>
 			<outline text="&quot;urlHomePageContent&quot;: &quot;http://1999.io/x/index.html&quot;,"></outline>
+			<outline text="&quot;url404page&quot;: &quot;http://1999.io/error.html&quot;,"></outline>
 			<outline text="&quot;where&quot;: {">
 				<outline text="&quot;flUseLocalFilesystem&quot;: true,"></outline>
 				<outline text="&quot;publicPath&quot;: &quot;publicFiles/&quot;,"></outline>

@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94v&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.94w&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -153,6 +153,7 @@
 			<outline text="};"></outline>
 			</outline>
 		<outline text="var facebookAppId = undefined; //5/2/16 by DW"></outline>
+		<outline text="var url404page = undefined; //6/25/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline created="Sun, 08 Jun 2014 14:20:26 GMT" pgfnum="42010" text=""></outline>
 		<outline created="Mon, 20 Jan 2014 17:26:34 GMT" pgfnum="36035" text="function httpReadUrl (url, callback) {">
@@ -3416,6 +3417,32 @@
 					<outline text="return (utils.jsonStringify (jstruct));"></outline>
 					<outline text="}"></outline>
 					</outline>
+				<outline text="function get404page (callback) { //6/25/16 by DW">
+					<outline text="function plainReturn () {">
+						<outline text="callback (&quot;Not found.&quot;, &quot;text/plain&quot;);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (url404page !== undefined) {">
+						<outline text="request (url404page, function (error, response, body) {">
+							<outline text="if (!error &amp;&amp; (response.statusCode == 200)) {">
+								<outline text="callback (body, &quot;text/html&quot;);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="else {">
+								<outline text="plainReturn ();"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="else {">
+						<outline text="plainReturn ();"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text=""></outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline created="Sat, 03 May 2014 21:00:18 GMT" pgfnum="40964" text="function errorResponse (error) {">
 					<outline text="httpResponse.writeHead (500, {&quot;Content-Type&quot;: &quot;text/plain&quot;, &quot;Access-Control-Allow-Origin&quot;: &quot;*&quot;});"></outline>
 					<outline text="httpResponse.end (utils.jsonStringify (error));    "></outline>
@@ -5031,6 +5058,26 @@
 																</outline>
 															<outline text="}"></outline>
 															</outline>
+														<outline text=""></outline>
+														<outline text="if (code == 500) { //6/25/16 by DW">
+															<outline text="try {">
+																<outline text="var jstruct = JSON.parse (bodytext);"></outline>
+																<outline text="if (jstruct.code == &quot;NoSuchKey&quot;) {">
+																	<outline text="get404page (function (bodytext, type) {">
+																		<outline text="doHttpReturn (404, type, bodytext);"></outline>
+																		<outline text="});"></outline>
+																		</outline>
+																	<outline text="return;"></outline>
+																	<outline text="}"></outline>
+																	</outline>
+																<outline text="}"></outline>
+																</outline>
+															<outline text="catch (err) {">
+																<outline text="}"></outline>
+																</outline>
+															<outline text="}"></outline>
+															</outline>
+														<outline text=""></outline>
 														<outline text="headers [&quot;Access-Control-Allow-Origin&quot;] = &quot;*&quot;; //5/29/16 by DW"></outline>
 														<outline text="httpResponse.writeHead (code, headers);"></outline>
 														<outline text="httpResponse.end (bodytext);"></outline>
@@ -5248,6 +5295,10 @@
 						</outline>
 					<outline text="if (config.facebookAppId !== undefined) { //5/2/16 by DW">
 						<outline text="facebookAppId = config.facebookAppId;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (config.url404page !== undefined) { //6/25/16 by DW">
+						<outline text="url404page = config.url404page;"></outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text=""></outline>

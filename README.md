@@ -58,6 +58,14 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.94w - 6/25/16 by DW
+
+New config.json value -- url404page. It points to an HTML page that's returned when a 404 error is generated. 
+
+Previously we'd return a 500 error where we should have returned 404, and the page we displayed showed the contents of a <a href="http://scripting.com/2016/06/25/randomJson.png">JSON struct</a>. Now It gives you a plain 404 "not found" message, and gives you the opportunity to override the default choice. 
+
+Here's an <a href="https://gist.github.com/scripting/11e3df5a975585b166d1b4cb8a5918a9">example</a> of a config.json that specified a 404 page. 
+
 ##### v0.93 - 4/3/16 by DW
 
 Added a call to ping the "community server" when the RSS feed updates in addition to the rssCloud server. See lib/rss.js for details.

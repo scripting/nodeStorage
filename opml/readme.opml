@@ -72,6 +72,11 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.94w - 6/25/16 by DW">
+				<outline text="New config.json value -- url404page. It points to an HTML page that's returned when a 404 error is generated. "></outline>
+				<outline text="Previously we'd return a 500 error where we should have returned 404, and the page we displayed showed the contents of a &lt;a href=&quot;http://scripting.com/2016/06/25/randomJson.png&quot;&gt;JSON struct&lt;/a&gt;. Now It gives you a plain 404 &quot;not found&quot; message, and gives you the opportunity to override the default choice. "></outline>
+				<outline text="Here's an &lt;a href=&quot;https://gist.github.com/scripting/11e3df5a975585b166d1b4cb8a5918a9&quot;&gt;example&lt;/a&gt; of a config.json that specified a 404 page. "></outline>
+				</outline>
 			<outline text="##### v0.93 - 4/3/16 by DW">
 				<outline text="Added a call to ping the &quot;community server&quot; when the RSS feed updates in addition to the rssCloud server. See lib/rss.js for details."></outline>
 				</outline>

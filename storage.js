@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94v", myProductName = "nodeStorage"; 
+var myVersion = "0.94w", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -128,6 +128,7 @@ var thePlugIns = { //5/14/16 by DW
 var theDomainMap = { //5/27/16 by DW
 	};
 var facebookAppId = undefined; //5/2/16 by DW
+var url404page = undefined; //6/25/16 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -2104,6 +2105,25 @@ function handleHttpRequest (httpRequest, httpResponse) {
 					}
 			return (utils.jsonStringify (jstruct));
 			}
+		function get404page (callback) { //6/25/16 by DW
+			function plainReturn () {
+				callback ("Not found.", "text/plain");
+				}
+			if (url404page !== undefined) {
+				request (url404page, function (error, response, body) {
+					if (!error && (response.statusCode == 200)) {
+						callback (body, "text/html");
+						}
+					else {
+						plainReturn ();
+						}
+					});
+				}
+			else {
+				plainReturn ();
+				}
+			
+			}
 		function errorResponse (error) {
 			httpResponse.writeHead (500, {"Content-Type": "text/plain", "Access-Control-Allow-Origin": "*"});
 			httpResponse.end (utils.jsonStringify (error));    
@@ -3234,6 +3254,21 @@ function handleHttpRequest (httpRequest, httpResponse) {
 															return;
 														}
 													}
+												
+												if (code == 500) { //6/25/16 by DW
+													try {
+														var jstruct = JSON.parse (bodytext);
+														if (jstruct.code == "NoSuchKey") {
+															get404page (function (bodytext, type) {
+																doHttpReturn (404, type, bodytext);
+																});
+															return;
+															}
+														}
+													catch (err) {
+														}
+													}
+												
 												headers ["Access-Control-Allow-Origin"] = "*"; //5/29/16 by DW
 												httpResponse.writeHead (code, headers);
 												httpResponse.end (bodytext);
@@ -3385,6 +3420,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.facebookAppId !== undefined) { //5/2/16 by DW
 				facebookAppId = config.facebookAppId;
+				}
+			if (config.url404page !== undefined) { //6/25/16 by DW
+				url404page = config.url404page;
 				}
 			
 			//give values to optional params -- 3/24/16 by DW
