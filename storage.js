@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94w", myProductName = "nodeStorage"; 
+var myVersion = "0.94x", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -3214,6 +3214,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 								
 								default:
 									var path = parsedUrl.pathname;
+									path = decodeURI (path); //6/28/16 by DW
 									
 									if (theDomainMap [lowerhost] !== undefined) {
 										path = theDomainMap [lowerhost] + path;
