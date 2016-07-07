@@ -46,7 +46,18 @@
 		<outline text="function stNewObject (path, data, type, acl, callback, metadata) {">
 			<outline isComment="true" text="console.log (&quot;store.newObject: path == &quot; + path);"></outline>
 			<outline text="if (stGlobals.flLocalFileSystem) {">
-				<outline text="filesystem.newObject (path, data, type, acl, callback, metadata);"></outline>
+				<outline text="if (utils.stringContains (path, &quot;./&quot;)) { //7/7/16 by DW">
+					<outline text="var err = {">
+						<outline text="message: &quot;Can't save the file because the name contains illegal characters.&quot;"></outline>
+						<outline text="};"></outline>
+						</outline>
+					<outline text="callback (err);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="filesystem.newObject (path, data, type, acl, callback, metadata);"></outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="}"></outline>
 				</outline>
 			<outline text="else {">
