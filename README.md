@@ -58,6 +58,20 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.95a - 7/17/16 by DW
+
+A problem showed up in Safari only, on a customized menu, on a site with a custom URL. 
+
+When we get the HTML of the menu from the server, it redirects from the long URL to the short one, as if we were a user coming in through a web browser.
+
+This works fine in Chrome, the $.ajax call in the browser just redirects, but not in Safari. A search turns up several Stack Exchange articles that say that Apple believes the HTML 5 spec tells them to work this way. Whatever. 
+
+So I added support for a new param on a request, noredirect, if it's true, we don't do the redirect, we just return the content of the object requested (the HTML of the menu in this case) without redirecting. 
+
+Amazingly it worked. ;-)
+
+Here's the <a href="http://lo.1999.io/2016/07/17/0008.html">page</a> that illustrated the problem, but I've seen it on other sites before, didn't have the time to chase it down.
+
 ##### v0.94w - 6/25/16 by DW
 
 New config.json value -- url404page. It points to an HTML page that's returned when a 404 error is generated. 

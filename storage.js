@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.94y", myProductName = "nodeStorage"; 
+var myVersion = "0.95a", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -3220,12 +3220,14 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										path = theDomainMap [lowerhost] + path;
 										}
 									else {
-										for (var x in theDomainMap) {
-											if (utils.beginsWith (path, theDomainMap [x])) { //aaa
-												var addport = (port == 80) ? "" : ":" + port;
-												var urlRedirect = "http://" + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);
-												returnRedirect (urlRedirect);
-												return;
+										if (!utils.getBoolean (parsedUrl.query.noredirect)) { //7/17/16 by DW, noredirect param not specified or not true
+											for (var x in theDomainMap) {
+												if (utils.beginsWith (path, theDomainMap [x])) { 
+													var addport = (port == 80) ? "" : ":" + port;
+													var urlRedirect = "http://" + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);
+													returnRedirect (urlRedirect);
+													return;
+													}
 												}
 											}
 										}
