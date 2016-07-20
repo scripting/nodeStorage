@@ -23,7 +23,7 @@
 	structured listing: http://scripting.com/listings/storage.html
 	*/
 
-var myVersion = "0.95a", myProductName = "nodeStorage"; 
+var myVersion = "0.95b", myProductName = "nodeStorage"; 
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -2180,7 +2180,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 					}
 				}
 			}
-		
 		function encode (s) {
 			return (encodeURIComponent (s));
 			}
@@ -2551,8 +2550,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											console.log ("twitter.getAccessToken: error == " + error.message);
 											}
 										else {
-											
-											var url = parsedUrl.query.redirectUrl + "?oauth_token=" + encode (accessToken) + "&oauth_token_secret=" + encode (accessTokenSecret) + "&user_id=" + encode (results.user_id) + "&screen_name=" + encode (results.screen_name);
+											var url = parsedUrl.query.redirectUrl + "?oauth_token=" + encodeURIComponent (accessToken) + "&oauth_token_secret=" + encodeURIComponent (accessTokenSecret) + "&user_id=" + encodeURIComponent (results.user_id) + "&screen_name=" + encodeURIComponent (results.screen_name);
 											
 											httpResponse.writeHead (302, {"location": url});
 											httpResponse.end ("302 REDIRECT");    

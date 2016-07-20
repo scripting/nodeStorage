@@ -37,7 +37,7 @@
 			<outline text="*/"></outline>
 			</outline>
 		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.95a&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.95b&quot;, myProductName = &quot;nodeStorage&quot;; "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -3517,7 +3517,6 @@
 						</outline>
 					<outline text="}"></outline>
 					</outline>
-				<outline text=""></outline>
 				<outline created="Mon, 21 Apr 2014 20:15:22 GMT" pgfnum="40388" text="function encode (s) {">
 					<outline created="Mon, 21 Apr 2014 20:15:26 GMT" pgfnum="40389" text="return (encodeURIComponent (s));"></outline>
 					<outline created="Mon, 21 Apr 2014 20:15:31 GMT" pgfnum="40390" text="}"></outline>
@@ -4012,19 +4011,7 @@
 													<outline created="Mon, 21 Apr 2014 15:12:29 GMT" pgfnum="40347" text="}"></outline>
 													</outline>
 												<outline created="Mon, 21 Apr 2014 15:12:16 GMT" pgfnum="40346" text="else {">
-													<outline created="Wed, 12 Feb 2014 16:07:40 GMT" isComment="true" pgfnum="37578" text="var myStatus = {">
-														<outline created="Wed, 12 Feb 2014 16:07:53 GMT" pgfnum="37579" text="oauthToken: parsedUrl.query.oauth_token, "></outline>
-														<outline created="Wed, 12 Feb 2014 16:08:01 GMT" pgfnum="37580" text="oauthVerifier: parsedUrl.query.oauth_verifier,"></outline>
-														<outline text="userRedirectUrl: parsedUrl.query.redirectUrl,"></outline>
-														<outline created="Mon, 21 Apr 2014 15:15:43 GMT" pgfnum="40349" text="userAccessToken: accessToken,"></outline>
-														<outline created="Mon, 21 Apr 2014 15:15:50 GMT" pgfnum="40350" text="userTokenSecret: accessTokenSecret,"></outline>
-														<outline created="Mon, 21 Apr 2014 15:16:10 GMT" pgfnum="40351" text="userResults: results"></outline>
-														<outline created="Wed, 12 Feb 2014 16:08:19 GMT" pgfnum="37584" text="};"></outline>
-														</outline>
-													<outline isComment="true" text="httpResponse.writeHead (200, {&quot;Content-Type&quot;: &quot;text/plain&quot;});"></outline>
-													<outline isComment="true" text="httpResponse.end (utils.jsonStringify (myStatus));    "></outline>
-													<outline created="Mon, 21 Apr 2014 20:11:25 GMT" pgfnum="40382" text=""></outline>
-													<outline created="Mon, 21 Apr 2014 20:11:35 GMT" pgfnum="40386" text="var url = parsedUrl.query.redirectUrl + &quot;?oauth_token=&quot; + encode (accessToken) + &quot;&amp;oauth_token_secret=&quot; + encode (accessTokenSecret) + &quot;&amp;user_id=&quot; + encode (results.user_id) + &quot;&amp;screen_name=&quot; + encode (results.screen_name);"></outline>
+													<outline created="Mon, 21 Apr 2014 20:11:35 GMT" pgfnum="40386" text="var url = parsedUrl.query.redirectUrl + &quot;?oauth_token=&quot; + encodeURIComponent (accessToken) + &quot;&amp;oauth_token_secret=&quot; + encodeURIComponent (accessTokenSecret) + &quot;&amp;user_id=&quot; + encodeURIComponent (results.user_id) + &quot;&amp;screen_name=&quot; + encodeURIComponent (results.screen_name);"></outline>
 													<outline created="Mon, 21 Apr 2014 20:13:19 GMT" pgfnum="40387" text=""></outline>
 													<outline text="httpResponse.writeHead (302, {&quot;location&quot;: url});"></outline>
 													<outline text="httpResponse.end (&quot;302 REDIRECT&quot;);    "></outline>

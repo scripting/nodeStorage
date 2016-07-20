@@ -58,6 +58,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.95b - 7/20/16 by DW
+
+Replaced calls to "encode" in encodeURIComponent with handleHttpRequest. This helped resolve an <a href="https://github.com/scripting/nodeStorage/issues/4">issue</a> Don Park was having on his system. 
+
 ##### v0.95a - 7/17/16 by DW
 
 A problem showed up in Safari only, on a customized menu, on a site with a custom URL. 

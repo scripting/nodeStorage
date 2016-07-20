@@ -72,6 +72,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.95b - 7/20/16 by DW">
+				<outline text="Replaced calls to &quot;encode&quot; in encodeURIComponent with handleHttpRequest. This helped resolve an &lt;a href=&quot;https://github.com/scripting/nodeStorage/issues/4&quot;&gt;issue&lt;/a&gt; Don Park was having on his system. "></outline>
+				</outline>
 			<outline text="##### v0.95a - 7/17/16 by DW">
 				<outline text="A problem showed up in Safari only, on a customized menu, on a site with a custom URL. "></outline>
 				<outline text="When we get the HTML of the menu from the server, it redirects from the long URL to the short one, as if we were a user coming in through a web browser."></outline>
