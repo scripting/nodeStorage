@@ -276,8 +276,9 @@ function twTweet (status, inReplyToId, callback) {
 		error: function (status) { 
 			var twitterResponse = JSON.parse (status.responseText);
 			var innerResponse = JSON.parse (twitterResponse.data);
-			console.log ("twTweet: error reported by twitter == " + JSON.stringify (innerResponse.error, undefined, 4));
-			alert ("Twitter reported an error: \"" + innerResponse.error + "\"");
+			var theError = innerResponse.errors [0].message; //8/2/16 by DW
+			console.log ("twTweet: error reported by twitter == " + theError);
+			alert ("Twitter reported an error: \"" + theError + "\"");
 			
 			},
 		dataType: "json"

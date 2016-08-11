@@ -398,8 +398,9 @@
 				<outline text="error: function (status) { ">
 					<outline created="Tue, 02 Sep 2014 20:21:32 GMT" pgfnum="43236" text="var twitterResponse = JSON.parse (status.responseText);"></outline>
 					<outline created="Tue, 02 Sep 2014 20:32:21 GMT" pgfnum="43237" text="var innerResponse = JSON.parse (twitterResponse.data);"></outline>
-					<outline text="console.log (&quot;twTweet: error reported by twitter == &quot; + JSON.stringify (innerResponse.error, undefined, 4));"></outline>
-					<outline text="alert (&quot;Twitter reported an error: \&quot;&quot; + innerResponse.error + &quot;\&quot;&quot;);"></outline>
+					<outline text="var theError = innerResponse.errors [0].message; //8/2/16 by DW"></outline>
+					<outline text="console.log (&quot;twTweet: error reported by twitter == &quot; + theError);"></outline>
+					<outline text="alert (&quot;Twitter reported an error: \&quot;&quot; + theError + &quot;\&quot;&quot;);"></outline>
 					<outline text=""></outline>
 					<outline isComment="true" text="old code -- pre-December 2014">
 						<outline created="Sat, 01 Jun 2013 14:45:29 GMT" isComment="true" pgfnum="24939" text="console.log (&quot;twTweet: error, twitter response == &quot; + JSON.stringify (innerResponse.errors [0], undefined, 4));"></outline>

@@ -32,7 +32,8 @@
 			<outline text="&quot;homePage&quot;: {">
 				<outline created="Sun, 06 Jan 2013 15:39:06 GMT" pgfnum="16734" text="&quot;productname&quot;: &quot;bloatWare&quot;,"></outline>
 				<outline text="&quot;productnameForDisplay&quot;: &quot;BloatWare&quot;,"></outline>
-				<outline text="&quot;urlPageTemplate&quot;: &quot;/template.html&quot;"></outline>
+				<outline text="&quot;urlPageTemplate&quot;: &quot;/template.html&quot;,"></outline>
+				<outline text="&quot;googleAnalyticsAccount&quot;: &quot;UA-39531990-1&quot;"></outline>
 				<outline text="},"></outline>
 				</outline>
 			<outline text="&quot;updates&quot;: {">

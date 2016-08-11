@@ -20,13 +20,15 @@ A simple server-side JavaScript storage system using Twitter identity, running i
 
 #### How to set up
 
-Here's <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up a NodeStorage server on Ubuntu, but probably works on many other Unix systems. It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
+Here's <a href="http://nodestorage.smallpict.com/2015/08/05/installingNodestorageOnUbuntu.html">quick guide</a> to setting up a nodeStorage server on Ubuntu, but probably works on many other Unix systems. It doesn't assume you have Node.js installed or a Git client. It shows you how to set up a connection with Twitter. It stores user data, both public and private, in the filesystem of the Ubuntu machine. 
 
 It's a good guide for installing on any Unix system, but has been tested on Ubuntu.
 
 #### Links
 
-1. I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of NodeStorage, what it can be used for and where it's likely to go as it evolves.
+1. I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
+
+2. 1999.io, my new blogging system, is a nodeStorage app and it has streamlined <a href="https://github.com/scripting/1999-project/blob/master/docs/setup.md">setup instructions</a>. 
 
 2. A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> provides another perspective.
 
@@ -48,7 +50,7 @@ It's a good guide for installing on any Unix system, but has been tested on Ubun
 
 2. It's fully <a href="https://github.com/scripting/myWordEditor">open source</a>, MIT License. 
 
-3. The back-end is NodeStorage. 
+3. The back-end is nodeStorage. 
 
 #### API
 
