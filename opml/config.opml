@@ -23,6 +23,12 @@
 			<outline text="&quot;flChatEnabled&quot;: true,"></outline>
 			<outline text="&quot;urlHomePageContent&quot;: &quot;http://1999.io/x/index.html&quot;,"></outline>
 			<outline text="&quot;url404page&quot;: &quot;http://1999.io/error.html&quot;,"></outline>
+			<outline isComment="true" text="&quot;where&quot;: {">
+				<outline text="&quot;flUseLocalFilesystem&quot;: false,"></outline>
+				<outline text="&quot;publicPath&quot;: &quot;bloatware.org/localhost/publicFiles/&quot;,"></outline>
+				<outline text="&quot;privatePath&quot;: &quot;smallpictusers/localhost/privateFiles/&quot;"></outline>
+				<outline text="},"></outline>
+				</outline>
 			<outline text="&quot;where&quot;: {">
 				<outline text="&quot;flUseLocalFilesystem&quot;: true,"></outline>
 				<outline text="&quot;publicPath&quot;: &quot;publicFiles/&quot;,"></outline>
@@ -41,6 +47,11 @@
 				<outline text="},"></outline>
 				</outline>
 			<outline text="&quot;editors&quot;: {">
+				<outline text="&quot;html&quot;: {">
+					<outline text="&quot;name&quot;: &quot;HTML source edit&quot;,"></outline>
+					<outline text="&quot;url&quot;: &quot;http://1999.io/editors/htmleditor.html&quot;"></outline>
+					<outline text="},"></outline>
+					</outline>
 				<outline text="&quot;text&quot;: {">
 					<outline text="&quot;name&quot;: &quot;Text&quot;,"></outline>
 					<outline text="&quot;url&quot;: &quot;http://1999.io/testing/textedit.html&quot;"></outline>

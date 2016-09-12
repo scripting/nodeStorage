@@ -2,7 +2,7 @@
 
 
 
-A simple server-side JavaScript storage system using Twitter identity, running in Node.js.
+A simple server-side JavaScript storage system using Twitter identity, running in Node.js. 
 
 
 
