@@ -1,4 +1,4 @@
-<?xml encoding="ISO-8859-1" version="1.0"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
 <opml version="2.0">
 	<head>
 		<title>api.js</title>
@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="api.js">
-		<outline text="/* The MIT License (MIT)">
+		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
 			<outline text="Copyright (c) 2014-2016 Dave Winer"></outline>
 			<outline text=""></outline>
@@ -361,6 +361,9 @@
 			</outline>
 		<outline created="Mon, 10 Jun 2013 18:07:32 GMT" pgfnum="25622" text="function twTweet (status, inReplyToId, callback) {">
 			<outline created="Thu, 05 Jun 2014 13:55:32 GMT" isComment="true" pgfnum="41784" text="Changes">
+				<outline text="8/2/16; 3:38:54 PM by DW">
+					<outline text="The error message format seems to have changed (again?) -- changed the code accordingly."></outline>
+					</outline>
 				<outline text="12/16/14; 2:50:13 PM by DW">
 					<outline text="It looks like the format of the struct returned by Twitter on error has changed. Now instead of an array, they return a struct? Not sure. But this effects how we call the callback on error, and the way we did it might break some? I looked at Radio3 and LCE, and they don't call this routine directly. (We don't call the callback on errors now, and we put up an alert dialog.)"></outline>
 					</outline>

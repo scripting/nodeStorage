@@ -1,5 +1,5 @@
 { 
-	"name": "nodestorage",
+	"name": "nodestorage", 
 	"description": "A simple storage system based on Twitter identity.",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"version": "0.94.0",

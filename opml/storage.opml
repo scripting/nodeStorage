@@ -1,4 +1,4 @@
-<?xml encoding="ISO-8859-1" version="1.0"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
 <opml version="2.0">
 	<head>
 		<title>storage.js</title>
@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline text="/* The MIT License (MIT)">
+		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
 			<outline text="Copyright (c) 2014-2016 Dave Winer"></outline>
 			<outline text=""></outline>
