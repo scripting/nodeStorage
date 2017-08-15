@@ -60,6 +60,16 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.4 - 8/15/17 by DW
+
+Changed to NPM-friendly version numbering. 
+
+Added a new routine to api.js, nodeStorageApp. It factors out some of the complexity of writing a nodeStorage-able app, based on what we know now, vs what we knew then. ;-)
+
+The demo app for the new interface is MacWrite. 
+
+All the previous api.js routines work as before, no changes.
+
 ##### v0.95b - 7/20/16 by DW
 
 Replaced calls to "encode" in encodeURIComponent with handleHttpRequest. This helped resolve an <a href="https://github.com/scripting/nodeStorage/issues/4">issue</a> Don Park was having on his system. 

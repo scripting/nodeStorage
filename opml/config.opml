@@ -32,6 +32,7 @@
 			<outline text="&quot;where&quot;: {">
 				<outline text="&quot;flUseLocalFilesystem&quot;: true,"></outline>
 				<outline text="&quot;publicPath&quot;: &quot;publicFiles/&quot;,"></outline>
+				<outline isComment="true" text="&quot;publicPath&quot;: &quot;/Volumes/Broadway/1999ServerTest/&quot;,"></outline>
 				<outline text="&quot;privatePath&quot;: &quot;privateFiles/&quot;"></outline>
 				<outline text="},"></outline>
 				</outline>

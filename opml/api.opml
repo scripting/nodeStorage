@@ -50,7 +50,8 @@
 			<outline text="twitterConfig: undefined,"></outline>
 			<outline text="pathAppPrefs: &quot;appPrefs.json&quot;,"></outline>
 			<outline text="flPrefsCalendarBackup: false, //4/24/15 by DW -- if true, we keep a calendar-based archive of prefs"></outline>
-			<outline text="pendingPolls: new Object () //8/30/15 by DW"></outline>
+			<outline text="pendingPolls: new Object (), //8/30/15 by DW"></outline>
+			<outline text="embedModifyCallback: undefined //3/30/17 by DW"></outline>
 			<outline text="}"></outline>
 			</outline>
 		<outline text=""></outline>
@@ -71,6 +72,11 @@
 			</outline>
 		<outline created="Tue, 16 Apr 2013 22:17:00 GMT" pgfnum="22778" text="function twGetOauthParams (flRedirectIfParamsPresent) {">
 			<outline created="Thu, 24 Apr 2014 01:03:08 GMT" isComment="true" pgfnum="40520" text="Changes">
+				<outline text="7/19/17; 6:40:17 PM by DW">
+					<outline text="Use window.location.replace to redirecdt, per this Stack Overflow post.">
+						<outline text="https://stackoverflow.com/a/506004/459452"></outline>
+						</outline>
+					</outline>
 				<outline created="Wed, 04 Jun 2014 12:08:46 GMT" pgfnum="41773" text="6/4/14; 8:08:46 AM by DW">
 					<outline created="Wed, 04 Jun 2014 12:08:47 GMT" pgfnum="41774" text="Return flTwitterParamsPresent to the caller."></outline>
 					</outline>
@@ -106,7 +112,8 @@
 			<outline created="Tue, 29 Apr 2014 16:09:03 GMT" pgfnum="40644" text=""></outline>
 			<outline created="Tue, 29 Apr 2014 16:03:36 GMT" pgfnum="40636" text="//redirect if there are params on the url that invoked us -- 4/29/14 by DW">
 				<outline created="Tue, 11 Jun 2013 23:26:25 GMT" pgfnum="25798" text="if (flTwitterParamsPresent &amp;&amp; flRedirectIfParamsPresent) {">
-					<outline created="Tue, 11 Jun 2013 23:26:50 GMT" pgfnum="25800" text="window.location.href = window.location.href.substr (0, window.location.href.search (&quot;\\?&quot;));"></outline>
+					<outline text="window.location.replace (window.location.href.substr (0, window.location.href.search (&quot;\\?&quot;))); //7/19/17 by DW"></outline>
+					<outline created="Tue, 11 Jun 2013 23:26:50 GMT" isComment="true" pgfnum="25800" text="window.location.href = window.location.href.substr (0, window.location.href.search (&quot;\\?&quot;));"></outline>
 					<outline created="Fri, 14 Jun 2013 15:22:33 GMT" pgfnum="26170" text="return;"></outline>
 					<outline created="Tue, 11 Jun 2013 23:26:43 GMT" pgfnum="25799" text="}"></outline>
 					</outline>
@@ -574,9 +581,15 @@
 			</outline>
 		<outline created="Thu, 17 Jul 2014 11:29:33 GMT" pgfnum="43018" text="function twViewTweet (idTweet, idDiv, callback) { //7/18/14 by DW">
 			<outline created="Fri, 20 Jun 2014 23:26:36 GMT" isComment="true" pgfnum="42353" text="Changes">
+				<outline text="3/30/17; 9:42:33 AM by DW">
+					<outline text="Implement a callback that allows the app to modify the returned value from Twitter. We need to be able to do this in Electric River, where Twitter returns html text that includes the following">
+						<outline text="script async src=\&quot;//platform.twitter.com/widgets.js\&quot;"></outline>
+						</outline>
+					<outline text="The problem is that the protocol is not specified, and ER is a file:// page. So the request to Twitter fails. The callback allows ER to modify it. "></outline>
+					</outline>
 				<outline created="Fri, 20 Jun 2014 23:26:41 GMT" pgfnum="42356" text="6/20/14; 7:26:42 PM by DW">
 					<outline created="Fri, 20 Jun 2014 23:26:43 GMT" pgfnum="42357" text="For param definitions see this Twitter doc.">
-						<outline text="https://dev.twitter.com/docs/api/1/get/statuses/oembed"></outline>
+						<outline text="https://dev.twitter.com/rest/reference/get/statuses/oembed"></outline>
 						</outline>
 					</outline>
 				</outline>
@@ -628,6 +641,10 @@
 					</outline>
 				<outline text="else {">
 					<outline created="Fri, 20 Jun 2014 18:30:17 GMT" pgfnum="42312" text="twGetEmbedCode (idTweet, function (struct) {">
+						<outline text="if (twStorageData.embedModifyCallback !== undefined) { //3/30/17 by DW">
+							<outline text="twStorageData.embedModifyCallback (struct);"></outline>
+							<outline text="}"></outline>
+							</outline>
 						<outline text="$(idViewer).css (&quot;visibility&quot;, &quot;hidden&quot;);"></outline>
 						<outline created="Wed, 03 Apr 2013 16:41:18 GMT" pgfnum="1226" text="$(idViewer).html (struct.html);"></outline>
 						<outline text=""></outline>
@@ -1623,6 +1640,90 @@
 				<outline text="});"></outline>
 				</outline>
 			<outline text="}"></outline>
+			</outline>
+		<outline text="function nodeStorageApp (consts, prefs) { //8/15/17 by DW">
+			<outline text="var myConsts = consts, myPrefs = prefs;"></outline>
+			<outline text="var flPrefsChanged = false;"></outline>
+			<outline text="var me = this;"></outline>
+			<outline text=""></outline>
+			<outline text="function everySecond () {">
+				<outline text="var now = clockNow ();"></outline>
+				<outline created="Thu, 13 Jun 2013 23:08:07 GMT" pgfnum="26123" text="twUpdateTwitterMenuItem (&quot;idTwitterConnectMenuItem&quot;);"></outline>
+				<outline text="twUpdateTwitterUsername (&quot;idTwitterUsername&quot;);"></outline>
+				<outline text="if (flPrefsChanged) {">
+					<outline text="twPrefsToStorage (myPrefs);"></outline>
+					<outline text="flPrefsChanged = false;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="if (me.everySecond !== undefined) { //user has installed a callback">
+					<outline text="me.everySecond ();"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text=""></outline>
+			<outline text="this.flStartupFail = false;"></outline>
+			<outline text=""></outline>
+			<outline text="this.prefsChanged = function () {">
+				<outline text="flPrefsChanged = true;"></outline>
+				<outline text="};"></outline>
+				</outline>
+			<outline text="this.start = function (callback) {">
+				<outline text="function docallback (flConnected) {">
+					<outline text="if (callback !== undefined) {">
+						<outline text="callback (flConnected);"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="twStorageData.urlTwitterServer = myConsts.urlTwitterServer;"></outline>
+				<outline text="if (localStorage.urlTwitterServer !== undefined) { ">
+					<outline text="twStorageData.urlTwitterServer = localStorage.urlTwitterServer;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="if (myConsts.pathAppPrefs !== undefined) {">
+					<outline text="twStorageData.pathAppPrefs = myConsts.pathAppPrefs;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text=""></outline>
+				<outline text="if (twGetOauthParams ()) { //redirects if OAuth params are present, returns true">
+					<outline text="console.log (&quot;nodeStorageApp.start: redirecting after processing OAuth params.&quot;);"></outline>
+					<outline text="docallback (false);"></outline>
+					<outline text="return;"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text=""></outline>
+				<outline text="if (twIsTwitterConnected ()) {">
+					<outline text="twStorageStartup (myPrefs, function (flGoodStart) {">
+						<outline text="this.flStartupFail = !flGoodStart;"></outline>
+						<outline text="if (flGoodStart) {">
+							<outline text="console.log (&quot;nodeStorageApp: myPrefs == &quot; + jsonStringify (myPrefs));"></outline>
+							<outline text="twGetTwitterConfig (function () { //twStorageData.twitterConfig will have information from twitter.com">
+								<outline text="twGetUserInfo (twGetScreenName (), function (userInfo) {">
+									<outline text="me.userInfo = userInfo;"></outline>
+									<outline text="docallback (true);"></outline>
+									<outline text="self.setInterval (everySecond, 1000); "></outline>
+									<outline text="});"></outline>
+									</outline>
+								<outline text="});"></outline>
+								</outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="else {">
+							<outline text="docallback (false);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="});"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="docallback (false);"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
+			<outline text="};"></outline>
 			</outline>
 		</body>
 	</opml>

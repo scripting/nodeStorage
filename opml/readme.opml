@@ -73,6 +73,12 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.9.4 - 8/15/17 by DW">
+				<outline text="Changed to NPM-friendly version numbering. "></outline>
+				<outline text="Added a new routine to api.js, nodeStorageApp. It factors out some of the complexity of writing a nodeStorage-able app, based on what we know now, vs what we knew then. ;-)"></outline>
+				<outline text="The demo app for the new interface is MacWrite. "></outline>
+				<outline text="All the previous api.js routines work as before, no changes."></outline>
+				</outline>
 			<outline text="##### v0.95b - 7/20/16 by DW">
 				<outline text="Replaced calls to &quot;encode&quot; in encodeURIComponent with handleHttpRequest. This helped resolve an &lt;a href=&quot;https://github.com/scripting/nodeStorage/issues/4&quot;&gt;issue&lt;/a&gt; Don Park was having on his system. "></outline>
 				</outline>

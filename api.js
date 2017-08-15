@@ -35,7 +35,8 @@ var twStorageData = {
 	twitterConfig: undefined,
 	pathAppPrefs: "appPrefs.json",
 	flPrefsCalendarBackup: false, //4/24/15 by DW -- if true, we keep a calendar-based archive of prefs
-	pendingPolls: new Object () //8/30/15 by DW
+	pendingPolls: new Object (), //8/30/15 by DW
+	embedModifyCallback: undefined //3/30/17 by DW
 	}
 
 function twGetDefaultServer () { 
@@ -71,7 +72,7 @@ function twGetOauthParams (flRedirectIfParamsPresent) {
 	
 	//redirect if there are params on the url that invoked us -- 4/29/14 by DW
 		if (flTwitterParamsPresent && flRedirectIfParamsPresent) {
-			window.location.href = window.location.href.substr (0, window.location.href.search ("\\?"));
+			window.location.replace (window.location.href.substr (0, window.location.href.search ("\\?"))); //7/19/17 by DW
 			return;
 			}
 	
@@ -416,6 +417,9 @@ function twViewTweet (idTweet, idDiv, callback) { //7/18/14 by DW
 			}
 		else {
 			twGetEmbedCode (idTweet, function (struct) {
+				if (twStorageData.embedModifyCallback !== undefined) { //3/30/17 by DW
+					twStorageData.embedModifyCallback (struct);
+					}
 				$(idViewer).css ("visibility", "hidden");
 				$(idViewer).html (struct.html);
 				
@@ -1126,3 +1130,69 @@ function twReadHttpWithProxy (urlToRead, callback) { //5/9/16 by DW
 			}
 		});
 	}
+function nodeStorageApp (consts, prefs) { //8/15/17 by DW
+	var myConsts = consts, myPrefs = prefs;
+	var flPrefsChanged = false;
+	var me = this;
+	
+	function everySecond () {
+		var now = clockNow ();
+		twUpdateTwitterMenuItem ("idTwitterConnectMenuItem");
+		twUpdateTwitterUsername ("idTwitterUsername");
+		if (flPrefsChanged) {
+			twPrefsToStorage (myPrefs);
+			flPrefsChanged = false;
+			}
+		if (me.everySecond !== undefined) { //user has installed a callback
+			me.everySecond ();
+			}
+		}
+	
+	this.flStartupFail = false;
+	
+	this.prefsChanged = function () {
+		flPrefsChanged = true;
+		};
+	this.start = function (callback) {
+		function docallback (flConnected) {
+			if (callback !== undefined) {
+				callback (flConnected);
+				}
+			}
+		twStorageData.urlTwitterServer = myConsts.urlTwitterServer;
+		if (localStorage.urlTwitterServer !== undefined) { 
+			twStorageData.urlTwitterServer = localStorage.urlTwitterServer;
+			}
+		if (myConsts.pathAppPrefs !== undefined) {
+			twStorageData.pathAppPrefs = myConsts.pathAppPrefs;
+			}
+		
+		if (twGetOauthParams ()) { //redirects if OAuth params are present, returns true
+			console.log ("nodeStorageApp.start: redirecting after processing OAuth params.");
+			docallback (false);
+			return;
+			}
+		
+		if (twIsTwitterConnected ()) {
+			twStorageStartup (myPrefs, function (flGoodStart) {
+				this.flStartupFail = !flGoodStart;
+				if (flGoodStart) {
+					console.log ("nodeStorageApp: myPrefs == " + jsonStringify (myPrefs));
+					twGetTwitterConfig (function () { //twStorageData.twitterConfig will have information from twitter.com
+						twGetUserInfo (twGetScreenName (), function (userInfo) {
+							me.userInfo = userInfo;
+							docallback (true);
+							self.setInterval (everySecond, 1000); 
+							});
+						});
+					}
+				else {
+					docallback (false);
+					}
+				});
+			}
+		else {
+			docallback (false);
+			}
+		}
+	};
