@@ -66,7 +66,7 @@ Changed to NPM-friendly version numbering.
 
 Added a new routine to api.js, nodeStorageApp. It factors out some of the complexity of writing a nodeStorage-able app, based on what we know now, vs what we knew then. ;-)
 
-The demo app for the new interface is MacWrite. 
+The demo app for the new interface is <a href="https://github.com/scripting/macwrite">MacWrite</a>. 
 
 All the previous api.js routines work as before, no changes.
 

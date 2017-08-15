@@ -76,7 +76,7 @@
 			<outline text="##### v0.9.4 - 8/15/17 by DW">
 				<outline text="Changed to NPM-friendly version numbering. "></outline>
 				<outline text="Added a new routine to api.js, nodeStorageApp. It factors out some of the complexity of writing a nodeStorage-able app, based on what we know now, vs what we knew then. ;-)"></outline>
-				<outline text="The demo app for the new interface is MacWrite. "></outline>
+				<outline text="The demo app for the new interface is &lt;a href=&quot;https://github.com/scripting/macwrite&quot;&gt;MacWrite&lt;/a&gt;. "></outline>
 				<outline text="All the previous api.js routines work as before, no changes."></outline>
 				</outline>
 			<outline text="##### v0.95b - 7/20/16 by DW">
