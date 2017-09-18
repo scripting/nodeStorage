@@ -27,6 +27,7 @@
 			<outline text="It's a good guide for installing on any Unix system, but has been tested on Ubuntu."></outline>
 			</outline>
 		<outline text="#### Links">
+			<outline text="0. There are a lot of &lt;a href=&quot;https://github.com/scripting/1999-project/tree/master/docs&quot;&gt;docs&lt;/a&gt; about nodeStorage on the 1999-project site. "></outline>
 			<outline text="1. I wrote a &lt;a href=&quot;http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html&quot;&gt;backgrounder&lt;/a&gt; that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves."></outline>
 			<outline text="2. 1999.io, my new blogging system, is a nodeStorage app and it has streamlined &lt;a href=&quot;https://github.com/scripting/1999-project/blob/master/docs/setup.md&quot;&gt;setup instructions&lt;/a&gt;. "></outline>
 			<outline text="2. A &lt;a href=&quot;http://scripting.com/2015/01/23/nodestorageNow.html&quot;&gt;blog post&lt;/a&gt; provides another perspective."></outline>
