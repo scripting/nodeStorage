@@ -26,19 +26,19 @@ It's a good guide for installing on any Unix system, but has been tested on Ubun
 
 #### Links
 
-0. There are a lot of <a href="https://github.com/scripting/1999-project/tree/master/docs">docs</a> about nodeStorage on the 1999-project site. 
+1. There are a lot of <a href="https://github.com/scripting/1999-project/tree/master/docs">docs</a> about nodeStorage on the 1999-project site. 
 
-1. I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
+2. I wrote a <a href="http://nodestorage.smallpict.com/2015/01/19/whatIsNodestorage.html">backgrounder</a> that explains the philosophy of nodeStorage, what it can be used for and where it's likely to go as it evolves.
 
-2. 1999.io, my new blogging system, is a nodeStorage app and it has streamlined <a href="https://github.com/scripting/1999-project/blob/master/docs/setup.md">setup instructions</a>. 
+3. 1999.io, my new blogging system, is a nodeStorage app and it has streamlined <a href="https://github.com/scripting/1999-project/blob/master/docs/setup.md">setup instructions</a>. 
 
-2. A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> provides another perspective.
+4. A <a href="http://scripting.com/2015/01/23/nodestorageNow.html">blog post</a> provides another perspective.
 
-3. Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">guide</a> to setting up a new nodeStorage server. 
+5. Andrew Shell wrote a <a href="https://github.com/scripting/storage/wiki/Installing-Storage-on-a-VPS">guide</a> to setting up a new nodeStorage server. 
 
-4. Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
+6. Marco Fabbri wrote a <a href="https://github.com/scripting/nodeStorage/wiki/Installing-nodeStorage-on-Heroku">howto</a> for Heroku server setup. 
 
-5. <a href="http://nodestorage.smallpict.com/2015/08/07/whyUseTwitterForIdentity.html">Why use Twitter for identity?</a>
+7. <a href="http://nodestorage.smallpict.com/2015/08/07/whyUseTwitterForIdentity.html">Why use Twitter for identity?</a>
 
 #### Demo app #1
 
