@@ -1,3 +1,5 @@
+var myVersion = "0.9.5", myProductName = "nodeStorage";  
+
 /* The MIT License (MIT) 
 	
 	Copyright (c) 2014-2016 Dave Winer
@@ -22,8 +24,6 @@
 	
 	structured listing: http://scripting.com/listings/storage.html
 	*/
-
-var myVersion = "0.9.4", myProductName = "nodeStorage";  
 
 var http = require ("http"); 
 var urlpack = require ("url");
@@ -129,6 +129,7 @@ var theDomainMap = { //5/27/16 by DW
 	};
 var facebookAppId = undefined; //5/2/16 by DW
 var url404page = undefined; //6/25/16 by DW
+var flUsePortInRedirect = true; //2/27/18 by DW
 
 
 function httpReadUrl (url, callback) {
@@ -3221,7 +3222,10 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										if (!utils.getBoolean (parsedUrl.query.noredirect)) { //7/17/16 by DW, noredirect param not specified or not true
 											for (var x in theDomainMap) {
 												if (utils.beginsWith (path, theDomainMap [x])) { 
-													var addport = (port == 80) ? "" : ":" + port;
+													var addport = "";
+													if (flUsePortInRedirect && (port != 80)) { //2/27/18 by DW
+														addport = ":" + port;
+														}
 													var urlRedirect = "http://" + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);
 													returnRedirect (urlRedirect);
 													return;
@@ -3424,6 +3428,9 @@ function loadConfig (callback) { //5/8/15 by DW
 				}
 			if (config.url404page !== undefined) { //6/25/16 by DW
 				url404page = config.url404page;
+				}
+			if (config.flUsePortInRedirect !== undefined) { //2/27/18 by DW
+				flUsePortInRedirect = config.flUsePortInRedirect;
 				}
 			
 			//give values to optional params -- 3/24/16 by DW

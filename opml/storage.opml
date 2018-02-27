@@ -11,6 +11,8 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.5&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
 			<outline text="Copyright (c) 2014-2016 Dave Winer"></outline>
@@ -36,8 +38,6 @@
 			<outline text="structured listing: http://scripting.com/listings/storage.html"></outline>
 			<outline text="*/"></outline>
 			</outline>
-		<outline text=""></outline>
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.4&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline created="Tue, 15 Apr 2014 20:31:53 GMT" pgfnum="40037" text=""></outline>
 		<outline created="Thu, 26 Dec 2013 23:02:58 GMT" pgfnum="34549" text="var http = require (&quot;http&quot;); "></outline>
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
@@ -154,6 +154,7 @@
 			</outline>
 		<outline text="var facebookAppId = undefined; //5/2/16 by DW"></outline>
 		<outline text="var url404page = undefined; //6/25/16 by DW"></outline>
+		<outline text="var flUsePortInRedirect = true; //2/27/18 by DW"></outline>
 		<outline text=""></outline>
 		<outline created="Sun, 08 Jun 2014 14:20:26 GMT" pgfnum="42010" text=""></outline>
 		<outline created="Mon, 20 Jan 2014 17:26:34 GMT" pgfnum="36035" text="function httpReadUrl (url, callback) {">
@@ -5002,7 +5003,12 @@
 												<outline text="if (!utils.getBoolean (parsedUrl.query.noredirect)) { //7/17/16 by DW, noredirect param not specified or not true">
 													<outline text="for (var x in theDomainMap) {">
 														<outline text="if (utils.beginsWith (path, theDomainMap [x])) { ">
-															<outline text="var addport = (port == 80) ? &quot;&quot; : &quot;:&quot; + port;"></outline>
+															<outline isComment="true" text="var addport = (port == 80) ? &quot;&quot; : &quot;:&quot; + port;"></outline>
+															<outline text="var addport = &quot;&quot;;"></outline>
+															<outline text="if (flUsePortInRedirect &amp;&amp; (port != 80)) { //2/27/18 by DW">
+																<outline text="addport = &quot;:&quot; + port;"></outline>
+																<outline text="}"></outline>
+																</outline>
 															<outline text="var urlRedirect = &quot;http://&quot; + x + addport + utils.stringDelete (path, 1, theDomainMap [x].length);"></outline>
 															<outline text="returnRedirect (urlRedirect);"></outline>
 															<outline text="return;"></outline>
@@ -5289,6 +5295,10 @@
 						</outline>
 					<outline text="if (config.url404page !== undefined) { //6/25/16 by DW">
 						<outline text="url404page = config.url404page;"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="if (config.flUsePortInRedirect !== undefined) { //2/27/18 by DW">
+						<outline text="flUsePortInRedirect = config.flUsePortInRedirect;"></outline>
 						<outline text="}"></outline>
 						</outline>
 					<outline text=""></outline>

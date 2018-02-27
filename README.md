@@ -62,6 +62,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.5 - 2/27/18 by DW
+
+New config option -- flUsePortInRedirect. Default true. See this <a href="http://scripting.com/2018/02/27/152934.html">post</a> for an explanation. 
+
 ##### v0.9.4 - 8/15/17 by DW
 
 Changed to NPM-friendly version numbering. 
