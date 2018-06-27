@@ -16,7 +16,8 @@
 		<outline text="exports.callLikeCallbacks = callLikeCallbacks; //4/24/16 by DW"></outline>
 		<outline text=""></outline>
 		<outline text="var fs = require (&quot;fs&quot;);"></outline>
-		<outline text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
+		<outline text="var utils = require (&quot;daveutils&quot;);"></outline>
+		<outline isComment="true" text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
 		<outline text="var s3 = require (&quot;../lib/s3.js&quot;); //so callbacks can do stuff with S3"></outline>
 		<outline text="var filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
 		<outline text=""></outline>

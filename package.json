@@ -14,10 +14,10 @@
 		"aws-sdk": "*", 
 		"opmlparser": "*",
 		"node-twitter-api": "*",
-		"mime": "*",
 		"nodejs-websocket": "*",
 		"request": "*",
-		"simple-git": "*"
+		"simple-git": "*",
+		"daveutils": "*"
 		}, 
 	"license": "MIT",
 	"engines": { 

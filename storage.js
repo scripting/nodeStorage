@@ -1,4 +1,4 @@
-var myVersion = "0.9.5", myProductName = "nodeStorage";  
+var myVersion = "0.9.6", myProductName = "nodeStorage";  
 
 /* The MIT License (MIT) 
 	
@@ -34,7 +34,7 @@ var request = require ("request");
 var querystring = require ("querystring"); //8/31/15 by DW
 var s3 = require ("./lib/s3.js");
 var store = require ("./lib/store.js"); //7/28/15 by DW
-var utils = require ("./lib/utils.js");
+var utils = require ("daveutils");
 var names = require ("./lib/names.js");
 var rss = require ("./lib/rss.js");
 var callbacks = require ("./lib/callbacks.js");

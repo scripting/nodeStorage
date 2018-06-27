@@ -13,7 +13,8 @@
 	<body text="lib/names.js">
 		<outline created="Tue, 21 Jan 2014 00:09:23 GMT" pgfnum="36074" text="var urlpack = require (&quot;url&quot;);"></outline>
 		<outline text="var s3 = require (&quot;../lib/s3.js&quot;);"></outline>
-		<outline text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
+		<outline text="var utils = require (&quot;daveutils&quot;);"></outline>
+		<outline isComment="true" text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
 		<outline text="var opml = require (&quot;../lib/opml.js&quot;);"></outline>
 		<outline text=""></outline>
 		<outline text="exports.init = init;"></outline>

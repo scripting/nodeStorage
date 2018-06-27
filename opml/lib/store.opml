@@ -13,9 +13,10 @@
 	<body text="lib/store.js">
 		<outline text="var fs = require (&quot;fs&quot;);"></outline>
 		<outline text="var filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
-		<outline text="var mime = require (&quot;mime&quot;); "></outline>
+		<outline isComment="true" text="var mime = require (&quot;mime&quot;); "></outline>
 		<outline text="var s3 = require (&quot;../lib/s3.js&quot;);"></outline>
-		<outline text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
+		<outline text="var utils = require (&quot;daveutils&quot;);"></outline>
+		<outline isComment="true" text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
 		<outline text=""></outline>
 		<outline text="exports.init = init;"></outline>
 		<outline text="exports.newObject = stNewObject;"></outline>
@@ -135,8 +136,9 @@
 			<outline text="var physicalpath;"></outline>
 			<outline text="function extensionToType (path) { ">
 				<outline text="var ext = utils.stringLastField (physicalpath, &quot;.&quot;);"></outline>
-				<outline text="mime.default_type = &quot;text/plain&quot;;"></outline>
-				<outline text="return (mime.lookup (ext.toLowerCase ()));"></outline>
+				<outline text="return (utils.httpExt2MIME (ext)); //6/27/18 by DW"></outline>
+				<outline isComment="true" text="mime.default_type = &quot;text/plain&quot;;"></outline>
+				<outline isComment="true" text="return (mime.lookup (ext.toLowerCase ()));"></outline>
 				<outline text="}"></outline>
 				</outline>
 			<outline isComment="true" text="console.log (&quot;store.serveFile: virtualpath == &quot; + virtualpath);"></outline>

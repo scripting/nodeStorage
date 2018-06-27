@@ -29,10 +29,11 @@
 				<outline text="&quot;aws-sdk&quot;: &quot;*&quot;, "></outline>
 				<outline text="&quot;opmlparser&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;node-twitter-api&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;mime&quot;: &quot;*&quot;,"></outline>
+				<outline isComment="true" text="&quot;mime&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;nodejs-websocket&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;request&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;simple-git&quot;: &quot;*&quot;"></outline>
+				<outline text="&quot;simple-git&quot;: &quot;*&quot;,"></outline>
+				<outline text="&quot;daveutils&quot;: &quot;*&quot;"></outline>
 				<outline text="}, "></outline>
 				</outline>
 			<outline text="&quot;license&quot;: &quot;MIT&quot;,"></outline>

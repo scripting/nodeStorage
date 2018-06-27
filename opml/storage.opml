@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.5&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.6&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
@@ -48,7 +48,8 @@
 		<outline text="var querystring = require (&quot;querystring&quot;); //8/31/15 by DW"></outline>
 		<outline text="var s3 = require (&quot;./lib/s3.js&quot;);"></outline>
 		<outline text="var store = require (&quot;./lib/store.js&quot;); //7/28/15 by DW"></outline>
-		<outline text="var utils = require (&quot;./lib/utils.js&quot;);"></outline>
+		<outline text="var utils = require (&quot;daveutils&quot;);"></outline>
+		<outline isComment="true" text="var utils = require (&quot;./lib/utils.js&quot;);"></outline>
 		<outline text="var names = require (&quot;./lib/names.js&quot;);"></outline>
 		<outline text="var rss = require (&quot;./lib/rss.js&quot;);"></outline>
 		<outline text="var callbacks = require (&quot;./lib/callbacks.js&quot;);"></outline>
