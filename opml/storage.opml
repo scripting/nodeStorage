@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.6&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.7&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
@@ -5336,6 +5336,11 @@
 			<outline text="}"></outline>
 			</outline>
 		<outline text="function startup () {">
+			<outline isComment="true" text="Changes">
+				<outline text="9/19/19; 2:31:28 PM by DW">
+					<outline text="Allow the app that launches us to determine the port we run on by setting process.env.PORT."></outline>
+					</outline>
+				</outline>
 			<outline text="function notDefined (value, name) {">
 				<outline text="if (value === undefined) {">
 					<outline text="console.log (&quot;Can't start the server because the \&quot;&quot; + name + &quot;\&quot; parameter is not specified.&quot;);"></outline>
@@ -5346,6 +5351,8 @@
 				<outline text="}"></outline>
 				</outline>
 			<outline text="loadConfig (function () {">
+				<outline text="myPort = process.env.PORT || myPort; //9/19/19 by DW"></outline>
+				<outline text=""></outline>
 				<outline created="Mon, 03 Feb 2014 18:54:58 GMT" pgfnum="36999" text="console.log (&quot;\n&quot; + myProductName + &quot; v&quot; + myVersion + &quot; running on port &quot; + myPort + &quot;, freemem = &quot; + gigabyteString (os.freemem ()) + &quot;, urlWhitelist == &quot; + urlWhitelist + &quot;\n&quot;);"></outline>
 				<outline text=""></outline>
 				<outline text="if (notDefined (myDomain, &quot;myDomain&quot;)) {">

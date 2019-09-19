@@ -1,6 +1,6 @@
 /* The MIT License (MIT) 
 	
-	Copyright (c) 2014-2016 Dave Winer
+	Copyright (c) 2014-2019 Dave Winer 
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 	*/
 
 var twStorageConsts = {
-	fontAwesomeIcon: "<i class=\"fa fa-twitter\" style=\"color: #4099FF;\"></i>",
+	fontAwesomeIcon: "<i class=\"fab fa-twitter\" style=\"color: #4099FF;\"></i>",
 	iconColor: "#4099FF",
 	flEditChatUsePostBody: false //4/28/16 by DW
 	}
@@ -78,8 +78,26 @@ function twGetOauthParams (flRedirectIfParamsPresent) {
 	
 	return (flTwitterParamsPresent); //6/4/14 by DW
 	}
+function twSendDisconnectMessage (callback) { //3/24/19 by DW
+	var token = encodeURIComponent (localStorage.twOauthToken);
+	var secret = encodeURIComponent (localStorage.twOauthTokenSecret);
+	$.ajax ({
+		type: "GET",
+		url: twGetDefaultServer () + "disconnect" + "?oauth_token=" + token + "&oauth_token_secret=" + secret,
+		success: function (data) {
+			if (callback !== undefined) { //6/13/19 by DW
+				callback ();
+				}
+			},
+		error: function (status) { 
+			console.log ("twSendDisconnectMessage: error == " + JSON.stringify (status, undefined, 4));
+			},
+		dataType: "json"
+		});
+	}
 function twDisconnectFromTwitter () {
 	try {
+		twSendDisconnectMessage (); //3/24/19 by DW
 		localStorage.removeItem ("twOauthToken");
 		localStorage.removeItem ("twOauthTokenSecret");
 		localStorage.removeItem ("twScreenName");
@@ -269,7 +287,6 @@ function twTweet (status, inReplyToId, callback) {
 		type: "GET",
 		url: apiUrl,
 		success: function (data){
-			console.log ("twTweet: twitter response == " + JSON.stringify (data, undefined, 4)); //9/3/14 by DW
 			if (callback != undefined) { //6/5/14 by DW
 				callback (data);
 				}
@@ -1065,12 +1082,17 @@ function twStorageToPrefs (appPrefs, callback) {
 		}
 	var whenstart = new Date ();
 	twGetFile (twStorageData.pathAppPrefs, true, true, function (error, data) {
-		if (data != undefined) {
-			var storedPrefs = JSON.parse (data.filedata);
-			for (var x in storedPrefs) {
-				appPrefs [x] = storedPrefs [x];
+		if (data !== undefined) {
+			try {
+				var jstruct = JSON.parse (data.filedata);
+				for (var x in jstruct) {
+					appPrefs [x] = jstruct [x];
+					}
+				console.log ("twStorageToPrefs: downloaded " + data.filedata.length + " chars from server in " + secondsSince (whenstart) + " secs.");
 				}
-			console.log ("twStorageToPrefs: downloaded " + data.filedata.length + " chars from server in " + secondsSince (whenstart) + " secs.");
+			catch (err) {
+				console.log ("twStorageToPrefs: error parsing " + twStorageData.pathAppPrefs + " JSON == " + err.message);
+				}
 			if (callback != undefined) { //8/16/14 by DW
 				callback ();
 				}
@@ -1090,7 +1112,7 @@ function twStorageToPrefs (appPrefs, callback) {
 				}
 			}
 		});
-	}
+	7
 function twStorageStartup (appPrefs, callback) {
 	twStorageToPrefs (appPrefs, function (errorInfo) {
 		var flStartupFail = false;

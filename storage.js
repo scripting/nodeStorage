@@ -1,4 +1,4 @@
-var myVersion = "0.9.6", myProductName = "nodeStorage";  
+var myVersion = "0.9.7", myProductName = "nodeStorage";  
 
 /* The MIT License (MIT) 
 	
@@ -3464,6 +3464,8 @@ function startup () {
 		return (false);
 		}
 	loadConfig (function () {
+		myPort = process.env.PORT || myPort; //9/19/19 by DW
+		
 		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + myPort + ", freemem = " + gigabyteString (os.freemem ()) + ", urlWhitelist == " + urlWhitelist + "\n");
 		
 		if (notDefined (myDomain, "myDomain")) {

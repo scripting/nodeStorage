@@ -13,7 +13,7 @@
 	<body text="api.js">
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
-			<outline text="Copyright (c) 2014-2016 Dave Winer"></outline>
+			<outline text="Copyright (c) 2014-2019 Dave Winer "></outline>
 			<outline text=""></outline>
 			<outline text="Permission is hereby granted, free of charge, to any person obtaining a copy"></outline>
 			<outline text="of this software and associated documentation files (the &quot;Software&quot;), to deal"></outline>
@@ -38,7 +38,12 @@
 			</outline>
 		<outline text=""></outline>
 		<outline text="var twStorageConsts = {">
-			<outline text="fontAwesomeIcon: &quot;&lt;i class=\&quot;fa fa-twitter\&quot; style=\&quot;color: #4099FF;\&quot;&gt;&lt;/i&gt;&quot;,"></outline>
+			<outline isComment="true" text="Changes">
+				<outline text="4/20/19; 1:11:58 PM by DW">
+					<outline text="Changed fontAwesomeIcon's class to fab instead of fa. So much confusion about these classes, but this seems to work where we need it to work?"></outline>
+					</outline>
+				</outline>
+			<outline text="fontAwesomeIcon: &quot;&lt;i class=\&quot;fab fa-twitter\&quot; style=\&quot;color: #4099FF;\&quot;&gt;&lt;/i&gt;&quot;,"></outline>
 			<outline text="iconColor: &quot;#4099FF&quot;,"></outline>
 			<outline text="flEditChatUsePostBody: false //4/28/16 by DW"></outline>
 			<outline text="}"></outline>
@@ -122,8 +127,41 @@
 			<outline created="Wed, 04 Jun 2014 12:09:11 GMT" pgfnum="41776" text="return (flTwitterParamsPresent); //6/4/14 by DW"></outline>
 			<outline created="Tue, 16 Apr 2013 22:17:28 GMT" pgfnum="22779" text="}"></outline>
 			</outline>
+		<outline text="function twSendDisconnectMessage (callback) { //3/24/19 by DW">
+			<outline isComment="true" text="Changes">
+				<outline text="6/13/19; 9:40:22 AM by DW">
+					<outline text="Don't call the callback if it is undefined."></outline>
+					</outline>
+				</outline>
+			<outline text="var token = encodeURIComponent (localStorage.twOauthToken);"></outline>
+			<outline text="var secret = encodeURIComponent (localStorage.twOauthTokenSecret);"></outline>
+			<outline text="$.ajax ({">
+				<outline text="type: &quot;GET&quot;,"></outline>
+				<outline text="url: twGetDefaultServer () + &quot;disconnect&quot; + &quot;?oauth_token=&quot; + token + &quot;&amp;oauth_token_secret=&quot; + secret,"></outline>
+				<outline text="success: function (data) {">
+					<outline text="if (callback !== undefined) { //6/13/19 by DW">
+						<outline created="Wed, 23 Apr 2014 17:17:13 GMT" pgfnum="40481" text="callback ();"></outline>
+						<outline text="}"></outline>
+						</outline>
+					<outline text="},"></outline>
+					</outline>
+				<outline text="error: function (status) { ">
+					<outline created="Wed, 12 Jun 2013 13:14:10 GMT" pgfnum="25848" text="console.log (&quot;twSendDisconnectMessage: error == &quot; + JSON.stringify (status, undefined, 4));"></outline>
+					<outline text="},"></outline>
+					</outline>
+				<outline text="dataType: &quot;json&quot;"></outline>
+				<outline text="});"></outline>
+				</outline>
+			<outline text="}"></outline>
+			</outline>
 		<outline created="Mon, 10 Jun 2013 18:07:32 GMT" pgfnum="25623" text="function twDisconnectFromTwitter () {">
+			<outline isComment="true" text="Changes">
+				<outline text="3/24/19; 11:03:27 AM by DW">
+					<outline text="Send a message to the server to remove references to localStorage.twScreenName from its cache. "></outline>
+					</outline>
+				</outline>
 			<outline text="try {">
+				<outline text="twSendDisconnectMessage (); //3/24/19 by DW"></outline>
 				<outline text="localStorage.removeItem (&quot;twOauthToken&quot;);"></outline>
 				<outline text="localStorage.removeItem (&quot;twOauthTokenSecret&quot;);"></outline>
 				<outline text="localStorage.removeItem (&quot;twScreenName&quot;);"></outline>
@@ -398,7 +436,7 @@
 				<outline text="type: &quot;GET&quot;,"></outline>
 				<outline text="url: apiUrl,"></outline>
 				<outline text="success: function (data){">
-					<outline created="Sat, 01 Jun 2013 14:45:29 GMT" pgfnum="24939" text="console.log (&quot;twTweet: twitter response == &quot; + JSON.stringify (data, undefined, 4)); //9/3/14 by DW"></outline>
+					<outline created="Sat, 01 Jun 2013 14:45:29 GMT" isComment="true" pgfnum="24939" text="console.log (&quot;twTweet: twitter response == &quot; + JSON.stringify (data, undefined, 4)); //9/3/14 by DW"></outline>
 					<outline created="Thu, 05 Jun 2014 13:55:13 GMT" pgfnum="41782" text="if (callback != undefined) { //6/5/14 by DW">
 						<outline created="Thu, 24 Apr 2014 12:47:03 GMT" pgfnum="40460" text="callback (data);"></outline>
 						<outline created="Thu, 05 Jun 2014 13:55:20 GMT" pgfnum="41783" text="}"></outline>
@@ -1528,6 +1566,9 @@
 			</outline>
 		<outline created="Tue, 11 Jun 2013 13:43:12 GMT" pgfnum="25729" text="function twStorageToPrefs (appPrefs, callback) {">
 			<outline isComment="true" text="Changes">
+				<outline text="12/13/18; 10:53:13 AM by DW">
+					<outline text="littleoutliner would crash if the JSON file is empty. This could happen if the server runs out of space. Now it doesn't crash."></outline>
+					</outline>
 				<outline text="1/20/15; 5:56:15 PM by DW">
 					<outline text="The first parameter to twGetFile was undefined, so the value we passed was &quot;undefined&quot; and that's where we were storing the users prefs. Fixed."></outline>
 					</outline>
@@ -1546,14 +1587,20 @@
 				</outline>
 			<outline text="var whenstart = new Date ();"></outline>
 			<outline text="twGetFile (twStorageData.pathAppPrefs, true, true, function (error, data) {">
-				<outline text="if (data != undefined) {">
-					<outline created="Tue, 11 Jun 2013 13:43:44 GMT" pgfnum="25734" text="var storedPrefs = JSON.parse (data.filedata);"></outline>
-					<outline text="for (var x in storedPrefs) {">
-						<outline text="appPrefs [x] = storedPrefs [x];"></outline>
+				<outline text="if (data !== undefined) {">
+					<outline text="try {">
+						<outline created="Tue, 11 Jun 2013 13:43:44 GMT" pgfnum="25734" text="var jstruct = JSON.parse (data.filedata);"></outline>
+						<outline text="for (var x in jstruct) {">
+							<outline text="appPrefs [x] = jstruct [x];"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="console.log (&quot;twStorageToPrefs: downloaded &quot; + data.filedata.length + &quot; chars from server in &quot; + secondsSince (whenstart) + &quot; secs.&quot;);"></outline>
 						<outline text="}"></outline>
 						</outline>
-					<outline text="console.log (&quot;twStorageToPrefs: downloaded &quot; + data.filedata.length + &quot; chars from server in &quot; + secondsSince (whenstart) + &quot; secs.&quot;);"></outline>
-					<outline isComment="true" text="console.log (&quot;twStorageToPrefs: appPrefs == &quot; + JSON.stringify (appPrefs, undefined, 4));"></outline>
+					<outline text="catch (err) {">
+						<outline text="console.log (&quot;twStorageToPrefs: error parsing &quot; + twStorageData.pathAppPrefs + &quot; JSON == &quot; + err.message);"></outline>
+						<outline text="}"></outline>
+						</outline>
 					<outline text="if (callback != undefined) { //8/16/14 by DW">
 						<outline text="callback ();"></outline>
 						<outline text="}"></outline>
@@ -1581,7 +1628,7 @@
 					</outline>
 				<outline text="});"></outline>
 				</outline>
-			<outline created="Tue, 11 Jun 2013 13:43:22 GMT" pgfnum="25731" text="}"></outline>
+			<outline created="Tue, 11 Jun 2013 13:43:22 GMT" pgfnum="25731" text="7"></outline>
 			</outline>
 		<outline text="function twStorageStartup (appPrefs, callback) {">
 			<outline isComment="true" text="Changes">

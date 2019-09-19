@@ -74,6 +74,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.9.7 - 9/19/19 by DW">
+				<outline text="If process.env.PORT is set when we launch, use that instead of what's in config.json."></outline>
+				</outline>
 			<outline text="##### v0.9.5 - 2/27/18 by DW">
 				<outline text="New config option -- flUsePortInRedirect. Default true. See this &lt;a href=&quot;http://scripting.com/2018/02/27/152934.html&quot;&gt;post&lt;/a&gt; for an explanation. "></outline>
 				</outline>
