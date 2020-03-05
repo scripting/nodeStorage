@@ -62,6 +62,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.9 - 3/5/20 by DW
+
+In the /getfilelist call, if it's the local file system, we return extra info about each file: when it was created, modified, its size. No changes for S3 storage. This was used to implement the new File/Open command in <a href="http://scripting.com/2020/03/04.html#a152838">Little Outliner</a>. 
+
 ##### v0.9.7 - 9/19/19 by DW
 
 If process.env.PORT is set when we launch, use that instead of what's in config.json.

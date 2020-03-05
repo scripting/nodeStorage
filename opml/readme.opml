@@ -74,6 +74,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.9.9 - 3/5/20 by DW">
+				<outline text="In the /getfilelist call, if it's the local file system, we return extra info about each file: when it was created, modified, its size. No changes for S3 storage. This was used to implement the new File/Open command in &lt;a href=&quot;http://scripting.com/2020/03/04.html#a152838&quot;&gt;Little Outliner&lt;/a&gt;. "></outline>
+				</outline>
 			<outline text="##### v0.9.7 - 9/19/19 by DW">
 				<outline text="If process.env.PORT is set when we launch, use that instead of what's in config.json."></outline>
 				</outline>
