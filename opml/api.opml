@@ -784,7 +784,7 @@
 				<outline text="url: twGetDefaultServer () + &quot;getfilelist?oauth_token=&quot; + encodeURIComponent (localStorage.twOauthToken) + &quot;&amp;oauth_token_secret=&quot; + encodeURIComponent (localStorage.twOauthTokenSecret) + &quot;&amp;flprivate=&quot; + encodeURIComponent (flPrivate),"></outline>
 				<outline text="success: function (data) {">
 					<outline created="Thu, 10 Jul 2014 11:49:52 GMT" pgfnum="42821" text="whenLastTwRatelimitError = undefined; "></outline>
-					<outline text="console.log (&quot;twGetUserFiles: list == &quot; + JSON.stringify (data, undefined, 4));"></outline>
+					<outline isComment="true" text="console.log (&quot;twGetUserFiles: list == &quot; + JSON.stringify (data, undefined, 4));"></outline>
 					<outline text="if (callback != undefined) {">
 						<outline created="Wed, 23 Apr 2014 17:17:13 GMT" pgfnum="40481" text="callback (data);"></outline>
 						<outline text="}"></outline>
@@ -1628,7 +1628,7 @@
 					</outline>
 				<outline text="});"></outline>
 				</outline>
-			<outline created="Tue, 11 Jun 2013 13:43:22 GMT" pgfnum="25731" text="7"></outline>
+			<outline created="Tue, 11 Jun 2013 13:43:22 GMT" pgfnum="25731" text="}"></outline>
 			</outline>
 		<outline text="function twStorageStartup (appPrefs, callback) {">
 			<outline isComment="true" text="Changes">

@@ -1,4 +1,4 @@
-var myVersion = "0.9.7", myProductName = "nodeStorage";  
+var myVersion = "0.9.9", myProductName = "nodeStorage";  
 
 /* The MIT License (MIT) 
 	
@@ -42,6 +42,7 @@ var update = require ("./lib/update.js");
 var dns = require ("dns");
 var os = require ("os");
 var qs = require ("querystring"); //4/28/16 by DW
+var filesystem = require ("davefilesystem"); //3/2/20 by DW
 
 //environment variables
 	var myPort = process.env.PORT;
@@ -1849,17 +1850,31 @@ function httpReadUrl (url, callback) {
 			}
 		}
 	function getUserFileList (s3path, callback) { //12/21/14 by DW
-		var now = new Date (), theList = new Array ();
-		store.listObjects (s3path, function (obj) {
-			if (obj.flLastObject != undefined) {
+		if (flLocalFilesystem) { //3/2/20 by DW
+			filesystem.getFolderInfo (s3path, function (theList) {
+				theList.forEach (function (item) {
+					item.Key = item.f;
+					item.LastModified = item.whenModified;
+					item.Size = item.size;
+					});
 				if (callback != undefined) {
 					callback (undefined, theList);
 					}
-				}
-			else {
-				theList [theList.length] = obj;
-				}
-			});
+				});
+			}
+		else {
+			var now = new Date (), theList = new Array ();
+			store.listObjects (s3path, function (obj) {
+				if (obj.flLastObject != undefined) {
+					if (callback != undefined) {
+						callback (undefined, theList);
+						}
+					}
+				else {
+					theList [theList.length] = obj;
+					}
+				});
+			}
 		}
 	function addComment (snCommenter, snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW
 		var s3path = s3PrivatePath + "users/" + snAuthor + "/comments/" + idPost + ".json", now = new Date (), flprivate = true;
@@ -1967,7 +1982,9 @@ function httpReadUrl (url, callback) {
 
 function everyMinute () {
 	var now = new Date ();
-	console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion + ", " + countOpenSockets () + " open sockets");
+	if (now.getMinutes () == 0) {
+		console.log ("\neveryMinute: " + now.toLocaleTimeString () + ", v" + myVersion + ", " + countOpenSockets () + " open sockets");
+		}
 	readUserWhitelist (); //11/18/14 by DW
 	update.doUpdate (); //3/24/16 by DW
 	}
@@ -2870,6 +2887,7 @@ function handleHttpRequest (httpRequest, httpResponse) {
 																}
 															obj.path = objectpath;
 														obj.whenLastChange = s3obj.LastModified;
+														obj.whenCreated = s3obj.whenCreated; //only present for filesystem objects --3/2/20 by DW
 														obj.ctChars = s3obj.Size;
 														returnedList [i] = obj;
 														}

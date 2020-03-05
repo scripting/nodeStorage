@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.7&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.9&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
@@ -57,6 +57,7 @@
 		<outline text="var dns = require (&quot;dns&quot;);"></outline>
 		<outline text="var os = require (&quot;os&quot;);"></outline>
 		<outline text="var qs = require (&quot;querystring&quot;); //4/28/16 by DW"></outline>
+		<outline text="var filesystem = require (&quot;davefilesystem&quot;); //3/2/20 by DW"></outline>
 		<outline created="Tue, 15 Apr 2014 20:32:04 GMT" pgfnum="40038" text=""></outline>
 		<outline text="//environment variables">
 			<outline created="Sat, 01 Feb 2014 18:42:45 GMT" pgfnum="36699" text="var myPort = process.env.PORT;"></outline>
@@ -3037,6 +3038,9 @@
 				</outline>
 			<outline text="function getUserFileList (s3path, callback) { //12/21/14 by DW">
 				<outline isComment="true" text="Changes">
+					<outline text="3/2/20; 11:35:23 AM by DW">
+						<outline text="If we're using the local file system, we get the list a different way, so we can get info about the files to return to the app. I want to have a real file dialog in LO2, and possibly other apps. "></outline>
+						</outline>
 					<outline text="11/1/14; 4:20:32 PM by DW">
 						<outline text="Only read files with names that end with .opml so we don't read invisible files like .DS_Store on the Mac."></outline>
 						</outline>
@@ -3047,20 +3051,40 @@
 						<outline text="We now keep a list of all the list names in serverData.stats."></outline>
 						</outline>
 					</outline>
-				<outline text="var now = new Date (), theList = new Array ();"></outline>
-				<outline created="Wed, 19 Mar 2014 19:59:25 GMT" pgfnum="39572" text="store.listObjects (s3path, function (obj) {">
-					<outline created="Sat, 22 Mar 2014 16:41:13 GMT" pgfnum="39728" text="if (obj.flLastObject != undefined) {">
+				<outline text="if (flLocalFilesystem) { //3/2/20 by DW">
+					<outline text="filesystem.getFolderInfo (s3path, function (theList) {">
+						<outline isComment="true" text="console.log (&quot;getUserFileList: theList == &quot; + utils.jsonStringify (theList));"></outline>
+						<outline text="theList.forEach (function (item) {">
+							<outline text="item.Key = item.f;"></outline>
+							<outline text="item.LastModified = item.whenModified;"></outline>
+							<outline text="item.Size = item.size;"></outline>
+							<outline text="});"></outline>
+							</outline>
 						<outline text="if (callback != undefined) {">
 							<outline text="callback (undefined, theList);"></outline>
 							<outline text="}"></outline>
 							</outline>
-						<outline created="Sat, 22 Mar 2014 16:41:27 GMT" pgfnum="39731" text="}"></outline>
+						<outline text="});"></outline>
 						</outline>
-					<outline created="Sat, 22 Mar 2014 16:41:28 GMT" pgfnum="39732" text="else {">
-						<outline text="theList [theList.length] = obj;"></outline>
-						<outline created="Sat, 22 Mar 2014 16:41:30 GMT" pgfnum="39733" text="}"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="var now = new Date (), theList = new Array ();"></outline>
+					<outline created="Wed, 19 Mar 2014 19:59:25 GMT" pgfnum="39572" text="store.listObjects (s3path, function (obj) {">
+						<outline created="Sat, 22 Mar 2014 16:41:13 GMT" pgfnum="39728" text="if (obj.flLastObject != undefined) {">
+							<outline text="if (callback != undefined) {">
+								<outline text="callback (undefined, theList);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline created="Sat, 22 Mar 2014 16:41:27 GMT" pgfnum="39731" text="}"></outline>
+							</outline>
+						<outline created="Sat, 22 Mar 2014 16:41:28 GMT" pgfnum="39732" text="else {">
+							<outline text="theList [theList.length] = obj;"></outline>
+							<outline created="Sat, 22 Mar 2014 16:41:30 GMT" pgfnum="39733" text="}"></outline>
+							</outline>
+						<outline created="Wed, 19 Mar 2014 19:59:50 GMT" pgfnum="39573" text="});"></outline>
 						</outline>
-					<outline created="Wed, 19 Mar 2014 19:59:50 GMT" pgfnum="39573" text="});"></outline>
+					<outline text="}"></outline>
 					</outline>
 				<outline text="}"></outline>
 				</outline>
@@ -3222,7 +3246,10 @@
 		<outline text=""></outline>
 		<outline text="function everyMinute () {">
 			<outline text="var now = new Date ();"></outline>
-			<outline text="console.log (&quot;\neveryMinute: &quot; + now.toLocaleTimeString () + &quot;, v&quot; + myVersion + &quot;, &quot; + countOpenSockets () + &quot; open sockets&quot;);"></outline>
+			<outline text="if (now.getMinutes () == 0) {">
+				<outline text="console.log (&quot;\neveryMinute: &quot; + now.toLocaleTimeString () + &quot;, v&quot; + myVersion + &quot;, &quot; + countOpenSockets () + &quot; open sockets&quot;);"></outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline text="readUserWhitelist (); //11/18/14 by DW"></outline>
 			<outline text="update.doUpdate (); //3/24/16 by DW"></outline>
 			<outline text="}"></outline>
@@ -4430,12 +4457,8 @@
 																		</outline>
 																	<outline text="obj.path = objectpath;"></outline>
 																	</outline>
-																<outline isComment="true" text=""></outline>
-																<outline isComment="true" text="obj.key = s3obj.Key; //delete this later"></outline>
-																<outline isComment="true" text="obj.s3path = s3path; //ditto"></outline>
-																<outline isComment="true" text=""></outline>
-																<outline isComment="true" text=""></outline>
 																<outline text="obj.whenLastChange = s3obj.LastModified;"></outline>
+																<outline text="obj.whenCreated = s3obj.whenCreated; //only present for filesystem objects --3/2/20 by DW"></outline>
 																<outline text="obj.ctChars = s3obj.Size;"></outline>
 																<outline text="returnedList [i] = obj;"></outline>
 																<outline text="}"></outline>

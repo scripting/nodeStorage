@@ -11,12 +11,13 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="lib/store.js">
-		<outline text="var fs = require (&quot;fs&quot;);"></outline>
-		<outline text="var filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
-		<outline isComment="true" text="var mime = require (&quot;mime&quot;); "></outline>
-		<outline text="var s3 = require (&quot;../lib/s3.js&quot;);"></outline>
-		<outline text="var utils = require (&quot;daveutils&quot;);"></outline>
-		<outline isComment="true" text="var utils = require (&quot;../lib/utils.js&quot;);"></outline>
+		<outline text="const fs = require (&quot;fs&quot;);"></outline>
+		<outline text="const filesystem = require (&quot;davefilesystem&quot;);"></outline>
+		<outline isComment="true" text="const filesystem = require (&quot;../lib/filesystem.js&quot;);"></outline>
+		<outline isComment="true" text="const mime = require (&quot;mime&quot;); "></outline>
+		<outline text="const s3 = require (&quot;../lib/s3.js&quot;);"></outline>
+		<outline text="const utils = require (&quot;daveutils&quot;);"></outline>
+		<outline isComment="true" text="const utils = require (&quot;../lib/utils.js&quot;);"></outline>
 		<outline text=""></outline>
 		<outline text="exports.init = init;"></outline>
 		<outline text="exports.newObject = stNewObject;"></outline>
@@ -118,6 +119,7 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
+			<outline isComment="true" text="console.log (&quot;stListObjects: path == &quot; + path); //3/1/20 by DW "></outline>
 			<outline text="if (stGlobals.flLocalFileSystem) {">
 				<outline text="filesystem.sureFilePath (path, function () { //7/19/15 by DW -- create the folder if it doesn't exist">
 					<outline text="fileLister (path, callback);"></outline>
@@ -196,7 +198,5 @@
 				</outline>
 			<outline text="}"></outline>
 			</outline>
-		<outline text=""></outline>
-		<outline text=""></outline>
 		</body>
 	</opml>

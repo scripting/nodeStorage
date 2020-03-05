@@ -515,7 +515,6 @@ function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
 		url: twGetDefaultServer () + "getfilelist?oauth_token=" + encodeURIComponent (localStorage.twOauthToken) + "&oauth_token_secret=" + encodeURIComponent (localStorage.twOauthTokenSecret) + "&flprivate=" + encodeURIComponent (flPrivate),
 		success: function (data) {
 			whenLastTwRatelimitError = undefined; 
-			console.log ("twGetUserFiles: list == " + JSON.stringify (data, undefined, 4));
 			if (callback != undefined) {
 				callback (data);
 				}
@@ -1112,7 +1111,7 @@ function twStorageToPrefs (appPrefs, callback) {
 				}
 			}
 		});
-	7
+	}
 function twStorageStartup (appPrefs, callback) {
 	twStorageToPrefs (appPrefs, function (errorInfo) {
 		var flStartupFail = false;

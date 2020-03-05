@@ -2,7 +2,7 @@
 	"name": "nodestorage", 
 	"description": "A simple storage system based on Twitter identity.",
 	"author": "Dave Winer <dave@smallpicture.com>",
-	"version": "0.9.7",
+	"version": "0.9.9",
 	"scripts": {
 		"start": "node storage.js"
 		},
@@ -17,6 +17,7 @@
 		"nodejs-websocket": "*",
 		"request": "*",
 		"simple-git": "*",
+		"davefilesystem": "*",
 		"daveutils": "*"
 		}, 
 	"license": "MIT",
