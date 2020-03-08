@@ -62,6 +62,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.10 - 3/6/20 by DW
+
+Add new /disconnect call, requires authentication, and removes the user from the screen name cache. The need for this came up in the <a href="http://scripting.com/2019/03/24.html#a164643">development</a> of feedBase. Little Outliner calls this endpoint. 
+
 ##### v0.9.9 - 3/5/20 by DW
 
 In the /getfilelist call, if it's the local file system, we return extra info about each file: when it was created, modified, its size. No changes for S3 storage. This was used to implement the new File/Open command in <a href="http://scripting.com/2020/03/04.html#a152838">Little Outliner</a>. 

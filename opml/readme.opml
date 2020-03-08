@@ -74,6 +74,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.9.10 - 3/6/20 by DW">
+				<outline text="Add new /disconnect call, requires authentication, and removes the user from the screen name cache. The need for this came up in the &lt;a href=&quot;http://scripting.com/2019/03/24.html#a164643&quot;&gt;development&lt;/a&gt; of feedBase. Little Outliner calls this endpoint. "></outline>
+				</outline>
 			<outline text="##### v0.9.9 - 3/5/20 by DW">
 				<outline text="In the /getfilelist call, if it's the local file system, we return extra info about each file: when it was created, modified, its size. No changes for S3 storage. This was used to implement the new File/Open command in &lt;a href=&quot;http://scripting.com/2020/03/04.html#a152838&quot;&gt;Little Outliner&lt;/a&gt;. "></outline>
 				</outline>
