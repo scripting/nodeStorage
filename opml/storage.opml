@@ -11,11 +11,11 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.9&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.10&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
-			<outline text="Copyright (c) 2014-2016 Dave Winer"></outline>
+			<outline text="Copyright (c) 2014-2020 Dave Winer"></outline>
 			<outline text=""></outline>
 			<outline text="Permission is hereby granted, free of charge, to any person obtaining a copy"></outline>
 			<outline text="of this software and associated documentation files (the &quot;Software&quot;), to deal"></outline>
@@ -2944,6 +2944,22 @@
 				<outline created="Wed, 09 Jul 2014 23:28:19 GMT" pgfnum="42744" text="}"></outline>
 				<outline created="Wed, 09 Jul 2014 23:27:48 GMT" pgfnum="42743" text=""></outline>
 				</outline>
+			<outline text="function deleteInScreenNameCache (accessToken, accessTokenSecret, callback) { //3/7/20M by DW">
+				<outline created="Wed, 09 Jul 2014 23:28:55 GMT" pgfnum="42746" text="for (var i = 0; i &lt; screenNameCache.length; i++) {">
+					<outline created="Wed, 09 Jul 2014 23:29:55 GMT" pgfnum="42752" text="var obj = screenNameCache [i];"></outline>
+					<outline created="Wed, 09 Jul 2014 23:30:08 GMT" pgfnum="42753" text="if ((obj.accessToken == accessToken) &amp;&amp; (obj.accessTokenSecret == accessTokenSecret)) {">
+						<outline text="callback (obj);"></outline>
+						<outline text="screenNameCache.splice (i, 1);"></outline>
+						<outline created="Wed, 09 Jul 2014 23:36:20 GMT" pgfnum="42759" text="return;"></outline>
+						<outline created="Wed, 09 Jul 2014 23:30:25 GMT" pgfnum="42754" text="}"></outline>
+						</outline>
+					<outline created="Wed, 09 Jul 2014 23:29:10 GMT" pgfnum="42751" text="}"></outline>
+					</outline>
+				<outline text="callback ({">
+					<outline text="});"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
 			<outline created="Wed, 02 Jul 2014 22:59:52 GMT" pgfnum="42668" text="function saveTweet (theTweet) { //7/2/14 by DW">
 				<outline text="if (serverPrefs.flArchiveTweets) {">
 					<outline created="Wed, 02 Jul 2014 23:08:16 GMT" pgfnum="42672" text="try {">
@@ -4016,6 +4032,18 @@
 												</outline>
 											<outline created="Wed, 22 Jan 2014 15:18:30 GMT" pgfnum="36266" text="break;"></outline>
 											</outline>
+										<outline text="case &quot;/disconnect&quot;: //3/7/20 by DW -- LO2 is calling this, first implemented in feedBase">
+											<outline isComment="true" text="Notes">
+												<outline text="http://scripting.com/2019/03/24.html#a164643"></outline>
+												</outline>
+											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessToken = parsedUrl.query.oauth_token;"></outline>
+											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessTokenSecret = parsedUrl.query.oauth_token_secret;"></outline>
+											<outline created="Wed, 09 Jul 2014 23:57:16 GMT" pgfnum="42784" text="deleteInScreenNameCache (accessToken, accessTokenSecret, function (data) {">
+												<outline text="dataResponse (data);"></outline>
+												<outline text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
+											</outline>
 										<outline created="Mon, 21 Apr 2014 14:25:08 GMT" pgfnum="40323" text="case &quot;/callbackfromtwitter&quot;:">
 											<outline created="Mon, 21 Apr 2014 15:14:29 GMT" isComment="true" pgfnum="40348" text="we're being called back from twitter -- like this: ">
 												<outline created="Mon, 21 Apr 2014 14:25:54 GMT" isComment="true" pgfnum="40325" text="http://fargotwitter.herokuapp.com/callbackFromTwitter?oauth_token=ohZDtFHu8T2siB59GbPCwhJTbS1sCOjv2EBvZJVvk&amp;oauth_verifier=Ne8EUrsuIPMfbta5PnaAvIv61sgoawlODlO8Uzob1kY"></outline>
@@ -4233,6 +4261,47 @@
 												<outline created="Wed, 09 Jul 2014 23:57:25 GMT" pgfnum="42785" text="}, flNotWhitelisted);"></outline>
 												</outline>
 											<outline created="Tue, 22 Jul 2014 18:44:32 GMT" pgfnum="43031" text="break;"></outline>
+											</outline>
+										<outline text="case &quot;/getoptionalfile&quot;: //3/7/20 by DW -- special version that doesn't generate an error if the file doesn't exist, for optional files">
+											<outline isComment="true" text="Notes">
+												<outline text="We return an object that either contains an error property or a data property"></outline>
+												</outline>
+											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessToken = parsedUrl.query.oauth_token;"></outline>
+											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessTokenSecret = parsedUrl.query.oauth_token_secret;"></outline>
+											<outline created="Thu, 26 Jun 2014 11:36:12 GMT" pgfnum="42468" text="var relpath = parsedUrl.query.relpath;"></outline>
+											<outline created="Mon, 04 Aug 2014 00:07:18 GMT" pgfnum="43127" text="var flprivate = utils.getBoolean (parsedUrl.query.flprivate);"></outline>
+											<outline created="Mon, 04 Aug 2014 00:07:18 GMT" pgfnum="43127" text="var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);"></outline>
+											<outline created="Wed, 09 Jul 2014 23:57:16 GMT" pgfnum="42784" text="getScreenName (accessToken, accessTokenSecret, function (screenName) {">
+												<outline created="Thu, 10 Jul 2014 00:53:00 GMT" pgfnum="42793" text="if (screenName === undefined) {">
+													<outline text="errorResponse ({message: &quot;Can't get the file because the accessToken is not valid.&quot;});    "></outline>
+													<outline created="Thu, 10 Jul 2014 00:53:11 GMT" pgfnum="42797" text="}"></outline>
+													</outline>
+												<outline created="Thu, 10 Jul 2014 00:53:12 GMT" pgfnum="42798" text="else {">
+													<outline created="Thu, 15 May 2014 15:40:17 GMT" pgfnum="41633" text="var s3path = getS3UsersPath (flprivate) + screenName + &quot;/&quot; + relpath;"></outline>
+													<outline created="Tue, 22 Jul 2014 13:24:40 GMT" isComment="true" pgfnum="43027" text="console.log (&quot;/getfile: s3 path == &quot; + s3path); "></outline>
+													<outline text="store.getObject (s3path, function (error, data) {">
+														<outline text="var jstruct;"></outline>
+														<outline text="if (error) {">
+															<outline text="jstruct = {error};"></outline>
+															<outline text="}"></outline>
+															</outline>
+														<outline text="else {">
+															<outline created="Sat, 09 Aug 2014 20:09:15 GMT" pgfnum="43181" text="if (flIncludeBody) {">
+																<outline created="Tue, 22 Jul 2014 23:02:02 GMT" pgfnum="43033" text="data.filedata = data.Body.toString (); "></outline>
+																<outline created="Sat, 09 Aug 2014 20:09:18 GMT" pgfnum="43182" text="}"></outline>
+																</outline>
+															<outline created="Wed, 23 Jul 2014 19:07:42 GMT" pgfnum="43044" text="delete data.Body;"></outline>
+															<outline text="jstruct = {data};"></outline>
+															<outline text="}"></outline>
+															</outline>
+														<outline text="dataResponse (jstruct);"></outline>
+														<outline text="});"></outline>
+														</outline>
+													<outline created="Thu, 10 Jul 2014 00:53:14 GMT" pgfnum="42799" text="}"></outline>
+													</outline>
+												<outline created="Wed, 09 Jul 2014 23:57:25 GMT" pgfnum="42785" text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
 											</outline>
 										<outline created="Thu, 31 Jul 2014 16:34:56 GMT" pgfnum="43058" text="case &quot;/derefurl&quot;: //7/31/14 by DW">
 											<outline created="Mon, 21 Apr 2014 23:15:16 GMT" pgfnum="40413" text="var accessToken = parsedUrl.query.oauth_token;"></outline>

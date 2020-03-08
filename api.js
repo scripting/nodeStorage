@@ -372,6 +372,29 @@ function twGetFile (relpath, flIncludeBody, flPrivate, callback, flNotWhiteliste
 		dataType: "json"
 		});
 	}
+function twGetOptionalFile (relpath, flIncludeBody, flPrivate, callback) { //3/7/20 by DW
+	var paramtable = {
+		oauth_token: localStorage.twOauthToken,
+		oauth_token_secret: localStorage.twOauthTokenSecret,
+		relpath: relpath
+		}
+	if (flIncludeBody) {
+		paramtable.flIncludeBody = "true";
+		}
+	var url = twGetDefaultServer () + "getoptionalfile?" + twBuildParamList (paramtable, flPrivate);
+	$.ajax ({
+		type: "GET",
+		url: url,
+		success: function (data) {
+			callback (undefined, data);
+			},
+		error: function (status, something, otherthing) { 
+			console.log ("twGetFile: error == " + JSON.stringify (status, undefined, 4));
+			callback (status, undefined);
+			},
+		dataType: "json"
+		});
+	}
 function twUploadFile (relpath, filedata, type, flPrivate, callback, flNotWhitelisted) { //8/3/14 by DW
 	var paramtable = {
 		oauth_token: localStorage.twOauthToken,

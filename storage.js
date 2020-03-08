@@ -1,8 +1,8 @@
-var myVersion = "0.9.9", myProductName = "nodeStorage";  
+var myVersion = "0.9.10", myProductName = "nodeStorage";  
 
 /* The MIT License (MIT) 
 	
-	Copyright (c) 2014-2016 Dave Winer
+	Copyright (c) 2014-2020 Dave Winer
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -1787,6 +1787,18 @@ function httpReadUrl (url, callback) {
 				});
 		}
 		
+	function deleteInScreenNameCache (accessToken, accessTokenSecret, callback) { //3/7/20M by DW
+		for (var i = 0; i < screenNameCache.length; i++) {
+			var obj = screenNameCache [i];
+			if ((obj.accessToken == accessToken) && (obj.accessTokenSecret == accessTokenSecret)) {
+				callback (obj);
+				screenNameCache.splice (i, 1);
+				return;
+				}
+			}
+		callback ({
+			});
+		}
 	function saveTweet (theTweet) { //7/2/14 by DW
 		if (serverPrefs.flArchiveTweets) {
 			try {
@@ -2551,6 +2563,13 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
+								case "/disconnect": //3/7/20 by DW -- LO2 is calling this, first implemented in feedBase
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									deleteInScreenNameCache (accessToken, accessTokenSecret, function (data) {
+										dataResponse (data);
+										});
+									break;
 								case "/callbackfromtwitter":
 									
 									var twitter = new twitterAPI ({
@@ -2717,6 +2736,35 @@ function handleHttpRequest (httpRequest, httpResponse) {
 												});
 											}
 										}, flNotWhitelisted);
+									break;
+								case "/getoptionalfile": //3/7/20 by DW -- special version that doesn't generate an error if the file doesn't exist, for optional files
+									var accessToken = parsedUrl.query.oauth_token;
+									var accessTokenSecret = parsedUrl.query.oauth_token_secret;
+									var relpath = parsedUrl.query.relpath;
+									var flprivate = utils.getBoolean (parsedUrl.query.flprivate);
+									var flIncludeBody = utils.getBoolean (parsedUrl.query.flIncludeBody);
+									getScreenName (accessToken, accessTokenSecret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get the file because the accessToken is not valid."});    
+											}
+										else {
+											var s3path = getS3UsersPath (flprivate) + screenName + "/" + relpath;
+											store.getObject (s3path, function (error, data) {
+												var jstruct;
+												if (error) {
+													jstruct = {error};
+													}
+												else {
+													if (flIncludeBody) {
+														data.filedata = data.Body.toString (); 
+														}
+													delete data.Body;
+													jstruct = {data};
+													}
+												dataResponse (jstruct);
+												});
+											}
+										});
 									break;
 								case "/derefurl": //7/31/14 by DW
 									var accessToken = parsedUrl.query.oauth_token;
