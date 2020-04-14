@@ -62,6 +62,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.11 - 4/14/20 by DW
+
+Add new /myfiles call, requires authentication, and returns a zip archive containing the user's files. Only works if the storage is local, not on S3.  
+
 ##### v0.9.10 - 3/6/20 by DW
 
 Add new /disconnect call, requires authentication, and removes the user from the screen name cache. The need for this came up in the <a href="http://scripting.com/2019/03/24.html#a164643">development</a> of feedBase. Little Outliner calls this endpoint. 

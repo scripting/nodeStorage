@@ -15,7 +15,7 @@
 			<outline text="&quot;name&quot;: &quot;nodestorage&quot;, "></outline>
 			<outline text="&quot;description&quot;: &quot;A simple storage system based on Twitter identity.&quot;,"></outline>
 			<outline text="&quot;author&quot;: &quot;Dave Winer &lt;dave@smallpicture.com&gt;&quot;,"></outline>
-			<outline text="&quot;version&quot;: &quot;0.9.10&quot;,"></outline>
+			<outline text="&quot;version&quot;: &quot;0.9.11&quot;,"></outline>
 			<outline text="&quot;scripts&quot;: {">
 				<outline text="&quot;start&quot;: &quot;node storage.js&quot;"></outline>
 				<outline text="},"></outline>
@@ -34,6 +34,7 @@
 				<outline text="&quot;request&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;simple-git&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;davefilesystem&quot;: &quot;*&quot;,"></outline>
+				<outline text="&quot;davezip&quot;: &quot;*&quot;,"></outline>
 				<outline text="&quot;daveutils&quot;: &quot;*&quot;"></outline>
 				<outline text="}, "></outline>
 				</outline>

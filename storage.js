@@ -1,4 +1,4 @@
-var myVersion = "0.9.10", myProductName = "nodeStorage";  
+var myVersion = "0.9.11", myProductName = "nodeStorage";  
 
 /* The MIT License (MIT) 
 	
@@ -43,6 +43,7 @@ var dns = require ("dns");
 var os = require ("os");
 var qs = require ("querystring"); //4/28/16 by DW
 var filesystem = require ("davefilesystem"); //3/2/20 by DW
+var zip = require ("davezip"); //4/13/20 by DW
 
 //environment variables
 	var myPort = process.env.PORT;
@@ -443,8 +444,6 @@ function httpReadUrl (url, callback) {
 	var maxLogLengthForClient = 50; //we won't return more than this number of log items to the client
 	var flChatLogDirty = false, nameDirtyChatLog;
 	var chatLogArray = new Array (); //10/26/15 by DW
-	
-	
 	
 	function initChatLogStats (name) { //1/20/16 by DW
 		if (serverStats.chatLogStats.logStats [name] === undefined) {
@@ -964,8 +963,6 @@ function httpReadUrl (url, callback) {
 			}
 		return (undefined); //didn't find the item
 		}
-	
-	
 	function getMonthChatLogPosts (nameChatLog, monthnum, yearnum) { //5/31/16 by DW
 		var theLog = findChatLog (nameChatLog), jstruct = new Array ();
 		if (theLog === undefined) {
@@ -988,8 +985,6 @@ function httpReadUrl (url, callback) {
 		
 		return (jstruct);
 		}
-	
-	
 	function getChatLogIndex (nameChatLog) { //1/2/16 by DW
 		var theLog = findChatLog (nameChatLog), jstruct = new Array (), ct = 0;
 		if (theLog === undefined) {
@@ -1408,8 +1403,6 @@ function httpReadUrl (url, callback) {
 				}
 			}
 		}
-	
-	
 //webhooks -- 8/28/15 by DW
 	var webhooks = {
 		incoming: {}, 
@@ -1991,6 +1984,27 @@ function httpReadUrl (url, callback) {
 				}
 			});
 		}
+//zip archive of user data -- 4/13/20 by DW
+	function getUserData (screenName, callback) { //4/14/20 by DW
+		if (flLocalFilesystem) {
+			const tmpfolder = "tmp/", archivefile = tmpfolder + screenName + ".zip"; 
+			utils.sureFilePath (archivefile, function () {
+				var theArchive = zip.createArchive (archivefile, function (err, data) {
+					if (callback !== undefined) {
+						callback (err, archivefile);
+						}
+					});
+				var pathPublicFiles = s3Path + "users/" + screenName + "/";
+				var pathPrivateFiles = s3PrivatePath + "users/" + screenName + "/";
+				theArchive.addDirectoryToArchive (pathPublicFiles, "Public Files");
+				theArchive.addDirectoryToArchive (pathPrivateFiles, "Private Files");
+				theArchive.finalize ();
+				});
+			}
+		else {
+			callback ({message: "Can't return the user's files because the server isn't using a local file system."});
+			}
+		}
 
 function everyMinute () {
 	var now = new Date ();
@@ -2163,7 +2177,16 @@ function handleHttpRequest (httpRequest, httpResponse) {
 			addOurDataToReturnObject (data);
 			httpResponse.end (utils.jsonStringify (data));    
 			}
-		
+		function returnZipFile (f) { //4/13/20 by DW
+			fs.readFile (f, function (err, data) {
+				if (err) {
+					errorResponse (err);
+					}
+				else {
+					doHttpReturn (200, "application/zip", data);
+					}
+				});
+			}
 		function requestHomeFile (lowerpath, callback) { //3/19/16 by DW
 			if (urlHomePageContent === undefined) {
 				callback ({message: "Can't get the file because the server isn't configured for it."});
@@ -3201,7 +3224,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
-								
 								case "/chat.css": //3/19/16 by DW
 									requestHomeFile (lowerpath, function (err, data) {
 										if (err) {
@@ -3261,7 +3283,6 @@ function handleHttpRequest (httpRequest, httpResponse) {
 											}
 										});
 									break;
-								
 								case "/getmonthchatmessages": //5/31/16 by DW
 									var monthnum = parsedUrl.query.monthnum;
 									var yearnum = parsedUrl.query.yearnum;
@@ -3276,7 +3297,23 @@ function handleHttpRequest (httpRequest, httpResponse) {
 										}
 									
 									break;
-								
+								case "/myfiles": //4/14/20 by DW
+									getScreenName (parsedUrl.query.oauth_token, parsedUrl.query.oauth_token_secret, function (screenName) {
+										if (screenName === undefined) {
+											errorResponse ({message: "Can't get the user's data because the access token is not valid."});    
+											}
+										else {
+											getUserData (screenName, function (err, zipfile) {
+												if (err) {
+													errorResponse (err);
+													}
+												else {
+													returnZipFile (zipfile);
+													}
+												});
+											}
+										});
+									break;
 								default:
 									var path = parsedUrl.pathname;
 									path = decodeURI (path); //6/28/16 by DW

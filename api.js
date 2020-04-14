@@ -1,6 +1,6 @@
 /* The MIT License (MIT) 
 	
-	Copyright (c) 2014-2019 Dave Winer 
+	Copyright (c) 2014-2020 Dave Winer 
 	
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -529,7 +529,7 @@ function twShortenUrl (longUrl, callback) { //8/25/14 by DW
 		dataType: "json"
 		});
 	}
-function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
+function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW -- get a list of the user's files
 	if (flPrivate == undefined) {
 		flPrivate = false;
 		}
@@ -547,6 +547,24 @@ function twGetUserFiles (flPrivate, callback) { //12/21/14 by DW
 			twCheckForRateLimitError (status.responseText); 
 			},
 		dataType: "json"
+		});
+	}
+function twDownloadUserFiles (callback) { //4/14/20 by DW -- get a zip file containing the user's files
+	var paramtable = {
+		oauth_token: localStorage.twOauthToken,
+		oauth_token_secret: localStorage.twOauthTokenSecret
+		}
+	var url = twGetDefaultServer () + "myfiles?" + twBuildParamList (paramtable);
+	$.ajax ({
+		type: "GET",
+		url: url,
+		success: function (data) {
+			callback (undefined, data);
+			},
+		error: function (status, something, otherthing) { 
+			console.log ("twDownloadUserFiles: error == " + JSON.stringify (status, undefined, 4));
+			callback (status, undefined);
+			}
 		});
 	}
 function twAddComment (snAuthor, idPost, urlOpmlFile, callback) { //2/21/15 by DW

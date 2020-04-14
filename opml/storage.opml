@@ -11,7 +11,7 @@
 		<windowRight>1500</windowRight>
 		</head>
 	<body text="storage.js">
-		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.10&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
+		<outline created="Mon, 03 Feb 2014 03:21:03 GMT" pgfnum="36831" text="var myVersion = &quot;0.9.11&quot;, myProductName = &quot;nodeStorage&quot;;  "></outline>
 		<outline text=""></outline>
 		<outline text="/* The MIT License (MIT) ">
 			<outline text=""></outline>
@@ -58,6 +58,7 @@
 		<outline text="var os = require (&quot;os&quot;);"></outline>
 		<outline text="var qs = require (&quot;querystring&quot;); //4/28/16 by DW"></outline>
 		<outline text="var filesystem = require (&quot;davefilesystem&quot;); //3/2/20 by DW"></outline>
+		<outline text="var zip = require (&quot;davezip&quot;); //4/13/20 by DW"></outline>
 		<outline created="Tue, 15 Apr 2014 20:32:04 GMT" pgfnum="40038" text=""></outline>
 		<outline text="//environment variables">
 			<outline created="Sat, 01 Feb 2014 18:42:45 GMT" pgfnum="36699" text="var myPort = process.env.PORT;"></outline>
@@ -697,7 +698,7 @@
 			<outline text="var maxLogLengthForClient = 50; //we won't return more than this number of log items to the client"></outline>
 			<outline text="var flChatLogDirty = false, nameDirtyChatLog;"></outline>
 			<outline text="var chatLogArray = new Array (); //10/26/15 by DW"></outline>
-			<outline text=""></outline>
+			<outline isComment="true" text=""></outline>
 			<outline isComment="true" text="what's in a chatLogArray element?">
 				<outline text="chatLog: array (one element for each top-level item in the log)"></outline>
 				<outline text="prefs: struct (info about the chatlog, including &lt;i&gt;serialNum&lt;/i&gt; for the ID of the next item added)"></outline>
@@ -806,7 +807,6 @@
 					<outline text="}"></outline>
 					</outline>
 				</outline>
-			<outline text=""></outline>
 			<outline text=""></outline>
 			<outline text="function initChatLogStats (name) { //1/20/16 by DW">
 				<outline text="if (serverStats.chatLogStats.logStats [name] === undefined) {">
@@ -1675,8 +1675,6 @@
 				<outline text="return (undefined); //didn't find the item"></outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
 			<outline text="function getMonthChatLogPosts (nameChatLog, monthnum, yearnum) { //5/31/16 by DW">
 				<outline text="var theLog = findChatLog (nameChatLog), jstruct = new Array ();"></outline>
 				<outline text="if (theLog === undefined) {">
@@ -1703,8 +1701,6 @@
 				<outline text="return (jstruct);"></outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
 			<outline text="function getChatLogIndex (nameChatLog) { //1/2/16 by DW">
 				<outline isComment="true" text="Changes">
 					<outline text="5/6/16; 11:16:50 AM by DW">
@@ -2327,8 +2323,6 @@
 					</outline>
 				<outline text="}"></outline>
 				</outline>
-			<outline text=""></outline>
-			<outline text=""></outline>
 			</outline>
 		<outline text="//webhooks -- 8/28/15 by DW">
 			<outline text="var webhooks = {">
@@ -3259,6 +3253,35 @@
 				<outline text="}"></outline>
 				</outline>
 			</outline>
+		<outline text="//zip archive of user data -- 4/13/20 by DW">
+			<outline text="function getUserData (screenName, callback) { //4/14/20 by DW">
+				<outline text="if (flLocalFilesystem) {">
+					<outline text="const tmpfolder = &quot;tmp/&quot;, archivefile = tmpfolder + screenName + &quot;.zip&quot;; "></outline>
+					<outline text="utils.sureFilePath (archivefile, function () {">
+						<outline text="var theArchive = zip.createArchive (archivefile, function (err, data) {">
+							<outline text="if (callback !== undefined) {">
+								<outline text="callback (err, archivefile);"></outline>
+								<outline text="}"></outline>
+								</outline>
+							<outline text="});"></outline>
+							</outline>
+						<outline text="var pathPublicFiles = s3Path + &quot;users/&quot; + screenName + &quot;/&quot;;"></outline>
+						<outline text="var pathPrivateFiles = s3PrivatePath + &quot;users/&quot; + screenName + &quot;/&quot;;"></outline>
+						<outline isComment="true" text="console.log (&quot;archiveUser: pathPublicFiles == &quot; + pathPublicFiles);"></outline>
+						<outline text="theArchive.addDirectoryToArchive (pathPublicFiles, &quot;Public Files&quot;);"></outline>
+						<outline text="theArchive.addDirectoryToArchive (pathPrivateFiles, &quot;Private Files&quot;);"></outline>
+						<outline text="theArchive.finalize ();"></outline>
+						<outline text="});"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="else {">
+					<outline text="callback ({message: &quot;Can't return the user's files because the server isn't using a local file system.&quot;});"></outline>
+					<outline text="}"></outline>
+					</outline>
+				<outline text="}"></outline>
+				</outline>
+			</outline>
 		<outline text=""></outline>
 		<outline text="function everyMinute () {">
 			<outline text="var now = new Date ();"></outline>
@@ -3499,7 +3522,20 @@
 					<outline text="httpResponse.end (utils.jsonStringify (data));    "></outline>
 					<outline created="Sat, 21 Jun 2014 14:43:44 GMT" pgfnum="42368" text="}"></outline>
 					</outline>
-				<outline text=""></outline>
+				<outline text="function returnZipFile (f) { //4/13/20 by DW">
+					<outline text="fs.readFile (f, function (err, data) {">
+						<outline text="if (err) {">
+							<outline text="errorResponse (err);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="else {">
+							<outline text="doHttpReturn (200, &quot;application/zip&quot;, data);"></outline>
+							<outline text="}"></outline>
+							</outline>
+						<outline text="});"></outline>
+						</outline>
+					<outline text="}"></outline>
+					</outline>
 				<outline text="function requestHomeFile (lowerpath, callback) { //3/19/16 by DW">
 					<outline text="if (urlHomePageContent === undefined) {">
 						<outline text="callback ({message: &quot;Can't get the file because the server isn't configured for it.&quot;});"></outline>
@@ -4967,7 +5003,6 @@
 												</outline>
 											<outline text="break;"></outline>
 											</outline>
-										<outline text=""></outline>
 										<outline text="case &quot;/chat.css&quot;: //3/19/16 by DW">
 											<outline text="requestHomeFile (lowerpath, function (err, data) {">
 												<outline created="Mon, 21 Apr 2014 23:12:55 GMT" pgfnum="40408" text="if (err) {">
@@ -5049,7 +5084,6 @@
 												</outline>
 											<outline created="Wed, 22 Jan 2014 15:18:30 GMT" pgfnum="36266" text="break;"></outline>
 											</outline>
-										<outline text=""></outline>
 										<outline text="case &quot;/getmonthchatmessages&quot;: //5/31/16 by DW">
 											<outline text="var monthnum = parsedUrl.query.monthnum;"></outline>
 											<outline text="var yearnum = parsedUrl.query.yearnum;"></outline>
@@ -5069,7 +5103,30 @@
 											<outline text=""></outline>
 											<outline text="break;"></outline>
 											</outline>
-										<outline text=""></outline>
+										<outline text="case &quot;/myfiles&quot;: //4/14/20 by DW">
+											<outline created="Wed, 09 Jul 2014 23:57:16 GMT" pgfnum="42784" text="getScreenName (parsedUrl.query.oauth_token, parsedUrl.query.oauth_token_secret, function (screenName) {">
+												<outline created="Thu, 10 Jul 2014 00:53:00 GMT" pgfnum="42793" text="if (screenName === undefined) {">
+													<outline text="errorResponse ({message: &quot;Can't get the user's data because the access token is not valid.&quot;});    "></outline>
+													<outline created="Thu, 10 Jul 2014 00:53:11 GMT" pgfnum="42797" text="}"></outline>
+													</outline>
+												<outline created="Thu, 10 Jul 2014 00:53:12 GMT" pgfnum="42798" text="else {">
+													<outline text="getUserData (screenName, function (err, zipfile) {">
+														<outline text="if (err) {">
+															<outline text="errorResponse (err);"></outline>
+															<outline text="}"></outline>
+															</outline>
+														<outline text="else {">
+															<outline text="returnZipFile (zipfile);"></outline>
+															<outline text="}"></outline>
+															</outline>
+														<outline text="});"></outline>
+														</outline>
+													<outline created="Thu, 10 Jul 2014 00:53:14 GMT" pgfnum="42799" text="}"></outline>
+													</outline>
+												<outline created="Wed, 09 Jul 2014 23:57:25 GMT" pgfnum="42785" text="});"></outline>
+												</outline>
+											<outline text="break;"></outline>
+											</outline>
 										<outline isComment="true" text="case &quot;/test1&quot;: //10/27/15 by DW">
 											<outline text="postChatMessage (&quot;davewiner&quot;, &quot;blork&quot;, &quot;Oh the buzzing of the bees&quot;, undefined, undefined, undefined, undefined, true, function (err, idMessage) {">
 												<outline text="if (err) {">
