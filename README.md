@@ -62,6 +62,10 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
+##### v0.9.12 -- 10/2/20 by DW
+
+nodeStorage becomes a real package.  See package.md in the repo for an explanation and background. 
+
 ##### v0.9.11 - 4/14/20 by DW
 
 Add new /myfiles call, requires authentication, and returns a zip archive containing the user's files. Only works if the storage is local, not on S3.  

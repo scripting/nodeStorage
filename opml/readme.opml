@@ -74,6 +74,9 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
+			<outline text="##### v0.9.12 -- 10/2/20 by DW">
+				<outline text="nodeStorage becomes a real package.  See package.md in the repo for an explanation and background. "></outline>
+				</outline>
 			<outline text="##### v0.9.11 - 4/14/20 by DW">
 				<outline text="Add new /myfiles call, requires authentication, and returns a zip archive containing the user's files. Only works if the storage is local, not on S3.  "></outline>
 				</outline>

@@ -1,8 +1,22 @@
 { 
 	"name": "nodestorage", 
-	"description": "A simple storage system based on Twitter identity.",
-	"author": "Dave Winer <dave@smallpicture.com>",
-	"version": "0.9.11",
+	"description": "A simple server-side JavaScript storage system using Twitter identity, running in Node.js.",
+	"author": "Dave Winer <dave@scripting.com>",
+	"version": "0.9.17",
+	"main": "main.js",
+	"files": [
+		"main.js",
+		"storage.js",
+		"package.md",
+		"lib/callbacks.js",
+		"lib/filesystem.js",
+		"lib/names.js",
+		"lib/opml.js",
+		"lib/rss.js",
+		"lib/s3.js",
+		"lib/store.js",
+		"lib/update.js"
+		],
 	"scripts": {
 		"start": "node storage.js"
 		},
