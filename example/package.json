@@ -1,0 +1,16 @@
+{
+	"name": "app",
+	"description": "Just a nodeStorage app.",
+	"author": "Bull Mancuso <bull@bullmancuso.com>",
+	"version": "0.4.0",
+	"scripts": {
+		"start": "node app.js"
+		},
+	"dependencies": {
+		"nodestorage": "*"
+		},
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+		}
+	}

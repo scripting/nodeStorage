@@ -24,19 +24,17 @@ When it's time to migrate an instance, just repeat the process you used the prev
 
 1. Download the package.
 
-2. Copy it into the application folder.
+2. The code you need is in the example folder. Copy the two files into your app's folder.
 
-3. Rename storage.js to whatever.
+3. Edit app.js to the name of your app, and update package.json accordingly.
 
-4. Edit it, replace <i>require ("./main.js")</i> with <i>require ("nodestorage")</i>. 
+4. You can delete the other files.
 
-5. Edit package.json and add nodestorage to the dependencies section, and you can remove all the rest. 
+5. At the command line, enter npm install.
 
-6. You can delete main.js.
+6. You still have to have a config.json file as before. 
 
-7. At the command line, enter npm install.
-
-The difference is next time you want to update to the latest version, you just have to do an npm update. No changes to files, no renaming things. 
+Next time you want to update to the latest version, you just have to do an npm update. No changes to files, no renaming things. 
 
 ### Test case
 

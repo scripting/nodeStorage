@@ -74,7 +74,7 @@
 			<outline text="1. You may see the product referred to in docs and comments as *storage*. That's what it was called while it was in development. It's still a good descriptive name for what the app does."></outline>
 			</outline>
 		<outline text="#### Updates">
-			<outline text="##### v0.9.12 -- 10/2/20 by DW">
+			<outline text="##### v0.9.17 -- 10/2/20 by DW">
 				<outline text="nodeStorage becomes a real package.  See &lt;a href=&quot;https://github.com/scripting/nodeStorage/blob/master/package.md&quot;&gt;package.md&lt;/a&gt; in the repo for an explanation and background. "></outline>
 				</outline>
 			<outline text="##### v0.9.11 - 4/14/20 by DW">

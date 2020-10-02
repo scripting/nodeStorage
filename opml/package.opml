@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <opml version="2.0">
 	<head>
-		<title>package.json</title>
+		<title>package.md</title>
 		<dateModified>&lt;%dateModified%></dateModified>
 		<expansionState></expansionState>
 		<vertScrollState>1</vertScrollState>
@@ -10,55 +10,33 @@
 		<windowBottom>900</windowBottom>
 		<windowRight>1500</windowRight>
 		</head>
-	<body text="package.json">
-		<outline text="{ ">
-			<outline text="&quot;name&quot;: &quot;nodestorage&quot;, "></outline>
-			<outline text="&quot;description&quot;: &quot;A simple server-side JavaScript storage system using Twitter identity, running in Node.js.&quot;,"></outline>
-			<outline text="&quot;author&quot;: &quot;Dave Winer &lt;dave@scripting.com&gt;&quot;,"></outline>
-			<outline text="&quot;version&quot;: &quot;0.9.17&quot;,"></outline>
-			<outline text="&quot;main&quot;: &quot;main.js&quot;,"></outline>
-			<outline text="&quot;files&quot;: [">
-				<outline text="&quot;main.js&quot;,"></outline>
-				<outline text="&quot;storage.js&quot;,"></outline>
-				<outline text="&quot;package.md&quot;,"></outline>
-				<outline text="&quot;lib/callbacks.js&quot;,"></outline>
-				<outline text="&quot;lib/filesystem.js&quot;,"></outline>
-				<outline text="&quot;lib/names.js&quot;,"></outline>
-				<outline text="&quot;lib/opml.js&quot;,"></outline>
-				<outline text="&quot;lib/rss.js&quot;,"></outline>
-				<outline text="&quot;lib/s3.js&quot;,"></outline>
-				<outline text="&quot;lib/store.js&quot;,"></outline>
-				<outline text="&quot;lib/update.js&quot;"></outline>
-				<outline text="],"></outline>
+	<body text="package.md">
+		<outline text="# Making nodeStorage a real package">
+			<outline text="In 2020, it's time to make the lowest level module in my system a package. "></outline>
+			</outline>
+		<outline text="### Background">
+			<outline text="nodeStorage was one of the first modules I wrote in Node, before I started using packages to modularize my work. "></outline>
+			<outline text="As a result, I created instances of the nodeStorage by downloading the repo, and renaming storage.js. Not a very easy to maintain approach because updating means repeating the initial process, every time. And I often don't do it, and old versions get left laying around. "></outline>
+			<outline text="Now in 2020 I know all about packages, and it's time to make this a package too. And I can do it without breaking anything. "></outline>
+			</outline>
+		<outline text="### What changed">
+			<outline text="There's a new file called main.js. It defines the package. "></outline>
+			<outline text="In package.json the &quot;main&quot; property points to this file, so when you're using the package, that's what you get."></outline>
+			<outline text="storage.js uses the package, and has the exact functionality of storage.js in previous versions. "></outline>
+			</outline>
+		<outline text="### How to migrate">
+			<outline text="When it's time to migrate an instance, just repeat the process you used the previous times. ">
+				<outline text="1. Download the package."></outline>
+				<outline text="2. The code you need is in the example folder. Copy the two files into your app's folder."></outline>
+				<outline text="3. Edit app.js to the name of your app, and update package.json accordingly."></outline>
+				<outline text="4. You can delete the other files."></outline>
+				<outline text="5. At the command line, enter npm install."></outline>
+				<outline text="6. You still have to have a config.json file as before. "></outline>
 				</outline>
-			<outline text="&quot;scripts&quot;: {">
-				<outline text="&quot;start&quot;: &quot;node storage.js&quot;"></outline>
-				<outline text="},"></outline>
-				</outline>
-			<outline text="&quot;repository&quot;: {">
-				<outline text="&quot;type&quot; : &quot;git&quot;,"></outline>
-				<outline text="&quot;url&quot; : &quot;https://github.com/scripting/nodestorage.git&quot;"></outline>
-				<outline text="},"></outline>
-				</outline>
-			<outline text="&quot;dependencies&quot; : {">
-				<outline text="&quot;aws-sdk&quot;: &quot;*&quot;, "></outline>
-				<outline text="&quot;opmlparser&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;node-twitter-api&quot;: &quot;*&quot;,"></outline>
-				<outline isComment="true" text="&quot;mime&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;nodejs-websocket&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;request&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;simple-git&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;davefilesystem&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;davezip&quot;: &quot;*&quot;,"></outline>
-				<outline text="&quot;daveutils&quot;: &quot;*&quot;"></outline>
-				<outline text="}, "></outline>
-				</outline>
-			<outline text="&quot;license&quot;: &quot;MIT&quot;,"></outline>
-			<outline text="&quot;engines&quot;: { ">
-				<outline text="&quot;node&quot;: &quot;0.10.*&quot;"></outline>
-				<outline text="}"></outline>
-				</outline>
-			<outline text="}"></outline>
+			<outline text="Next time you want to update to the latest version, you just have to do an npm update. No changes to files, no renaming things. "></outline>
+			</outline>
+		<outline text="### Test case">
+			<outline text="I'm doing the test case with the back-end for friends.farm, which is just a nodeStorage instance. "></outline>
 			</outline>
 		</body>
 	</opml>

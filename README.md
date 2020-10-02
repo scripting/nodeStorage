@@ -62,7 +62,7 @@ You can also access it in <a href="http://api.nodestorage.io/api.js">api.nodesto
 
 #### Updates
 
-##### v0.9.12 -- 10/2/20 by DW
+##### v0.9.17 -- 10/2/20 by DW
 
 nodeStorage becomes a real package.  See <a href="https://github.com/scripting/nodeStorage/blob/master/package.md">package.md</a> in the repo for an explanation and background. 
 
