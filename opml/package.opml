@@ -20,7 +20,7 @@
 			<outline text="Now in 2020 I know all about packages, and it's time to make this a package too. And I can do it without breaking anything. "></outline>
 			</outline>
 		<outline text="### What changed">
-			<outline text="There's a new file called main.js. It defines the package. "></outline>
+			<outline text="There's a new file called main.js. It defines the package.  "></outline>
 			<outline text="In package.json the &quot;main&quot; property points to this file, so when you're using the package, that's what you get."></outline>
 			<outline text="storage.js uses the package, and has the exact functionality of storage.js in previous versions. "></outline>
 			</outline>

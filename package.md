@@ -12,7 +12,7 @@ Now in 2020 I know all about packages, and it's time to make this a package too.
 
 ### What changed
 
-There's a new file called main.js. It defines the package. 
+There's a new file called main.js. It defines the package.  
 
 In package.json the "main" property points to this file, so when you're using the package, that's what you get.
 
